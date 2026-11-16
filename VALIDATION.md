@@ -45,7 +45,7 @@ Actual hosted checks are separate from these local browser tests:
 | Public submission-access release | All role passwords visibly autofill; Admin login and mobile requester signup/re-login work; temporary test account disabled afterward |
 | Public startup-recovery release | Missing previous-release asset returns 404 JSON; HTML uses no-store; blocked fonts/storage permit sign-in; failed entry download exposes recovery; reload restores sign-in |
 
-Production synthetic purchase commitments were avoided. Mutable purchasing verification used the separate preview database. Deployment IDs and the current application commit are recorded in DEPLOYMENT.md.
+Production synthetic purchase commitments were avoided. Mutable purchasing verification used the separate preview database. The hosted application uses the same reviewed FastAPI backend, with persistent PostgreSQL and same-origin frontend requests.
 
 ## Blind-test rehearsal and export preflight
 
@@ -62,4 +62,4 @@ The standalone read-only checker accepted all three rehearsal files with supplie
 - No unrestricted LLM, OCR, cryptographic signature verifier, corporate SSO/MFA/recovery or external PO fulfillment is claimed.
 - Shared submission Admin access is deliberately public and requires an operational preflight before the timed assessment.
 - Exhaustive load, fault-injection and penetration testing have not been performed. The 20,000-row API bound is not a hosted throughput guarantee; Vercel's payload limit is 4.5 MB.
-- The assessment form, code freeze and timely output-only Git push remain human obligations. See BLIND_TEST_RUNBOOK.md.
+- The assessment form, code freeze and timely output-only Git push remain human obligations. The submission procedure is summarized in README.md.

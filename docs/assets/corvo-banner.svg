@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-labelledby="title description">
+  <title id="title">Corvo Procurement OS</title>
+  <desc id="description">Policy-driven procurement with deterministic decisions and a complete evidence trail.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1"><stop stop-color="#080b1f"/><stop offset=".65" stop-color="#171335"/><stop offset="1" stop-color="#302064"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#6246ff" stop-opacity=".5"/><stop offset="1" stop-color="#6246ff" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#b7b3d7" stroke-opacity=".07"/></pattern>
+  </defs>
+  <rect width="1200" height="280" rx="18" fill="url(#background)"/>
+  <rect width="1200" height="280" rx="18" fill="url(#grid)"/>
+  <ellipse cx="1000" cy="140" rx="220" ry="180" fill="url(#glow)"/>
+  <path d="M48 48H80" stroke="#d7ff3f" stroke-width="4"/>
+  <text x="48" y="82" fill="#b7b3d7" font-family="Arial,sans-serif" font-size="12" letter-spacing="3">PROCUREMENT · POLICY · EVIDENCE</text>
+  <text x="45" y="155" fill="#f5f3ec" font-family="Arial,sans-serif" font-size="66" font-weight="700" letter-spacing="-3">corvo<tspan fill="#d7ff3f">.</tspan></text>
+  <text x="50" y="193" fill="#f5f3ec" font-family="Arial,sans-serif" font-size="22">Every request. A reasoned decision.</text>
+  <text x="50" y="239" fill="#b7b3d7" font-family="Arial,sans-serif" font-size="13" letter-spacing="1">DETERMINISTIC ENGINE / VERSIONED RULES / IMMUTABLE RUNS</text>
+  <g transform="translate(1000 140)" fill="none" stroke-width="1.5">
+    <circle r="88" stroke="#b7b3d7" stroke-opacity=".3"/>
+    <ellipse rx="110" ry="45" transform="rotate(-32)" stroke="#d7ff3f" stroke-opacity=".75"/>
+    <ellipse rx="110" ry="45" transform="rotate(38)" stroke="#a99bff"/>
+    <circle r="39" fill="#6246ff" fill-opacity=".2" stroke="#a99bff"/>
+    <path d="M-17 0H17M0-17V17" stroke="#d7ff3f"/>
+    <circle cx="80" cy="-64" r="5" fill="#d7ff3f" stroke="none"/>
+    <circle cx="-88" cy="21" r="4" fill="#32e6d2" stroke="none"/>
+  </g>
+  <rect x=".5" y=".5" width="1199" height="279" rx="18" fill="none" stroke="#b7b3d7" stroke-opacity=".18"/>
+</svg>

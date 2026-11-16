@@ -1,81 +1,116 @@
-# Corvo Procurement OS
+<div align="center">
 
-Deterministic procurement decisions, versioned policy amendments, exact contract accounting and auditable buyer workflows for the Cantill assessment. The authoritative backend is implemented here. Arena's React + TypeScript + Vite frontend is integrated with this API, preserving its custom 3D scenes, media and visual identity.
+<img src="docs/assets/corvo-banner.svg" alt="Corvo Procurement OS — Every request. A reasoned decision." width="100%" />
 
-Live application: **https://corvo-procurement.vercel.app**. Health: [database connectivity](https://corvo-procurement.vercel.app/health). API reference: [Swagger UI](https://corvo-procurement.vercel.app/docs). Integration contract: [FRONTEND_API_CONTRACT.md](FRONTEND_API_CONTRACT.md). For submission, select a controlled role: its public submission password fills and displays automatically. Individual users can create their own Requester account. Private operational credentials remain in the ignored local access file.
+**A policy-driven procurement platform with explainable decisions, governed amendments, and auditable purchasing.**
 
-Local API: **http://localhost:8000**.
+[Live application](https://corvo-procurement.vercel.app) · [Interactive API](https://corvo-procurement.vercel.app/docs) · [OpenAPI specification](openapi.json) · [Solution design](SOLUTION_DESIGN.md)
 
-## Documentation guide
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
-| Document | Purpose |
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-145_passed-28A745?style=flat-square)
+![Browser verification](https://img.shields.io/badge/Browser_scenarios-13_passed-6246FF?style=flat-square)
+![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-D7FF3F?style=flat-square&labelColor=171335)
+
+</div>
+
+---
+
+## Overview
+
+Corvo converts conversational purchase requests and CSV batches into deterministic PO or sourcing recommendations. It resolves catalog items, groups compatible needs, evaluates contract headroom, applies versioned policies, ranks eligible suppliers, and preserves the evidence behind each decision.
+
+A policy amendment changes configuration through the application’s review and activation workflow. Earlier runs remain reproducible from immutable snapshots. Procurement calculations live in the Python backend; the React interface displays actual server results and never recalculates financial decisions.
+
+Built for the **Cantill.ai Full-stack Intern Challenge**. Verification badges record checks executed on **16 November 2026**; they are not continuous-monitoring or unseen-accuracy claims.
+
+## Explore the application
+
+**[Open Corvo →](https://corvo-procurement.vercel.app)**
+
+Choose **Controlled role account → Admin** to review every workspace. The submission password fills and displays automatically. Buyer and Requester roles are also available; individual signup creates a Requester account.
+
+| Workspace | What to inspect |
 |---|---|
-| [SOLUTION_DESIGN.md](SOLUTION_DESIGN.md) | Architecture, processing algorithms, financial invariants, evidence and transactional approvals |
-| [REQUIREMENTS_TRACEABILITY.md](REQUIREMENTS_TRACEABILITY.md) | Requirement-to-implementation and verification mapping |
-| [DECISIONS.md](DECISIONS.md) | Business interpretations, alternatives, supplier ranking and justification |
-| [APPROACH.md](APPROACH.md) | Engineering strategy, technology tradeoffs and AI-tool disclosure |
-| [FRONTEND_API_CONTRACT.md](FRONTEND_API_CONTRACT.md) | Exact requests/responses, authorization and screen integration |
-| [VALIDATION.md](VALIDATION.md) | Executed checks, environments and limits of the evidence |
-| [READINESS_REVIEW.md](READINESS_REVIEW.md) | Assessment-oriented self-review and prioritized residual risks |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Actual hosting configuration, release process and operational constraints |
-| [BLIND_TEST_RUNBOOK.md](BLIND_TEST_RUNBOOK.md) | Code freeze, two processing runs, amendment review and final CSV submission |
+| **Overview** | Live counters, active policy and latest work queue |
+| **Request Studio** | Multi-turn intake, clarification, corrections and confirmation before creating a PR |
+| **Buyer Inbox / Decision X-Ray** | Source lines, grouping, exact valuation, contract rejections, rule traces and approval scope |
+| **Batch Lab** | CSV processing, persisted runs, replay, same-input comparison and authenticated exports |
+| **Policy Reactor** | Schema registry, policy DSL, amendment upload, preview, simulation and governed activation |
+| **Supplier Constellation** | Dated rankings, score components, reference prices and preferred-supplier export |
+| **Contract Vault** | Contract register, ceiling values and reviewed PDF proposals |
+| **Purchase Orders / Sourcing / Audit Trail** | Persisted purchasing records, overrides and actor/time evidence |
 
-Known-case verification matches all 14 supplied procurement examples and three supplier rankings. A sample-derived two-run rehearsal produced all three exports with 55 affected line outcomes after a five-part amendment. These are verified preparation results, not a prediction of unseen evaluation accuracy.
+Shared submission roles intentionally allow reviewers to change live data. Normal production operation can disable this configuration and use individual accounts. [Health endpoint](https://corvo-procurement.vercel.app/health).
 
-## Reviewer walkthrough
+## Technology stack
 
-Choose the shared Admin role on the hosted sign-in page; its submission password fills automatically. Open Batch Lab to inspect a persisted run and its export/replay, then use Buyer Inbox and Decision X-Ray to inspect source lines, contract rejections, valuation and supplier evidence. Policy Reactor exposes the schema registry, versioned rules and preview/simulation flow. Supplier Constellation exports rankings for an explicit as-of date; Contract Vault, Purchase Orders, Sourcing and Audit Trail expose their persisted records. Creating a new individual account grants Requester access rather than administrative privileges.
-
-## Configuration boundary
-
-| Variable | Purpose | Exposure |
+| Layer | Technologies | Responsibility |
 |---|---|---|
-| DATABASE_URL | Persistent PostgreSQL connection in production; SQLite local fallback outside Vercel | Server secret |
-| SESSION_SECRET | Stable token-signing key | Server secret |
-| REQUESTER_PASSWORD / BUYER_PASSWORD / ADMIN_PASSWORD | Private operational role credentials | Server secrets |
-| DEMO_MODE | Allows local demonstration defaults; false in hosted production | Server configuration |
-| SUBMISSION_ACCESS | Explicit opt-in to published role credentials and requester self-registration; false by default | Server configuration; public access intentionally changes when enabled |
-| CORS_ORIGINS | Exact allowed frontend origins; hosted application uses same-origin calls | Server configuration |
-| VITE_API_BASE_URL | Empty for same-origin hosting; explicit backend origin for split development | Public client configuration; never a secret |
+| **Frontend** | React 19 · TypeScript 5.9 · Vite 7 · Tailwind CSS 4 | Responsive workspaces and typed interaction |
+| **Visual experience** | Three.js · React Three Fiber · GSAP · Motion | Custom 3D scenes, animation and industrial visual identity |
+| **Client data** | TanStack Query · Zod · React Router | Live queries, runtime response validation and role-aware navigation |
+| **API** | FastAPI · Pydantic · Uvicorn | Typed endpoints, validation, authentication and OpenAPI |
+| **Procurement engine** | Python · Decimal · RapidFuzz · validated policy DSL | Deterministic matching, valuation, routing and supplier selection |
+| **Persistence** | PostgreSQL · SQLAlchemy · Alembic · psycopg | Durable records, migrations, transactional approvals and snapshots |
+| **Documents** | pypdf | Contract and amendment text extraction with human review |
+| **Delivery** | Docker Compose · Vercel · Neon PostgreSQL | Reproducible local setup and persistent hosted application |
+| **Verification** | pytest · Playwright | Engine/API/concurrency regressions and real-backend browser workflows |
 
-Never place private credentials in a VITE_ variable. Source data is initialized separately from application builds and remains outside the public repository.
+SQLite supports isolated tests and a Python-only local backend. Hosted production uses persistent PostgreSQL.
+
+## Architecture
 
 ```mermaid
 flowchart LR
-  Arena[Arena React frontend] --> API[FastAPI / OpenAPI]
-  API --> Engine[Pure deterministic engine]
-  Engine --> Rules[Validated policy DSL]
-  API --> DB[(PostgreSQL)]
-  DB --> Snapshots[Immutable runs and evidence]
-  API --> Governance[Review / Approval / Audit]
-  Private[Private CSV / PDF import] --> API
+    UI[React + TypeScript] --> API[FastAPI / OpenAPI]
+    API --> Service[Services + authorization]
+    Service --> Engine[Deterministic engine]
+    Engine --> Rules[Versioned policy DSL]
+    Engine --> Suppliers[Eligible supplier ranking]
+    Service --> DB[(PostgreSQL)]
+    DB --> Evidence[Immutable runs + evidence]
+    Service --> Actions[Transactional approvals + audit]
 ```
 
-## Local Docker setup
+The pipeline validates input, resolves items, forms fixed-anchor requirements, evaluates contracts and exact values, applies first-match rules, selects suppliers, then consolidates compatible POs. Recommendation processing and simulation do not create purchasing commitments; buyer approval rechecks current headroom inside a transaction.
 
-Install Docker Desktop, start its Linux engine, then run:
+Read the [solution design](SOLUTION_DESIGN.md) for algorithms and invariants, and [DECISIONS.md](DECISIONS.md) for interpretations and rejected alternatives.
+
+## Run locally
+
+### Docker — recommended
+
+Prerequisite: Docker Desktop with its Linux engine running.
 
 ```sh
 docker compose up --build -d
 ```
 
-This starts PostgreSQL with a named persistent volume and the API at port 8000. Migrations run before the API starts. The root page serves the integrated Arena interface, built in a separate Node stage. API documentation remains at /docs. Keep port 8000 free.
+Open **http://localhost:8000** for the application and **http://localhost:8000/docs** for the API. The build compiles the frontend, starts PostgreSQL with a named volume, runs migrations and launches FastAPI. Local roles are `requester`, `buyer` and `admin`, with password `corvo-demo`.
 
-Copy `.env.example` to `.env` to customize settings. Compose supplies local-only defaults. Before public hosting set `DEMO_MODE=false`, a random stable `SESSION_SECRET`, three distinct strong role passwords, production PostgreSQL `DATABASE_URL` and the exact frontend `CORS_ORIGINS`. Do not commit `.env`.
+### Initialize the private assessment data
 
-## Private data import
-
-The original kit must stay outside Git and Docker images. Extract it under `.private/`. The directory must contain `master_data`, `contracts`, `contracts/pdf` and `pr_batches`. Import through an authenticated admin API (`POST /api/admin/import-data`, original ZIP) or use:
+The repository deliberately excludes the original kit. Extract your supplied copy under `.private/Cantill_FullStack_Task_Kit/`, retaining its `master_data/`, `contracts/` and `pr_batches/` structure, then run:
 
 ```sh
 docker compose exec api python -m scripts.import_kit /app/.private/Cantill_FullStack_Task_Kit
 ```
 
-The private local directory is mounted read-only into the container solely for this import. PDFs are parsed and register agreement checked, including PDF-only contracts. No source data is embedded in the frontend or image. On a hosted server use the authenticated upload endpoint or a private shell, not a public Git commit. Bulk API import is blocked after purchasing commitments exist.
+The private directory is mounted read-only for import. Register/PDF terms are reconciled and PDF-only contracts are included. Alternatively, an authenticated Admin can upload the original ZIP through `POST /api/admin/import-data`. Bulk replacement is blocked after purchasing commitments exist. The hosted application is already initialized.
 
-## Python-only setup
+<details>
+<summary><strong>Run the backend and frontend without Docker</strong></summary>
 
-Python 3.11+ is required (local verification used 3.14). From the repository root:
+Requires Python 3.11+ and Node/npm. Run from the repository root:
 
 ```sh
 python -m venv .venv
@@ -89,13 +124,32 @@ npm run build --prefix frontend
 python -m uvicorn backend.api:app --host 127.0.0.1 --port 8000
 ```
 
-Without DATABASE_URL this uses `.private/corvo.db` (SQLite). Set DATABASE_URL to `postgresql+psycopg://user:password@host:5432/database` for PostgreSQL. Import tools and tests work from the repository root; no global Python path change is needed.
+Without `DATABASE_URL`, the local backend uses ignored `.private/corvo.db`. For frontend development, run `npm run dev --prefix frontend` alongside FastAPI; its development proxy forwards API calls to port 8000.
 
-The Python-only backend path still needs Node/npm to build the UI; alternatively run the Vite development server separately. Use the Docker command above to build both runtimes together.
+</details>
 
-## Demo accounts and API use
+<details>
+<summary><strong>Environment configuration</strong></summary>
 
-Local demo roles are `requester`, `buyer`, `admin`, each with password `corvo-demo`. Login issues an eight-hour signed bearer token backed by a revocable database session. Admins can create individual accounts through `/api/users`; requester runs and chat are isolated by identity. Five failed attempts throttle an identity for the remaining 15-minute window. Shared role accounts remain a controlled demonstration convenience. Startup refuses non-demo mode without a session secret and all role passwords.
+Copy `.env.example` to `.env` for local overrides. Never commit credentials.
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection; mandatory on Vercel |
+| `SESSION_SECRET` | Stable, private token-signing key |
+| `REQUESTER_PASSWORD`, `BUYER_PASSWORD`, `ADMIN_PASSWORD` | Private operational role passwords |
+| `DEMO_MODE` | Enables local defaults; hosted production uses false |
+| `SUBMISSION_ACCESS` | Opt-in to published role credentials and requester signup; false by default |
+| `CORS_ORIGINS` | Exact permitted cross-origin frontend origins |
+| `VITE_API_BASE_URL` | Empty for same-origin hosting; explicit backend origin for split development |
+
+Private server credentials must never use a `VITE_` prefix. Production runs FastAPI and static assets on Vercel with persistent Neon PostgreSQL; durable state does not depend on the function filesystem. The hosted payload limit is 4.5 MB. Process large batches whole on an appropriate deployment rather than splitting grouping or ceiling allocation across separate uploads.
+
+</details>
+
+## API and exports
+
+[Swagger UI](https://corvo-procurement.vercel.app/docs) and the checked-in [OpenAPI specification](openapi.json) are the authoritative endpoint references. Business APIs use bearer authentication, stable run IDs, paginated lists and structured errors. Monetary values are decimal strings.
 
 ```sh
 curl -X POST http://localhost:8000/api/auth/login \
@@ -107,63 +161,74 @@ curl -X POST http://localhost:8000/api/process-batch \
   -F 'file=@/private/path/batch.csv' -F 'policy_version=5.0'
 ```
 
-Use the returned run ID with `GET /api/runs/{id}/export.csv`, passing the bearer header. Interactive `/docs` supports login, Authorize, upload and JSON endpoints. All required screen APIs and precise evidence schemas are documented in the Arena contract.
+Download decisions through `GET /api/runs/{id}/export.csv` with the bearer header. Exports preserve one row per input PR line, including explicit `NOT_PROCESSED` reasons.
 
-## Policy amendments
+```text
+pr_no,pr_line,resolved_item_code,group_id,po_id,decision,route,supplier_id,unit_price,group_value_inr,suggested_supplier_ids,policy_version,reason
+```
 
-Upload PDF, text or full policy JSON with a unique version, base version and effective date. Inspect extracted source and the proposed structured conditions. Edit the draft if parsing did not represent every clause. Preview validation, simulate against a stored run, review, approve, then activate. No draft or approved-but-unactivated version affects ordinary processing. Scheduled versions apply only from their effective date. Historical explicit version runs remain available. New plant/category predicates use the existing policy editor/DSL without changing Python.
+Preferred-supplier exports use `item_code,rank,supplier_id,reference_price` for the selected as-of date. Generated frontend TypeScript/Zod models are checked against `openapi.json` during release builds.
 
-The controlled text compiler handles named limits, windows, supplier counts and explicit scoped conditions. Unknown clauses remain visible and block ordinary review until a human reconciles the structured rules and explicitly acknowledges manual verification. It does not claim unrestricted amendment understanding. A structured human-reviewed editor is the reliable fallback. See `GET /api/policy-schema` and `DECISIONS.md` for supported facts and interpretations.
+## Reproduce the two-policy evaluation
+
+1. Process the supplied batch explicitly under **v5.0**, export decisions and retain its run/input hashes.
+2. Upload the amendment in **Policy Reactor**. Inspect every clause, effective date, condition and priority; preview and simulate the draft.
+3. Correct unsupported wording using the existing structured editor, then review, approve and activate. Approval alone does not activate a policy.
+4. Process the **same original CSV** under the amended version. Export the second result and compare runs with identical input hashes.
+5. Export preferred suppliers for the evaluator’s exact as-of date and selected policy version. Replay both decision snapshots.
+
+Processing and export are sufficient for this comparison: approving a PO between runs would consume ceiling and change the purchasing baseline. After the assessment's **19 November 2026, 10:00 AM IST** source freeze, only the three actual result CSVs belong in `submission/`, pushed before **12:00 noon IST**. No fabricated submission files are included.
+
+Validate export structure before submission:
+
+```sh
+python -m scripts.validate_submission --input .private/blind_batch.csv --run1 submission/run1.csv --run2 submission/run2.csv --preferred submission/preferred.csv --amended-version 6.0 --suppliers .private/Cantill_FullStack_Task_Kit/master_data/supplier_master.csv
+```
+
+Replace version, paths and filenames with the supplied values. This read-only tool checks headers, PR-line multiplicity, decimal/action consistency, repeated requirement/PO fields, preferred ranks and optional Active-supplier membership. It does not calculate decisions or certify policy interpretation.
 
 ## Verification
 
-Before pushing the actual blind-test exports, run the read-only structural checker. It validates file integrity, not the correctness of the amendment's business interpretation:
+| Evidence | Result |
+|---|---|
+| Linux / PostgreSQL suite | **145 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **143 passed**, with two PostgreSQL-only skips |
+| Real-backend browser suite | **13 scenarios passed** |
+| Disclosed worked examples | **14 procurement decisions + 3 supplier rankings match** |
+| Original sample | **186 outputs · 149 requirements · 2 explicit invalid lines** |
+| Amendment rehearsal | Five policy changes, **55 affected lines**, three exports and matching replays |
+| Hosted checks | Real API workflows, authenticated downloads, persistence after redeployment and startup recovery |
 
-```sh
-python -m scripts.validate_submission --input .private/blind_batch.csv --run1 submission/sohamgaonkhadkar__run1.csv --run2 submission/sohamgaonkhadkar__run2.csv --preferred submission/sohamgaonkhadkar__preferred.csv --amended-version 6.0 --suppliers .private/Cantill_FullStack_Task_Kit/master_data/supplier_master.csv
-```
-
-Replace the example version, filenames and private paths with the evaluator's actual values. The checker never modifies exports, calls the API or commits inputs. Without `--suppliers` it cannot verify supplier status.
+These results describe executed checks, not a predicted blind-test score. See [VALIDATION.md](VALIDATION.md) for scope and limitations.
 
 ```sh
 python -m pytest -q
-python -m compileall -q backend scripts
-python -m scripts.export_openapi
-docker compose config --quiet
+npm run typecheck --prefix frontend
+npm run build --prefix frontend
+npm run test:e2e --prefix frontend
+python -m scripts.generate_frontend_contract --check
 ```
 
-Tests use only synthetic public fixtures. Original worked-example checks and original batch outputs remain private. API tests use isolated SQLite databases; real PostgreSQL validation is separate. See [VALIDATION.md](VALIDATION.md) for executed checks and open limitations. Windows sandboxed Python event loops may require local socket access for TestClient; normal local terminals do not have that restriction.
+Browser tests start isolated FastAPI/SQLite with synthetic data. Install Chromium first from `frontend/` using `npx playwright install chromium`. The repository's Python virtual environment must exist; `CORVO_PYTHON` can select another interpreter. Original task data and private reports are excluded from public test fixtures.
 
-Migrations are frozen schema files in `migrations/versions/`. New changes must add migrations. Do not remove backend tests or migrations to accommodate a frontend export. OpenAPI is generated from application schemas and tested for synchronization.
+## Evaluator documentation
 
-## Deployment
+| Document | Contents |
+|---|---|
+| [SOLUTION_DESIGN.md](SOLUTION_DESIGN.md) | Architecture, algorithms, policy lifecycle, evidence and concurrency |
+| [DECISIONS.md](DECISIONS.md) | Business judgment, ambiguity handling, ranking formula and tradeoffs |
+| [APPROACH.md](APPROACH.md) | Implementation strategy, technical choices and AI-tool disclosure |
+| [REQUIREMENTS_TRACEABILITY.md](REQUIREMENTS_TRACEABILITY.md) | Requirement-to-code and verification mapping |
+| [VALIDATION.md](VALIDATION.md) | Executed evidence, test environments and known limits |
+| [Asset credits](frontend/ASSET_CREDITS.md) | Third-party visual attribution and source provenance |
 
-The public repository is [Sohamgaonkhadkar/cantill-procurement-ai](https://github.com/Sohamgaonkhadkar/cantill-procurement-ai). The Vercel project `corvo-procurement` and separate production/preview Neon PostgreSQL databases have been provisioned. Schemas and private initial data are loaded; secure role/session environment variables are configured. See [DEPLOYMENT.md](DEPLOYMENT.md) for the current target and checks.
+## Boundaries
 
-`app.py` and `vercel.json` adapt the existing backend to Vercel's Python ASGI runtime. The release build checks the generated OpenAPI client, compiles TypeScript and builds the reviewed Arena frontend. Its Vite build is served from the same origin; purchasing data persists in PostgreSQL, not the function filesystem. Hosted request/response limits are tighter than the portable API upload limit; see the deployment notes. Local browser and production Docker checks pass. Hosted checks are recorded separately in DEPLOYMENT.md.
+Chat and amendment parsing use bounded deterministic grammars. Unresolved clauses require faithful structured authoring and review; new rules must use registered facts and supported operations. Scanned policies need transcription, and PDF extraction does not establish signature authenticity. Corporate SSO/MFA/recovery, external supplier dispatch and exhaustive load/security audits are outside the implemented scope. Approvals create durable internal purchasing records.
 
-`Dockerfile`, `compose.yaml` and `render.yaml` also remain available for local deployment or a backend fallback. No Render resource has been created. The API respects `PORT`; `/health` checks database connectivity.
+---
 
-## Blind-test runbook
-
-Follow [BLIND_TEST_RUNBOOK.md](BLIND_TEST_RUNBOOK.md) for the detailed freeze, two-run, amendment-review and three-file submission procedure, including operational risks and the executed rehearsal.
-
-Complete the repository, hosted application and assessment form before **19 November 2026, 10:00 AM IST**. Freeze application code at that time.
-
-1. Import the supplied blind CSV and process explicitly under v5.0. Save the returned run ID and download `yourname__run1.csv`.
-2. Upload the unseen amendment, inspect/correct all structured changes, simulate, review, approve and activate. Process the same CSV with the approved version, respecting the effective date. Download `yourname__run2.csv`.
-3. Generate preferred suppliers using the evaluator's exact as-of date. Download `yourname__preferred.csv`.
-4. Place only these actual evaluator outputs into `submission/` and commit before **12:00 noon IST**. Do not commit input data or change code after freeze. No fabricated submission files are included.
-5. Replay both runs and verify hashes; retain audit evidence and original run IDs.
-
-## Current boundaries
-
-Arena integration and local browser verification are complete. Hosted verification is tracked separately. Individual application accounts are available; corporate SSO, MFA and account recovery are not integrated. Chat uses a bounded deterministic parser and asks for incomplete specifications. Scanned contracts create manual-entry proposals; scanned policies need transcription. Signatures require human verification. Buyer overrides support safer sourcing routes, not arbitrary direct orders. There are no live supplier integrations or outbound PO dispatches. Approval creates persisted internal purchasing records only.
-
-AI usage and actual architecture are documented in [APPROACH.md](APPROACH.md); detailed business judgments are in [DECISIONS.md](DECISIONS.md).
-
-## Frontend development and integration checks
-
-Run `npm ci --prefix frontend`, then `npm run dev --prefix frontend` alongside FastAPI on port 8000. The Vite development proxy forwards /api; production uses an empty VITE_API_BASE_URL for same-origin requests. Run `npm run build --prefix frontend` before serving the SPA directly from Python.
-
-Regenerate the frontend TypeScript/Zod contract with `python -m scripts.generate_frontend_contract`; append `--check` to detect drift. Browser verification: install Chromium with `npx --prefix frontend playwright install chromium`, then run `npm run test:e2e --prefix frontend`. Tests start an isolated real FastAPI/SQLite server with synthetic records. See INTEGRATION_REPORT.md.
+<div align="center">
+<strong>Exact decisions. Visible evidence. Policies that can change.</strong><br />
+<sub>Corvo Procurement OS · Cantill.ai assessment submission</sub>
+</div>
