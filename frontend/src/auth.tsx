@@ -101,6 +101,13 @@ export function Login() {
       ? options.data?.roles.find((item) => item.role === role)?.password
       : undefined;
   useEffect(() => {
+    if (options.data?.submission_access === false) {
+      setKind("individual");
+      setPassword("");
+      setShowPassword(false);
+    }
+  }, [options.data?.submission_access]);
+  useEffect(() => {
     if (publicPassword) {
       setPassword(publicPassword);
       setShowPassword(true);
@@ -161,7 +168,9 @@ export function Login() {
               setError(null);
             }}
           >
-            <option value="role">Controlled role account</option>
+            {options.data?.submission_access !== false ? (
+              <option value="role">Controlled role account</option>
+            ) : null}
             <option value="individual">Individual account</option>
           </select>
         </label>
