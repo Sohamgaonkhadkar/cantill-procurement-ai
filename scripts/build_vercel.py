@@ -16,7 +16,9 @@ def main():
     if not npm: raise RuntimeError('Node/npm is required for the frontend build')
     if not (frontend/'package-lock.json').is_file(): raise RuntimeError('Commit the reviewed frontend package-lock.json before deployment')
     if not os.getenv('DATABASE_URL'): raise RuntimeError('Provision persistent PostgreSQL before building')
-    subprocess.run([npm,'ci','--prefix',str(frontend)],check=True)
+    python=shutil.which('python') or 'python'
+    subprocess.run([python,'-m','scripts.generate_frontend_contract','--check'],check=True,cwd=root)
+    subprocess.run([npm,'ci','--include=dev','--ignore-scripts','--prefix',str(frontend)],check=True)
     subprocess.run([npm,'run','build','--prefix',str(frontend)],check=True)
     if not (frontend/'dist'/'index.html').is_file(): raise RuntimeError('Expected a Vite build in frontend/dist')
     public=root/'public'; public.mkdir(exist_ok=True)

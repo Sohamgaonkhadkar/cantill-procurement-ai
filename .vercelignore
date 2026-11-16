@@ -11,3 +11,5 @@ submission/**
 *.zip
 *.db
 *.sqlite*
+frontend/node_modules/**
+frontend/e2e/**

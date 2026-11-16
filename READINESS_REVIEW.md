@@ -16,7 +16,7 @@ Closed gaps:
 
 Remaining release requirements and limitations:
 
-- Arena's exported frontend has not arrived. Browser flows, live-mode mock removal, final public Vercel deployment and persistence after redeployment must still be verified together.
+- Arena integration and real-backend browser workflows pass locally. All eleven pages were inspected at desktop/mobile widths, and mock dependencies are removed. Hosted Vercel and redeployment verification is tracked separately in DEPLOYMENT.md.
 - Controlled prose and chat grammars are bounded. Arbitrary policy language needs structured manual authoring and review. Scanned policy PDFs need transcription; OCR and cryptographic signature verification are not implemented.
 - Corporate SSO, MFA, password recovery, production monitoring and outbound supplier/PO integrations are outside the implemented application boundary.
 - The suite includes real concurrent PostgreSQL approvals, but it is not an exhaustive production load or penetration test. Vercel platform payload limits still apply.

@@ -10,7 +10,7 @@ Server-only SESSION_SECRET and all three role passwords are configured as distin
 
 The Python function region is pinned to Singapore (`sin1`) to colocate it with the databases. The hardened suite passes on Windows/SQLite and Linux/PostgreSQL (see VALIDATION.md for counts), including a real PostgreSQL concurrent contract-ceiling approval test. Migration 003 adds persistent sessions and login-throttle records. A Vercel-like local HTTP listener backed by managed preview Neon also passed chat, policy lifecycle, batch/export, synthetic purchasing approval, override, audit and replay checks. This is not a substitute for the pending public Vercel deployment/browser checks.
 
-The final Arena frontend has not been supplied. `scripts/build_vercel.py` deliberately refuses to build a final release without its package.json, reviewed package-lock.json and Vite output. This prevents an outdated frontend or the temporary integration page from being published as the final application.
+The Arena frontend is integrated. The release build validates its generated OpenAPI client and TypeScript before compiling assets. A multi-stage Docker build packages the same UI with FastAPI. Local workflows and original-sample browser verification pass; hosted evidence is recorded after deployment.
 
 ## Vercel compatibility
 

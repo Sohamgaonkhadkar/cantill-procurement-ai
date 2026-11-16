@@ -1,6 +1,6 @@
 # Corvo Procurement OS
 
-Deterministic procurement decisions, versioned policy amendments, exact contract accounting and auditable buyer workflows for the Cantill assessment. The authoritative backend is implemented here. The premium React + TypeScript + Vite frontend is being developed independently in Arena AI and will connect to this API.
+Deterministic procurement decisions, versioned policy amendments, exact contract accounting and auditable buyer workflows for the Cantill assessment. The authoritative backend is implemented here. Arena's React + TypeScript + Vite frontend is integrated with this API, preserving its custom 3D scenes, media and visual identity.
 
 Local API: **http://localhost:8000**. API reference: **http://localhost:8000/docs**. Integration contract: [FRONTEND_API_CONTRACT.md](FRONTEND_API_CONTRACT.md). No public hosted URL is verified yet.
 
@@ -23,7 +23,7 @@ Install Docker Desktop, start its Linux engine, then run:
 docker compose up --build -d
 ```
 
-This starts PostgreSQL with a named persistent volume and the API at port 8000. Migrations run before the API starts. The root page links to live API documentation; it is an integration entry page, not the final Arena interface. Keep port 8000 free.
+This starts PostgreSQL with a named persistent volume and the API at port 8000. Migrations run before the API starts. The root page serves the integrated Arena interface, built in a separate Node stage. API documentation remains at /docs. Keep port 8000 free.
 
 Copy `.env.example` to `.env` to customize settings. Compose supplies local-only defaults. Before public hosting set `DEMO_MODE=false`, a random stable `SESSION_SECRET`, three distinct strong role passwords, production PostgreSQL `DATABASE_URL` and the exact frontend `CORS_ORIGINS`. Do not commit `.env`.
 
@@ -92,7 +92,7 @@ Migrations are frozen schema files in `migrations/versions/`. New changes must a
 
 The public repository is [Sohamgaonkhadkar/cantill-procurement-ai](https://github.com/Sohamgaonkhadkar/cantill-procurement-ai). The Vercel project `corvo-procurement` and separate production/preview Neon PostgreSQL databases have been provisioned. Schemas and private initial data are loaded; secure role/session environment variables are configured. See [DEPLOYMENT.md](DEPLOYMENT.md) for the current target and checks.
 
-`app.py` and `vercel.json` adapt the existing backend to Vercel's Python ASGI runtime. The final build refuses to publish until the reviewed Arena frontend is present. Its Vite build is served from the same origin; purchasing data persists in PostgreSQL, not the function filesystem. Hosted request/response limits are tighter than the portable API upload limit; see the deployment notes. Final public HTTP, browser and redeployment checks remain pending.
+`app.py` and `vercel.json` adapt the existing backend to Vercel's Python ASGI runtime. The release build checks the generated OpenAPI client, compiles TypeScript and builds the reviewed Arena frontend. Its Vite build is served from the same origin; purchasing data persists in PostgreSQL, not the function filesystem. Hosted request/response limits are tighter than the portable API upload limit; see the deployment notes. Local browser and production Docker checks pass. Hosted checks are recorded separately in DEPLOYMENT.md.
 
 `Dockerfile`, `compose.yaml` and `render.yaml` also remain available for local deployment or a backend fallback. No Render resource has been created. The API respects `PORT`; `/health` checks database connectivity.
 
@@ -108,6 +108,12 @@ Complete the repository, hosted application and assessment form before **19 Nove
 
 ## Current boundaries
 
-The final Arena frontend and hosted end-to-end verification are pending. Individual application accounts are available; corporate SSO, MFA and account recovery are not integrated. Chat uses a bounded deterministic parser and asks for incomplete specifications. Scanned contracts create manual-entry proposals; scanned policies need transcription. Signatures require human verification. Buyer overrides support safer sourcing routes, not arbitrary direct orders. There are no live supplier integrations or outbound PO dispatches. Approval creates persisted internal purchasing records only.
+Arena integration and local browser verification are complete. Hosted verification is tracked separately. Individual application accounts are available; corporate SSO, MFA and account recovery are not integrated. Chat uses a bounded deterministic parser and asks for incomplete specifications. Scanned contracts create manual-entry proposals; scanned policies need transcription. Signatures require human verification. Buyer overrides support safer sourcing routes, not arbitrary direct orders. There are no live supplier integrations or outbound PO dispatches. Approval creates persisted internal purchasing records only.
 
 AI usage and actual architecture are documented in [APPROACH.md](APPROACH.md); detailed business judgments are in [DECISIONS.md](DECISIONS.md).
+
+## Frontend development and integration checks
+
+Run `npm ci --prefix frontend`, then `npm run dev --prefix frontend` alongside FastAPI on port 8000. The Vite development proxy forwards /api; production uses an empty VITE_API_BASE_URL for same-origin requests. Run `npm run build --prefix frontend` before serving the SPA directly from Python.
+
+Regenerate the frontend TypeScript/Zod contract with `python -m scripts.generate_frontend_contract`; append `--check` to detect drift. Browser verification: install Chromium with `npx --prefix frontend playwright install chromium`, then run `npm run test:e2e --prefix frontend`. Tests start an isolated real FastAPI/SQLite server with synthetic records. See INTEGRATION_REPORT.md.

@@ -1,3 +1,10 @@
+FROM node:24-slim AS frontend-build
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --include=dev --ignore-scripts
+COPY frontend ./
+RUN npm run build
+
 FROM python:3.12-slim
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
@@ -7,7 +14,7 @@ COPY backend backend
 COPY migrations migrations
 COPY scripts scripts
 COPY alembic.ini .
-COPY frontend frontend
+COPY --from=frontend-build /frontend/dist frontend/dist
 RUN useradd --create-home corvo && mkdir -p /app/.private && chown -R corvo:corvo /app
 USER corvo
 EXPOSE 8000

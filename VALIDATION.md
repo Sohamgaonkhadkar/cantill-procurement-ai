@@ -30,10 +30,16 @@ The managed-preview HTTP hardening check passed (9 affected sample lines, 269.75
 
 ## Still unverified or incomplete
 
-- Arena's exported React frontend has not yet been received or integrated. No frontend build, type check, browser workflow or final UI quality claim is made.
-- Vercel project creation is verified; final application deployment is intentionally blocked until the reviewed Arena frontend is integrated.
+- Arena integration, TypeScript/production builds and real-backend browser workflows pass locally; see INTEGRATION_REPORT.md.
+- Vercel project creation is verified; hosted application verification is tracked in DEPLOYMENT.md.
 - Public hosted HTTP smoke checks are pending. Managed database access from this workstation does not establish Vercel-runtime connectivity.
 - Exhaustive serverless load testing, corporate SSO/MFA, OCR and cryptographic PDF verification are not claimed. Individual employee account isolation and PostgreSQL transaction contention are tested.
 - No blind-test batch or amendment has been received. `submission/` contains no fabricated CSV outputs.
 
 See `DEPLOYMENT.md` for the authorized repository/project and the exact remaining release sequence.
+
+## Arena integration verification
+
+All nine Playwright scenarios pass against isolated real FastAPI/SQLite: CSV/export/replay, approvals, duplicate commitment rejection, sourcing override, policy proposal/upload/simulation/review/approval/activation, chat confirmation and session continuity, manual scanned-contract review, session revocation, throttling, outage states and pagination. All eleven pages were captured and visually inspected at 1440px and 390px with automated horizontal-overflow checks.
+
+The production Vite build served directly by Docker/FastAPI/PostgreSQL separately passed an actual Chromium run over the original private sample: 186 outputs, 149 requirements, two invalid lines, authenticated export, replay and supplier view, with zero browser exceptions. Its output hash remains 9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f. The final image passes 125 PostgreSQL tests; Windows passes 124 with one PostgreSQL-only skip. TypeScript, production build and generated-client drift checks pass.
