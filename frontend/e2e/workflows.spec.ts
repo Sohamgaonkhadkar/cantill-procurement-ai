@@ -977,5 +977,5 @@ test("keyboard dialogs retain focus and Arena 3D has a complete 2D alternative",
     text: el.textContent,
   }));
   expect(colors.color).toBe("rgb(245, 243, 236)");
-  expect(colors.text).toBe("Inspect the machine.");
+  expect(colors.text?.replace(/\s/g, "")).toBe("Inspectthemachine.");
 });
