@@ -1,5 +1,3 @@
-import { ConditionEditor } from "@/components/ConditionEditor";
-import { EvidenceView } from "@/components/EvidenceView";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -128,30 +126,11 @@ export default function PolicyReactor() {
                 <h2 className="font-display text-2xl">{selected.version}</h2>
                 <span className="num text-lime">{selected.status}</span>
               </div>
-              <div className="rule-register">
-                {selected.rules.map((rule, i) => (
-                  <button
-                    key={rule.id}
-                    onClick={() => setRuleIndex(i)}
-                    aria-pressed={ruleIndex === i}
-                  >
-                    <span className="num">
-                      {rule.id} · Priority {rule.priority}
-                    </span>
-                    <strong>{rule.route}</strong>
-                    <p>{rule.reason}</p>
-                  </button>
-                ))}
-              </div>
-              <EvidenceView value={selected.rules[ruleIndex]} />
-              <details className="mt-4">
-                <summary>Explore rule circuit</summary>
-                <RuleCircuit
-                  policy={selected}
-                  selected={ruleIndex}
-                  onSelect={setRuleIndex}
-                />
-              </details>
+              <RuleCircuit
+                policy={selected}
+                selected={ruleIndex}
+                onSelect={setRuleIndex}
+              />
               <Json
                 value={selected.rules[ruleIndex]}
                 label="Selected rule / exact predicate"
@@ -292,74 +271,17 @@ export default function PolicyReactor() {
             Edit predicates, grouping windows, supplier counts and parameters.
             Draft edits clear prior review.
           </p>
-          {(() => {
-            try {
-              const p = parsed();
-              const rule = p.rules[ruleIndex];
-              if (!rule) return null;
-              return (
-                <div className="visual-rule-editor">
-                  <h3 className="font-display text-lg">Rule {rule.id}</h3>
-                  <label className="field">
-                    Execution priority
-                    <input
-                      type="number"
-                      min="0"
-                      disabled={locked}
-                      value={rule.priority}
-                      onChange={(e) => {
-                        const next = Number(e.target.value);
-                        if (Number.isInteger(next) && next >= 0) {
-                          p.rules[ruleIndex].priority = next;
-                          setEditor(JSON.stringify(p, null, 2));
-                        }
-                      }}
-                    />
-                  </label>
-                  <ConditionEditor
-                    value={rule.when}
-                    facts={registry.data?.facts ?? {}}
-                    operators={registry.data?.operators ?? []}
-                    disabled={locked}
-                    onChange={(when) => {
-                      setEditor(
-                        JSON.stringify(
-                          {
-                            ...p,
-                            rules: p.rules.map((r, i) =>
-                              i === ruleIndex ? { ...r, when } : r,
-                            ),
-                          },
-                          null,
-                          2,
-                        ),
-                      );
-                    }}
-                  />
-                </div>
-              );
-            } catch {
-              return (
-                <p role="alert">
-                  Correct the advanced JSON before using the visual editor.
-                </p>
-              );
-            }
-          })()}
-          <details>
-            <summary>Advanced policy DSL JSON</summary>
-            <label className="field">
-              Policy DSL JSON
-              <textarea
-                aria-label="Policy DSL JSON"
-                className="num"
-                rows={18}
-                value={editor}
-                onChange={(e) => setEditor(e.target.value)}
-                readOnly={locked}
-              />
-            </label>
-          </details>
+          <label className="field">
+            Policy DSL JSON
+            <textarea
+              aria-label="Policy DSL JSON"
+              className="num"
+              rows={18}
+              value={editor}
+              onChange={(e) => setEditor(e.target.value)}
+              readOnly={locked}
+            />
+          </label>
           <div className="toolbar">
             <Button
               disabled={busy}
@@ -500,7 +422,7 @@ export default function PolicyReactor() {
             rows={4}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="If plant is DEMO-PLANT and category is Safety and value exceeds INR 75000 require RFQ"
+            placeholder="If plant is CHK1 and category is Safety and value exceeds INR 75000 require RFQ"
           />
         </label>
         <div className="toolbar">

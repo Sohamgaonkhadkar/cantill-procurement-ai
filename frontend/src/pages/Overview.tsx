@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { useOverview, useRequests } from "@/api/hooks";
 import { IndustrialHero } from "@/components/media/IndustrialHero";
+import { MaterialBand } from "@/components/media/MaterialBand";
+import { VISUALS } from "@/components/media/assets";
 import { useMainScroll } from "@/components/Shell";
 import { RequirementsTable } from "@/components/Workflow";
 import { LoadingBlock, ErrorBlock } from "@/components/ui";
@@ -57,30 +59,13 @@ export default function Overview() {
           </Link>
         ))}
       </section>
-      <section
-        className="process-journey"
-        aria-label="Procurement evidence journey"
-      >
-        <div className="eyebrow">
-          One request. A complete chain of evidence.
-        </div>
-        <ol>
-          {[
-            ["Request", "Source lines", "/request-studio"],
-            ["Item", "Catalog matching", "/decision-xray"],
-            ["Group", "Compatible demand", "/decision-xray"],
-            ["Value", "Exact price reference", "/decision-xray"],
-            ["Contract", "Terms and headroom", "/contracts"],
-            ["Policy", "Effective rules", "/policy-reactor"],
-            ["Outcome", "PO or sourcing", "/inbox"],
-          ].map(([label, detail, to]) => (
-            <li key={label}>
-              <Link to={to}>{label} ↗</Link>
-              <small>{detail}</small>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <MaterialBand
+        asset={VISUALS.gears}
+        statement="Steel becomes a requirement. A requirement becomes a decision."
+        caption="EVERY LINE BELOW CARRIES ITS OWN EVIDENCE TRAIL"
+        vertical="SCROLL TO THE WORK QUEUE"
+        height={196}
+      />
       <section className="paper-texture px-6 py-10 text-ink md:px-10">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>

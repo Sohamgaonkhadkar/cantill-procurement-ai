@@ -44,10 +44,6 @@ The server key is named `GEMINI_API_KEY` and belongs only in the isolated demo p
 
 ## Explore the application
 
-![Corvo workspace with synthetic verification data](docs/assets/corvo-overview.png)
-
-*Industrial Editorial interface. This screenshot uses isolated synthetic verification data; its counters are calculated by the real backend.*
-
 **[Open Corvo →](https://corvo-procurement.vercel.app)**
 
 Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged live-workspace password is published. The separate [fictional demo](https://corvo-procurement-demo.vercel.app) provides automatically filled demonstration roles against its isolated database schema.

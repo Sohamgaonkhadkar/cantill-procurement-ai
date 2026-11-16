@@ -68,7 +68,7 @@ test("blocked entry script shows reload recovery instead of a blank page", async
 const csv =
   headers +
   "\nPR-E2E-A,1,2026-11-01 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-B,1,2026-11-02 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-C,1,2026-11-03 10:00,Synthetic user,Testing,P-A,ITM-9002,Hydraulic hose 1/2 inch 2 wire,3,MTR,,2026-11-20,Normal\nPR-E2E-BAD,1,2026-11-04 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing,abc,NOS,,2026-11-20,Normal\n";
-test("privileged credentials stay private and editorial hero preserves readable imagery", async ({
+test("privileged credentials are never autofilled and the core leaves its background visible", async ({
   page,
 }) => {
   await page.addInitScript(() =>
@@ -88,16 +88,17 @@ test("privileged credentials stay private and editorial hero preserves readable 
   await expect(
     page.getByRole("heading", { level: 1, name: /PROCUREMENT/ }),
   ).toBeVisible();
-  await expect(page.locator(".hero-photo img")).toBeVisible();
-  await expect(page.locator(".industrial-hero canvas")).toHaveCount(0);
-  const overlaps = await page.evaluate(() => {
+  await page.waitForTimeout(3000);
+  const bounds = await page.evaluate(() => {
     const a = document
-        .querySelector(".hero-editorial-copy")!
-        .getBoundingClientRect(),
-      b = document.querySelector(".hero-photo")!.getBoundingClientRect();
-    return a.right > b.left && a.bottom > b.top && b.bottom > a.top;
+      .querySelector(".hero-machine-view")!
+      .getBoundingClientRect();
+    const b = document
+      .querySelector(".hero-stage-note")!
+      .getBoundingClientRect();
+    return { sceneBottom: a.bottom, noteTop: b.top };
   });
-  expect(overlaps).toBe(false);
+  expect(bounds.sceneBottom).toBeLessThanOrEqual(bounds.noteTop + 1);
   await page.screenshot({ path: "../.private/hero-refined-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(1200);
@@ -337,7 +338,6 @@ test("real CSV, consolidated approval, policy amendment lifecycle, replay and au
   await expect(page.getByText("No approved records yet.")).toHaveCount(0);
   await noErrors(page);
   await go(page, "Policy Reactor");
-  await page.getByText("Advanced policy DSL JSON", { exact: true }).click();
   await expect(page.getByLabel("Policy DSL JSON")).toBeVisible();
   const version = "6.0-browser";
   await page.getByLabel("New policy version").fill(version);
@@ -444,8 +444,7 @@ test("real CSV, consolidated approval, policy amendment lifecycle, replay and au
   await expect(page.getByText("No approved records yet.")).toHaveCount(0);
   await go(page, "Decision X-Ray");
   await noErrors(page);
-  await expect(page.getByRole("button", { name: "3D machine" })).toBeVisible();
-  await expect(page.locator(".xray-canvas")).toHaveCount(0);
+  await page.getByRole("button", { name: "2D evidence" }).click();
   await expect(
     page.getByText("Contract evaluation", { exact: true }),
   ).toBeVisible();
@@ -935,7 +934,7 @@ function headersCsv() {
   return headers;
 }
 
-test("keyboard dialogs retain focus and seven-stage 3D remains optional", async ({
+test("keyboard dialogs retain focus and Arena 3D has a complete 2D alternative", async ({
   page,
 }) => {
   await login(page);
@@ -968,10 +967,8 @@ test("keyboard dialogs retain focus and seven-stage 3D remains optional", async 
   expect((await processed).status()).toBe(200);
   await go(page, "Decision X-Ray");
   await expect(
-    page.getByRole("button", { name: /7 · FINAL ROUTE/ }),
+    page.getByRole("button", { name: /5 · FINAL ROUTE/ }),
   ).toBeVisible();
-  await expect(page.locator(".xray-canvas")).toHaveCount(0);
-  await page.getByRole("button", { name: "3D machine" }).click();
   await expect(page.locator(".xray-canvas canvas")).toBeVisible();
   await page.getByRole("button", { name: "2D evidence" }).click();
   await expect(page.locator(".xray-canvas")).toHaveCount(0);
@@ -979,6 +976,6 @@ test("keyboard dialogs retain focus and seven-stage 3D remains optional", async 
     color: getComputedStyle(el).color,
     text: el.textContent,
   }));
-  expect(colors.color).toBe("rgb(18, 25, 28)");
+  expect(colors.color).toBe("rgb(245, 243, 236)");
   expect(colors.text).toBe("Inspect the machine.");
 });

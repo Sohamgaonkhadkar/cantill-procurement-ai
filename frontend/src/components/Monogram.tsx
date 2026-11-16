@@ -31,15 +31,15 @@ export function Monogram({
       <defs>
         <linearGradient id="mono-g1" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#f5f3ec" />
-          <stop offset="1" stopColor="#D8DEDD" />
+          <stop offset="1" stopColor="#b7b3d7" />
         </linearGradient>
         <linearGradient id="mono-g2" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stopColor="#4678E8" />
-          <stop offset="1" stopColor="#82929A" />
+          <stop offset="0" stopColor="#6246ff" />
+          <stop offset="1" stopColor="#8f7bff" />
         </linearGradient>
       </defs>
       {glow ? (
-        <circle cx="32" cy="32" r="30" fill="#4678E8" opacity="0.18" />
+        <circle cx="32" cy="32" r="30" fill="#6246ff" opacity="0.18" />
       ) : null}
       <path
         d={arc(32, 32, 27, 42, 318)}
@@ -58,18 +58,18 @@ export function Monogram({
       <path
         d={arc(32, 32, 11.5, 30, 330)}
         fill="none"
-        stroke="#D8DEDD"
+        stroke="#b7b3d7"
         strokeOpacity="0.7"
         strokeWidth="2"
         strokeLinecap="round"
       />
-      <circle cx="50" cy="32" r="4.2" fill="#76A0F4" />
+      <circle cx="50" cy="32" r="4.2" fill="#d7ff3f" />
       <circle
         cx="50"
         cy="32"
         r="8"
         fill="none"
-        stroke="#76A0F4"
+        stroke="#d7ff3f"
         strokeOpacity="0.35"
       />
     </svg>

@@ -53,11 +53,11 @@ export function Panel({
 
 type Variant = "lime" | "ghost" | "ink" | "ultra" | "danger" | "paper";
 const BTN: Record<Variant, string> = {
-  lime: "bg-ultra text-white hover:bg-ultra-deep",
-  ultra: "bg-ultra text-white hover:bg-ultra-deep",
+  lime: "bg-lime text-ink hover:bg-[#e4ff73] sheen-hover",
+  ultra: "bg-ultra text-porcelain hover:bg-ultra-hi sheen-hover",
   ghost:
     "bg-white/[0.05] text-porcelain hover:bg-white/[0.1] ring-1 ring-inset ring-lavender/20",
-  ink: "bg-ink text-white hover:bg-ink-2",
+  ink: "bg-ink text-porcelain hover:bg-ink-2",
   paper: "bg-white text-ink ring-1 ring-inset ring-ink/15 hover:bg-porcelain-2",
   danger:
     "bg-coral/10 text-coral ring-1 ring-inset ring-coral/50 hover:bg-coral/20",
@@ -93,7 +93,7 @@ export const Button = forwardRef<
     <button
       ref={ref}
       disabled={disabled || busy}
-      style={{ borderRadius: 4 }}
+      style={{ clipPath: CHAMFER_SM }}
       className={cn(
         "corvo-button group inline-flex items-center justify-center gap-2 font-medium tracking-tight transition-colors duration-200 disabled:opacity-40",
         BTN[variant],
@@ -157,15 +157,15 @@ const ROUTE_DARK: Record<string, string> = {
   CONTRACT_PO: "bg-mint/12 text-mint ring-1 ring-inset ring-mint/45",
   SPOT_PO: "bg-lime/12 text-lime ring-1 ring-inset ring-lime/45",
   RFQ: "bg-coral/12 text-coral ring-1 ring-inset ring-coral/50",
-  RFP: "bg-ultra-hi/15 text-ultra ring-1 ring-inset ring-ultra-hi/55",
+  RFP: "bg-ultra-hi/15 text-[#cfc6ff] ring-1 ring-inset ring-ultra-hi/55",
   NOT_PROCESSED:
     "bg-transparent text-lavender ring-1 ring-dashed ring-lavender/50 border border-dashed border-lavender/50",
 };
 const ROUTE_PAPER: Record<string, string> = {
   CONTRACT_PO: "bg-mint/25 text-[#00574e] ring-1 ring-inset ring-[#00574e]/40",
-  SPOT_PO: "bg-ultra/10 text-ultra ring-1 ring-inset ring-ink/30",
+  SPOT_PO: "bg-lime/70 text-ink ring-1 ring-inset ring-ink/30",
   RFQ: "bg-coral/20 text-[#9e2f1e] ring-1 ring-inset ring-[#9e2f1e]/40",
-  RFP: "bg-ultra/15 text-ultra ring-1 ring-inset ring-ultra/40",
+  RFP: "bg-ultra/15 text-[#3b25b8] ring-1 ring-inset ring-ultra/40",
   NOT_PROCESSED: "bg-transparent text-ink-2 border border-dashed border-ink/35",
 };
 const ROUTE_GLYPH: Record<string, string> = {
@@ -194,7 +194,7 @@ export function RouteTag({
           : (ROUTE_PAPER[route] ?? ROUTE_PAPER.RFP),
         className,
       )}
-      style={{ borderRadius: 4 }}
+      style={{ clipPath: CHAMFER_SM }}
     >
       <span aria-hidden className="text-[9px] opacity-80">
         {ROUTE_GLYPH[route] ?? "◇"}
@@ -532,7 +532,7 @@ export function PageHeading({
             : "text-[clamp(34px,4vw,52px)]",
         )}
       >
-        {title}
+        <MaskText text={title} />
       </h1>
       {lede ? (
         <p className="max-w-xl text-[15px] leading-relaxed text-lavender">

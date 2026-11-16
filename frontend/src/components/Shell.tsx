@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from "motion/react";
+import { useDialogFocus } from "./useDialogFocus";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Suspense,
   createContext,
@@ -35,7 +36,6 @@ import { APP_NAME, IS_MOCK } from "@/lib/config";
 import { cn } from "@/utils/cn";
 import { Monogram, Wordmark } from "./Monogram";
 import { EASE_OUT, Kbd } from "./ui";
-import { useDialogFocus } from "./useDialogFocus";
 
 /* ---------- Shared shell context ---------- */
 
@@ -104,69 +104,137 @@ export const NAV: NavItem[] = [
   { to: "/audit", label: "Audit Trail", icon: ScrollText, theme: "audit" },
 ];
 
+/** Background light per section. Each section lights the midnight canvas differently. */
+const THEME: Record<string, string> = {
+  home: "radial-gradient(55% 60% at 70% 45%, rgba(98,70,255,0.42), transparent 70%), radial-gradient(35% 40% at 8% 95%, rgba(255,102,79,0.12), transparent 70%)",
+  "request-studio":
+    "radial-gradient(50% 60% at 18% 30%, rgba(98,70,255,0.36), transparent 70%), radial-gradient(40% 40% at 92% 85%, rgba(215,255,63,0.08), transparent 70%)",
+  inbox:
+    "radial-gradient(60% 40% at 50% -10%, rgba(98,70,255,0.45), transparent 70%)",
+  "decision-xray":
+    "radial-gradient(55% 60% at 40% 50%, rgba(50,230,210,0.16), transparent 70%), radial-gradient(40% 50% at 90% 0%, rgba(98,70,255,0.3), transparent 70%)",
+  "batch-lab":
+    "radial-gradient(60% 50% at 50% 0%, rgba(215,255,63,0.1), transparent 70%), radial-gradient(40% 50% at 15% 100%, rgba(98,70,255,0.28), transparent 70%)",
+  "policy-reactor":
+    "radial-gradient(55% 60% at 60% 40%, rgba(255,102,79,0.2), transparent 70%), radial-gradient(40% 60% at 8% 85%, rgba(98,70,255,0.3), transparent 70%)",
+  suppliers:
+    "radial-gradient(60% 60% at 50% 40%, rgba(50,230,210,0.12), transparent 70%), radial-gradient(40% 40% at 95% 90%, rgba(98,70,255,0.25), transparent 70%)",
+  contracts:
+    "radial-gradient(50% 60% at 80% 30%, rgba(208,140,90,0.14), transparent 70%), radial-gradient(40% 50% at 10% 90%, rgba(98,70,255,0.26), transparent 70%)",
+  "purchase-orders":
+    "radial-gradient(60% 50% at 30% 0%, rgba(50,230,210,0.1), transparent 70%)",
+  sourcing:
+    "radial-gradient(60% 50% at 70% 0%, rgba(255,102,79,0.14), transparent 70%), radial-gradient(40% 50% at 0% 100%, rgba(98,70,255,0.22), transparent 70%)",
+  audit:
+    "radial-gradient(50% 50% at 50% 100%, rgba(183,179,215,0.1), transparent 70%)",
+};
+
 /* ---------- Rail ---------- */
 
 function Rail() {
   const { identity } = useAuth();
   const nav = visibleNav(identity?.role);
-  const groups = [
-    {
-      label: "Workspace",
-      paths: ["/", "/request-studio", "/inbox", "/batch-lab"],
-    },
-    { label: "Intelligence", paths: ["/decision-xray", "/suppliers"] },
-    { label: "Governance", paths: ["/policy-reactor"] },
-    {
-      label: "Records",
-      paths: ["/contracts", "/purchase-orders", "/sourcing", "/audit"],
-    },
-  ];
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
   return (
-    <nav aria-label="Primary" className="workspace-rail hidden lg:flex">
-      <div className="rail-brand">
-        <Monogram size={34} glow={false} />
-        <Wordmark className="text-[25px]" />
+    <motion.nav
+      aria-label="Primary"
+      data-expanded={open}
+      className="fixed bottom-3 left-3 top-3 z-40 hidden flex-col overflow-hidden rounded-[6px] md:flex"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(20,26,66,0.94), rgba(8,11,31,0.97))",
+        boxShadow:
+          "inset 0 0 0 1px rgba(183,179,215,0.12), 0 30px 60px -20px rgba(0,0,0,0.7)",
+      }}
+      initial={false}
+      animate={{ width: open ? 232 : 68 }}
+      transition={{ type: "spring", stiffness: 420, damping: 40, mass: 0.7 }}
+      onHoverStart={() => setOpen(true)}
+      onHoverEnd={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+          setOpen(false);
+      }}
+    >
+      <div className="flex h-[64px] shrink-0 items-center gap-3 pl-[18px]">
+        <Monogram size={30} />
+        <motion.div
+          animate={{ opacity: open ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="whitespace-nowrap"
+        >
+          <Wordmark className="text-[20px]" />
+        </motion.div>
       </div>
-      <p className="rail-caption">Procurement operations</p>
-      <div className="rail-links scroll-thin">
-        {groups.map((group) => {
-          const items = nav.filter((n) => group.paths.includes(n.to));
-          return items.length ? (
-            <section key={group.label}>
-              <h2>{group.label}</h2>
-              {items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === "/"}
-                    aria-label={item.label}
-                    className={({ isActive }) =>
-                      cn("rail-link", isActive && "active")
-                    }
-                  >
-                    <Icon size={17} aria-hidden />
-                    {item.to === "/suppliers"
-                      ? "Supplier Intelligence"
-                      : item.label}
-                  </NavLink>
-                );
-              })}
-            </section>
-          ) : null;
+
+      <div className="scroll-thin flex flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden py-2">
+        {nav.map((item) => {
+          const Icon = item.icon;
+          const active =
+            item.to === "/"
+              ? location.pathname === "/"
+              : location.pathname.startsWith(item.to);
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === "/"}
+              aria-label={item.label}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "relative mx-[10px] flex h-[42px] shrink-0 items-center gap-3 rounded-[3px] pl-[13px] pr-3 text-lavender transition-colors duration-200 hover:bg-white/[0.05] hover:text-porcelain",
+                active && "bg-white/[0.06] text-porcelain",
+              )}
+            >
+              {active ? (
+                <motion.span
+                  layoutId="rail-active"
+                  className="absolute -left-[10px] bottom-2 top-2 w-[3px] bg-lime shadow-[0_0_12px_rgba(215,255,63,0.8)]"
+                  transition={{ type: "spring", stiffness: 500, damping: 42 }}
+                />
+              ) : null}
+              <Icon
+                className={cn(
+                  "h-[18px] w-[18px] shrink-0",
+                  active && "text-lime",
+                )}
+                aria-hidden
+              />
+              <motion.span
+                animate={{ opacity: open ? 1 : 0, x: open ? 0 : -6 }}
+                transition={{ duration: 0.22, ease: EASE_OUT }}
+                className="whitespace-nowrap text-[13px] tracking-[-0.01em]"
+              >
+                {item.label}
+              </motion.span>
+            </NavLink>
+          );
         })}
       </div>
-      <div className="rail-account">
-        <span>{identity?.id}</span>
-        <small>
-          {identity?.role} ·{" "}
-          {identity?.workspace_mode === "demo"
-            ? "fictional demo"
-            : "live workspace"}
-        </small>
+
+      <div className="flex shrink-0 items-center gap-3 border-t border-lavender/10 px-[13px] py-3">
+        <div
+          className="num flex h-8 w-8 shrink-0 items-center justify-center bg-ultra text-[11px] text-porcelain"
+          style={{ clipPath: "polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)" }}
+        >
+          {identity?.id.slice(0, 2).toUpperCase()}
+        </div>
+        <motion.div
+          animate={{ opacity: open ? 1 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="min-w-0 whitespace-nowrap"
+        >
+          <div className="truncate text-[12px] text-porcelain">
+            {identity?.id}
+          </div>
+          <div className="num truncate text-[10px] tracking-[0.08em] text-lavender">
+            {identity?.role.toUpperCase()}
+          </div>
+        </motion.div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }
 
@@ -183,12 +251,7 @@ function Header({
   const { identity, logout } = useAuth();
   const policies = usePolicies();
   const activePolicy = policies.data?.items
-    .filter(
-      (p) =>
-        p.status === "active" &&
-        p.effective_date <=
-          new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
-    )
+    .filter((p) => p.status === "active")
     .sort((a, b) => b.effective_date.localeCompare(a.effective_date))[0];
   const [logoutError, setLogoutError] = useState<unknown>(null);
   const [profile, setProfile] = useState(false);
@@ -200,11 +263,11 @@ function Header({
     ) ?? NAV[0];
 
   return (
-    <header className="workspace-header pointer-events-none fixed inset-x-0 top-0 z-40 flex h-[68px] items-center justify-between gap-4 px-4 lg:left-[244px] md:px-6">
+    <header className="workspace-header pointer-events-none fixed inset-x-0 top-0 z-40 flex h-[68px] items-center justify-between gap-4 px-4 md:left-[96px] md:px-6">
       <div className="pointer-events-auto flex min-w-0 items-center gap-3">
         <button
           onClick={onOpenMenu}
-          className="flex h-9 w-9 items-center justify-center text-lavender hover:text-porcelain lg:hidden"
+          className="flex h-9 w-9 items-center justify-center text-lavender hover:text-porcelain md:hidden"
           aria-label="Open navigation"
         >
           <Menu className="h-5 w-5" />
@@ -270,7 +333,7 @@ function Header({
         <div className="relative">
           <button
             onClick={() => setProfile((p) => !p)}
-            className="num flex h-9 w-9 items-center justify-center bg-ultra text-[11px] text-white hover:bg-ultra-hi"
+            className="num flex h-9 w-9 items-center justify-center bg-ultra text-[11px] text-porcelain hover:bg-ultra-hi"
             aria-expanded={profile}
             aria-label="Profile"
           >
@@ -291,7 +354,7 @@ function Header({
                   {identity?.role}
                 </div>
                 <button
-                  className="mt-3 w-full bg-lime p-2 text-white"
+                  className="mt-3 w-full bg-lime p-2 text-ink"
                   onClick={async () => {
                     try {
                       await logout();
@@ -345,48 +408,44 @@ function CommandPalette({
   const [idx, setIdx] = useState(0);
   const navigate = useNavigate();
   const commands = useMemo(
-    () =>
-      [
-        ...visibleNav(identity?.role).map((n) => ({
-          id: n.to,
-          label: `Open ${n.label}`,
-          hint: n.to,
-          run: () => navigate(n.to),
-        })),
-        {
-          id: "new-request",
-          label: "New purchase request",
-          hint: "Request Studio",
-          run: () => navigate("/request-studio"),
-        },
-        {
-          id: "process-batch",
-          label: "Process a CSV batch",
-          hint: "Batch Lab",
-          run: () => navigate("/batch-lab"),
-        },
-        {
-          id: "simulate",
-          label: "Simulate policy impact",
-          hint: "Policy Reactor",
-          run: () => navigate("/policy-reactor"),
-        },
-        {
-          id: "xray",
-          label: "Open latest Decision X-Ray",
-          hint: "Decision X-Ray",
-          run: () => navigate("/decision-xray"),
-        },
-        {
-          id: "intro",
-          label: "Replay brand intro",
-          hint: "Brand",
-          run: () => window.dispatchEvent(new Event("corvo:replay-intro")),
-        },
-      ].filter(
-        (command) =>
-          identity?.role !== "requester" || command.id !== "simulate",
-      ),
+    () => [
+      ...visibleNav(identity?.role).map((n) => ({
+        id: n.to,
+        label: `Open ${n.label}`,
+        hint: n.to,
+        run: () => navigate(n.to),
+      })),
+      {
+        id: "new-request",
+        label: "New purchase request",
+        hint: "Request Studio",
+        run: () => navigate("/request-studio"),
+      },
+      {
+        id: "process-batch",
+        label: "Process a CSV batch",
+        hint: "Batch Lab",
+        run: () => navigate("/batch-lab"),
+      },
+      {
+        id: "simulate",
+        label: "Simulate policy impact",
+        hint: "Policy Reactor",
+        run: () => navigate("/policy-reactor"),
+      },
+      {
+        id: "xray",
+        label: "Open latest Decision X-Ray",
+        hint: "Decision X-Ray",
+        run: () => navigate("/decision-xray"),
+      },
+      {
+        id: "intro",
+        label: "Replay brand intro",
+        hint: "Brand",
+        run: () => window.dispatchEvent(new Event("corvo:replay-intro")),
+      },
+    ],
     [navigate, identity?.role],
   );
   const list = commands.filter((c) =>
@@ -468,14 +527,14 @@ function CommandPalette({
                     onClick={() => run(i)}
                     className={cn(
                       "flex w-full items-center justify-between px-4 py-3 text-left text-[14px]",
-                      i === idx ? "bg-ultra text-white" : "text-porcelain",
+                      i === idx ? "bg-lime text-ink" : "text-porcelain",
                     )}
                   >
                     <span>{c.label}</span>
                     <span
                       className={cn(
                         "num text-[11px]",
-                        i === idx ? "text-white" : "text-lavender",
+                        i === idx ? "text-ink/70" : "text-lavender",
                       )}
                     >
                       {c.hint}
@@ -509,10 +568,10 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           ref={dialog}
           aria-modal="true"
           aria-label="Mobile navigation"
-          className="fixed inset-0 z-[110] flex flex-col overflow-y-auto bg-midnight/97 p-6 lg:hidden"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[110] flex flex-col overflow-y-auto bg-midnight/97 p-6 md:hidden"
+          initial={{ clipPath: "circle(0% at 92% 6%)" }}
+          animate={{ clipPath: "circle(150% at 92% 6%)" }}
+          exit={{ clipPath: "circle(0% at 92% 6%)" }}
           transition={{ duration: 0.5, ease: EASE_OUT }}
         >
           <div className="flex items-center justify-between">
@@ -573,6 +632,7 @@ export function Shell() {
   const [palette, setPalette] = useState(false);
   const [menu, setMenu] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     setMenu(false);
@@ -596,6 +656,50 @@ export function Shell() {
     <PlantContext.Provider value={plantValue}>
       <MainScrollContext.Provider value={mainRef}>
         <div className="relative h-full w-full overflow-hidden bg-midnight">
+          <AnimatePresence initial={false}>
+            <motion.div
+              key={themeKey}
+              aria-hidden
+              className="pointer-events-none fixed inset-0 z-0"
+              style={{ background: THEME[themeKey] ?? THEME.home }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.9, ease: EASE_OUT }}
+            />
+          </AnimatePresence>
+
+          {/* Precision wipe: a dark panel with a lime leading edge covers the
+              outgoing screen and uncovers the incoming one. Replaces a plain
+              cross-fade so navigation feels mechanically coordinated. */}
+          {!reduceMotion ? (
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={`wipe-${location.pathname}`}
+                aria-hidden
+                className="pointer-events-none fixed inset-0 z-[100] bg-midnight"
+                initial={{ clipPath: "inset(0 0 100% 0)" }}
+                animate={{
+                  clipPath: [
+                    "inset(0 0 100% 0)",
+                    "inset(0 0 0% 0)",
+                    "inset(100% 0 0 0)",
+                  ],
+                }}
+                transition={{
+                  duration: 0.66,
+                  times: [0, 0.44, 1],
+                  ease: [0.7, 0, 0.17, 1],
+                }}
+              >
+                <span className="absolute inset-x-0 bottom-0 h-px bg-lime shadow-[0_0_22px_#d7ff3f]" />
+                <span className="absolute bottom-5 left-1/2 -translate-x-1/2">
+                  <Monogram size={22} glow={false} />
+                </span>
+              </motion.div>
+            </AnimatePresence>
+          ) : null}
+
           <Rail />
           <Header
             onOpenPalette={() => setPalette(true)}
@@ -605,7 +709,7 @@ export function Shell() {
           <main
             ref={mainRef}
             id="main"
-            className="scroll-thin absolute inset-0 z-10 overflow-y-auto pt-[68px] lg:pl-[244px]"
+            className="scroll-thin absolute inset-0 z-10 overflow-y-auto pt-[68px] md:pl-[96px]"
           >
             {identity?.workspace_mode === "demo" ? (
               <div className="demo-workspace-banner" role="status">
@@ -618,7 +722,21 @@ export function Shell() {
                 </a>
               </div>
             ) : null}
-            <div key={themeKey} className="min-h-full">
+            <motion.div
+              key={themeKey}
+              className="min-h-full"
+              initial={
+                reduceMotion
+                  ? false
+                  : { opacity: 0, y: 12, filter: "blur(4px)" }
+              }
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{
+                duration: 0.5,
+                delay: reduceMotion ? 0 : 0.18,
+                ease: EASE_OUT,
+              }}
+            >
               <Suspense
                 fallback={
                   <div className="p-10" role="status">
@@ -628,7 +746,7 @@ export function Shell() {
               >
                 <Outlet />
               </Suspense>
-            </div>
+            </motion.div>
           </main>
 
           <MobileMenu open={menu} onClose={() => setMenu(false)} />
