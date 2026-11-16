@@ -42,7 +42,7 @@ Actual hosted checks are separate from these local browser tests:
 | Isolated Vercel preview + Neon | Original CSV, authenticated export/replay, amendment lifecycle/comparison (48 affected lines), chat confirmation, PO approval, sourcing override, supplier export, contract upload and audit. Test policy withdrawn afterward |
 | Public Vercel production + Neon | Eleven screens; original sample/hash; authenticated 13-column export; ranking; logout revocation; exclusively same-origin API calls; no normal browser exceptions |
 | Public production redeployment | A preexisting run retained its hash and replayed after a new release; database persistence is independent of the function filesystem |
-| Retired submission-access release | Historical only: replaced by private evaluator identities. Public role aliases are disabled; registration is closed in production |
+| Retired submission-access release | Historical only: replaced by private evaluator identities. Public demonstration password aliases remain disabled. Controlled roles require private passwords; requester self-registration is enabled by explicit owner choice |
 | Public startup-recovery release | Missing previous-release asset returns 404 JSON; HTML uses no-store; blocked fonts/storage permit sign-in; failed entry download exposes recovery; reload restores sign-in |
 
 Production synthetic purchase commitments were avoided. Mutable purchasing verification used the separate preview database. The hosted application uses the same reviewed FastAPI backend, with persistent PostgreSQL and same-origin frontend requests.
@@ -84,3 +84,6 @@ The amendment compiler accounts for source clauses as proposed, preserved, unres
 Recommendation output hashes for the original sample remain unchanged. Additional-approval policies delay sourcing creation until the configured number of distinct reviewers has voted. Policy calendar and catalog locks prevent stale-policy commitments and import/approval races. Every approval still rechecks current financial headroom with Decimal arithmetic.
 
 The final full browser rerun passed all 15 scenarios. A stale effective-date fixture initially hit the intended freshness rejection; correcting the fixture to use the latest policy allowed the quorum workflow to complete without changing its assertions. Both full backend environments then passed: PostgreSQL 204/204, SQLite 200 passed plus four PostgreSQL-only skips. The pinned Python requirements audit also reported no known vulnerabilities.
+
+
+Hosted sign-in configuration update: both Controlled role account and Individual account are available. The owner explicitly enabled requester self-registration. New users choose their own password, which is hashed and verified by the backend. Admin/Buyer roles cannot be self-registered and no privileged password is returned in authentication options. Controlled role access uses private credentials; retired public aliases remain rejected.

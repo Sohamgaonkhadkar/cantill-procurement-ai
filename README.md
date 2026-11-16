@@ -49,7 +49,7 @@ Choose **Individual account** and use the private evaluator credentials supplied
 | **Contract Vault** | Contract register, ceiling values and reviewed PDF proposals |
 | **Purchase Orders / Sourcing / Audit Trail** | Persisted purchasing records, overrides and actor/time evidence |
 
-Public privileged demonstration credentials have been removed. Public registration is disabled by default. [Health endpoint](https://corvo-procurement.vercel.app/health).
+Controlled role sign-in is also available: select Admin, Buyer or Requester and enter its privately assigned password. New users can select Individual account → New here? Create account; self-registration creates Requester accounts only. Public privileged demonstration passwords remain removed. Registration is an explicit environment setting, enabled on this hosted instance. [Health endpoint](https://corvo-procurement.vercel.app/health).
 
 ### Isolated synthetic examples
 

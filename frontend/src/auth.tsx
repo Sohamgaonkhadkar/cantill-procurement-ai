@@ -205,9 +205,7 @@ export function Login() {
                 setError(null);
               }}
             >
-              {options.data?.submission_access !== false ? (
-                <option value="role">Controlled role account</option>
-              ) : null}
+              <option value="role">Controlled role account</option>
               <option value="individual">Individual account</option>
             </select>
           </label>
@@ -289,8 +287,11 @@ export function Login() {
           ) : null}
           {!options.isPending && !options.data?.submission_access ? (
             <p className="text-sm text-lavender mb-3">
-              Use your private individual credentials. Ask the workspace
-              administrator for access.
+              {kind === "role"
+                ? "Use the private password assigned to the selected role. Contact the workspace administrator for access."
+                : options.data?.registration_enabled
+                  ? "Already registered? Enter your username and password. New users can create a Requester account above."
+                  : "Use your private individual credentials. Ask the workspace administrator for access."}
             </p>
           ) : null}
           <label className="field">
