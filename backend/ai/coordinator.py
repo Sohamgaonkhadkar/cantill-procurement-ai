@@ -110,7 +110,7 @@ def _compute(factory,body,actor,payload,session_id):
     if intent not in QUESTION_INTENTS:
         if plan:
             state,warnings=validate_updates(state,plan,body.message,data)
-            reply=('Please clarify: '+ '; '.join(warnings)) if warnings else (plan.clarification or ('Review the complete draft and select Confirm PR.' if state['ready'] else 'Please provide '+', '.join(state['missing_fields']).replace('_',' ')+'.'))
+            reply=('Please clarify: '+ '; '.join(warnings)) if warnings else ('Review the complete, server-validated draft and select Confirm PR.' if state['ready'] else (plan.clarification or 'Please provide '+', '.join(state['missing_fields']).replace('_',' ')+'.'))
         else:
             state,reply=parse_message(state,body.message,data);state=validate_draft(state,data)
         return state,reply,intent,'intake',[],[],False,[],status,False

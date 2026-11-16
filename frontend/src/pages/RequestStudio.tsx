@@ -129,7 +129,7 @@ export default function RequestStudio() {
         {chat ? (
           <p className="mt-3 text-sm text-lavender">
             {chat.ai_status === "available"
-              ? "Gemini response · validated against backend evidence"
+              ? (chat.mode==='intake'?'Gemini-assisted intake · server-validated draft':'Gemini answer · source-checked')
               : chat.ai_status === "local_only"
                 ? "Local response · no external model call"
                 : chat.ai_status === "disabled"
