@@ -18,7 +18,7 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 | OpenAPI synchronization | Checked-in schema matches live application's generated schema in automated test |
 | Compilation | `python -m compileall -q backend scripts` passed |
 | Docker configuration and startup | `docker compose config --quiet` and actual `docker compose up --build -d` passed |
-| Managed Neon PostgreSQL | Separate production and preview free-plan databases in Singapore provisioned. Both migrated and privately initialized with 73 items / 12 contracts; each persisted 186 sample outputs and replayed with the same business hash. This verifies database access, not a hosted Vercel HTTP deployment |
+| Managed Neon PostgreSQL | Separate production and preview free-plan databases in Singapore provisioned. Both migrated and privately initialized with 73 items / 12 contracts; each persisted 186 sample outputs and replayed with the same business hash. Actual Vercel HTTP/browser checks also pass, as recorded below |
 | Vercel environment configuration | Distinct production/preview session and role Secrets configured; DEMO_MODE=false and same-origin CORS configuration set. Credentials were not printed or committed |
 | Managed-preview HTTP workflow | Passed through a local HTTP listener using Vercel-like startup, secure preview credentials and remote Neon persistence: sample CSV, amendment simulation/review/approval/activation, comparison (48 affected lines), historical replay, chat confirmation, actual synthetic PO approval, duplicate rejection, sourcing override, rankings, exports, contract upload and audit. The test amendment was deactivated afterward; production purchasing records were untouched |
 
@@ -28,15 +28,15 @@ The hardening pass increased the synthetic suite from 79 to 127 tests. It covers
 
 The managed-preview HTTP hardening check passed (9 affected sample lines, 269.75 seconds), separately exercising individual requester accounts, cross-user run/export/requirement isolation, persistent logout, login throttling, a scoped plant/category amendment, simulation, review/approval/activation, reprocessing/comparison and historical replay. Synthetic identities are disabled and the test amendment withdrawn afterward. This uses a local listener with a remote preview database; it is not a public deployment test.
 
-## Still unverified or incomplete
+## Scope and remaining limits
 
 - Arena integration, TypeScript/production builds and real-backend browser workflows pass locally; see INTEGRATION_REPORT.md.
-- Vercel project creation is verified; hosted application verification is tracked in DEPLOYMENT.md.
-- Public hosted HTTP smoke checks are pending. Managed database access from this workstation does not establish Vercel-runtime connectivity.
+- Hosted preview and public production browser verification pass; see DEPLOYMENT.md.
+- Public health confirms Vercel-to-Neon connectivity; persisted run retrieval and replay survive redeployment.
 - Exhaustive serverless load testing, corporate SSO/MFA, OCR and cryptographic PDF verification are not claimed. Individual employee account isolation and PostgreSQL transaction contention are tested.
 - No blind-test batch or amendment has been received. `submission/` contains no fabricated CSV outputs.
 
-See `DEPLOYMENT.md` for the authorized repository/project and the exact remaining release sequence.
+See `DEPLOYMENT.md` for the authorized repository/project and the release sequence and executed hosted checks.
 
 ## Arena integration verification
 
@@ -45,3 +45,8 @@ All nine Playwright scenarios pass against isolated real FastAPI/SQLite: CSV/exp
 The production Vite build served directly by Docker/FastAPI/PostgreSQL separately passed an actual Chromium run over the original private sample: 186 outputs, 149 requirements, two invalid lines, authenticated export, replay and supplier view, with zero browser exceptions. Its output hash remains 9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f. The final image passes 127 PostgreSQL tests; Windows passes 125 with two PostgreSQL-only skips. TypeScript, production build and generated-client drift checks pass.
 
 Hosted checks exposed and fixed a frontend draft-selection race and reuse of a PR identity across submissions in one chat. New regressions assert the simulation policy ID, distinct chat commitments and cross-instance confirmation serialization. Procurement routing algorithms and schema migrations are unchanged.
+
+
+## Hosted browser verification
+
+Public production Chromium passed all eleven screens, the original 186-row sample, authenticated 13-column CSV export, deterministic replay, supplier ranking and persisted logout, with zero browser exceptions and no foreign API origins. A preexisting run and its immutable output hash survived redeployment and replayed successfully. Hosted preview additionally passed the full mutable policy/chat/PO/override/contract workflows against its separate Neon database; the amendment comparison changed 48 sample lines and the test policy was withdrawn afterward. Production purchasing commitments were not used for synthetic verification.

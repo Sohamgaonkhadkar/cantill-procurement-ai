@@ -2,7 +2,7 @@
 
 The Python backend is authoritative. Keep all financial decisions in this API. Arena may replace `frontend/` without editing `backend/`, migrations or tests.
 
-Local API origin: **http://localhost:8000**. Interactive reference: **http://localhost:8000/docs**. Machine-readable specification: **http://localhost:8000/openapi.json**; a checked-in copy is at `openapi.json`. No verified public deployment URL exists yet.
+Local API origin: **http://localhost:8000**. Interactive reference: **http://localhost:8000/docs**. Machine-readable specification: **http://localhost:8000/openapi.json**; a checked-in copy is at `openapi.json`. Verified production API origin: **https://corvo-procurement.vercel.app**; [production OpenAPI](https://corvo-procurement.vercel.app/openapi.json). Production frontend requests use same-origin relative paths.
 
 Set Arena's local `VITE_API_BASE_URL=http://localhost:8000`. Paths below already include `/api`; do not append it to the environment variable. Configure backend `CORS_ORIGINS` with Arena's exact origin (scheme, hostname and port), comma-separated for multiple origins. Production and preview Vercel environments are configured with an **empty** VITE_API_BASE_URL for same-origin calls. Preserve that empty value; use `import.meta.env.VITE_API_BASE_URL ?? ''`, not a truthiness fallback to localhost. Never put backend passwords or `SESSION_SECRET` in Vite variables.
 

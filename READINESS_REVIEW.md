@@ -2,7 +2,7 @@
 
 Reviewed 16 November 2026. This is an implementation self-review, not an independent security audit or an evaluator score. No weakness-free or 10/10 guarantee is made.
 
-The backend is ready for Arena integration. The hardening suite passes 127 tests on Linux/PostgreSQL and 125 on Windows/SQLite, with the PostgreSQL-only concurrency test skipped on SQLite. Private checks match all 14 supplied procurement examples and three supplier-ranking examples. The 186-row sample retains its original business-output hash after hardening. Known-case success does not establish unseen blind-test accuracy.
+The backend is integrated with Arena and deployed on Vercel. The hardening suite passes 127 tests on Linux/PostgreSQL and 125 on Windows/SQLite, with two PostgreSQL-only concurrency tests skipped on SQLite. Private checks match all 14 supplied procurement examples and three supplier-ranking examples. The 186-row sample retains its original business-output hash after hardening. Known-case success does not establish unseen blind-test accuracy.
 
 Closed gaps:
 
@@ -16,7 +16,7 @@ Closed gaps:
 
 Remaining release requirements and limitations:
 
-- Arena integration and real-backend browser workflows pass locally. All eleven pages were inspected at desktop/mobile widths, and mock dependencies are removed. Hosted Vercel and redeployment verification is tracked separately in DEPLOYMENT.md.
+- Arena integration and real-backend browser workflows pass locally. All eleven pages were inspected at desktop/mobile widths, and mock dependencies are removed. Hosted preview workflows, public production checks and persistence after redeployment also pass; see DEPLOYMENT.md.
 - Controlled prose and chat grammars are bounded. Arbitrary policy language needs structured manual authoring and review. Scanned policy PDFs need transcription; OCR and cryptographic signature verification are not implemented.
 - Corporate SSO, MFA, password recovery, production monitoring and outbound supplier/PO integrations are outside the implemented application boundary.
 - The suite includes real concurrent PostgreSQL approvals, but it is not an exhaustive production load or penetration test. Vercel platform payload limits still apply.
