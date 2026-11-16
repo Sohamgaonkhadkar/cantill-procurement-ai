@@ -6,9 +6,9 @@ Reviewed 16 November 2026. Results distinguish pure business checks, API tests, 
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **148 passed, 2 PostgreSQL-only tests skipped** |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **150 passed**, including independent approval and chat-confirmation transactions |
-| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **14 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **200 passed, 4 PostgreSQL-only tests skipped** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **204 passed**, including independent approval and chat-confirmation transactions |
+| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **15 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
 | CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
 | OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
 | Generated frontend models | OpenAPI-derived TypeScript and Zod | Drift check passes; release build enforces TypeScript compilation |
@@ -31,7 +31,7 @@ The sample does not provide a complete answer key. Passing all disclosed example
 
 ## Browser and deployment evidence
 
-The browser suite exercises a real isolated FastAPI server and synthetic database. It contains fourteen scenarios: blocked startup resources, visible script-failure recovery, role-password autofill, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling and pagination.
+The browser suite exercises a real isolated FastAPI server and synthetic database. It contains fifteen scenarios: blocked startup resources, visible script-failure recovery, privileged-password non-disclosure, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling pagination and independent two-reviewer sourcing approval.
 
 All eleven screens have desktop/mobile captures at 1440px and 390px, horizontal-overflow checks and visual inspection. The custom Arena 3D scenes remain; the hero's opaque shader, oversized composition and overlapping inset/caption issues were corrected. Startup recovery was additionally checked with denied localStorage, blocked external fonts and a deliberately blocked entry script.
 
@@ -42,7 +42,7 @@ Actual hosted checks are separate from these local browser tests:
 | Isolated Vercel preview + Neon | Original CSV, authenticated export/replay, amendment lifecycle/comparison (48 affected lines), chat confirmation, PO approval, sourcing override, supplier export, contract upload and audit. Test policy withdrawn afterward |
 | Public Vercel production + Neon | Eleven screens; original sample/hash; authenticated 13-column export; ranking; logout revocation; exclusively same-origin API calls; no normal browser exceptions |
 | Public production redeployment | A preexisting run retained its hash and replayed after a new release; database persistence is independent of the function filesystem |
-| Public submission-access release | All role passwords visibly autofill; Admin login and mobile requester signup/re-login work; temporary test account disabled afterward |
+| Retired submission-access release | Historical only: replaced by private evaluator identities. Public role aliases are disabled; registration is closed in production |
 | Public startup-recovery release | Missing previous-release asset returns 404 JSON; HTML uses no-store; blocked fonts/storage permit sign-in; failed entry download exposes recovery; reload restores sign-in |
 
 Production synthetic purchase commitments were avoided. Mutable purchasing verification used the separate preview database. The hosted application uses the same reviewed FastAPI backend, with persistent PostgreSQL and same-origin frontend requests.
@@ -60,7 +60,7 @@ The standalone read-only checker accepted all three rehearsal files with supplie
 - The actual blind batch and amendment have not been received; submission/ contains no fabricated evaluator outputs.
 - Controlled-language parsing is bounded. Unsupported clauses require faithful structured authoring and explicit review.
 - No unrestricted LLM, OCR, cryptographic signature verifier, corporate SSO/MFA/recovery or external PO fulfillment is claimed.
-- Shared submission Admin access is deliberately public and requires an operational preflight before the timed assessment.
+- Private evaluator accounts permit procurement and policy evaluation; only the owner can administer identities or replace master data.
 - Exhaustive load, fault-injection and penetration testing have not been performed. The 20,000-row API bound is not a hosted throughput guarantee; Vercel's payload limit is 4.5 MB.
 - The assessment form, code freeze and timely output-only Git push remain human obligations. The submission procedure is summarized in README.md.
 
@@ -69,3 +69,18 @@ The standalone read-only checker accepted all three rehearsal files with supplie
 Five backend regressions check calculated demo responses against the real engine, quantity-sensitive outcomes, CSV fidelity, authentication, assessment-record isolation and the 200-row demo limit. The real-browser demo scenario calculates nine rows, downloads a synthetic export, uploads an edited demo CSV, verifies the changed route and confirms unchanged live overview data. The demo uses fictional input data rather than precomputed output fixtures.
 
 The public production browser check also passed: nine computed demo rows spanning eight route families, authenticated synthetic CSV export, changed-quantity RFP routing, identical live overview and contract-register responses before/after, unchanged assessment sample hash and zero browser exceptions. Live OpenAPI matches the checked-in schema.
+
+
+## Evaluation-readiness hardening — 16 November 2026
+
+The PostgreSQL suite now contains 204 passing tests. Added independent expectations cover twelve exact monetary boundaries, competing contract ceilings, a 500-line mixed-item/plant batch with shuffled-input equivalence, unrelated-plant isolation, industrial aliases/mixed fractions and explicit UoM/model protection. These synthetic cases have literal expectations and invariants; they do not import an assessment answer key.
+
+New API/security checks cover private evaluator scope, non-disclosure of legacy privileged aliases, owner-specific run IDs, persisted expiry, malformed CSV quoting, spreadsheet formula injection, operation budgets, exact amendment-upload hashes, direct contract retrieval, manual source reconciliation, stale-policy approval rejection and additional sourcing approvals. Four PostgreSQL-specific tests exercise separate transactions: contract ceiling contention, chat confirmation, policy edit versus approval, and simultaneous distinct sourcing votes.
+
+Seven frontend unit assertions cover quoted CSV round trips, BOM/blank rows, malformed quoting/null bytes and exact formatting beyond JavaScript's safe integer range. ESLint checks TypeScript correctness patterns and React hook ordering; type checking remains an independent build gate. The supported lint toolchain uses a pinned patched minimatch override; dependency audit reports zero known advisories at this check. This is a point-in-time dependency result, not a penetration-test claim.
+
+The amendment compiler accounts for source clauses as proposed, preserved, unresolved or conflicting. Supported additions include exclusions, supplier-ranking weights, RFQ supplier counts, spelled-out grouping windows, scoped thresholds, exceptions and explicit dates. Unsupported text still requires saved structured corrections and a human reconciliation statement; checking a box alone cannot authorize unchanged missing rules.
+
+Recommendation output hashes for the original sample remain unchanged. Additional-approval policies delay sourcing creation until the configured number of distinct reviewers has voted. Policy calendar and catalog locks prevent stale-policy commitments and import/approval races. Every approval still rechecks current financial headroom with Decimal arithmetic.
+
+The final full browser rerun passed all 15 scenarios. A stale effective-date fixture initially hit the intended freshness rejection; correcting the fixture to use the latest policy allowed the quorum workflow to complete without changing its assertions. Both full backend environments then passed: PostgreSQL 204/204, SQLite 200 passed plus four PostgreSQL-only skips. The pinned Python requirements audit also reported no known vulnerabilities.

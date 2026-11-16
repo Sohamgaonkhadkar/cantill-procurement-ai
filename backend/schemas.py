@@ -14,6 +14,9 @@ class PolicyParameters(Schema):
     weights:dict[str,int|float]
     recency_days:list[int]
     frequency_cap:int
+    excluded_supplier_ids:list[str]=Field(default_factory=list)
+    contract_excluded_supplier_ids:list[str]=Field(default_factory=list)
+    additional_sourcing_approvals:dict[str,int]=Field(default_factory=dict)
 class Predicate(BaseModel):
     model_config=ConfigDict(extra='forbid')
     fact:str=Field(description='One of the facts returned by /api/policy-schema')
@@ -111,6 +114,8 @@ class RequirementResponse(Schema):
     evidence:Evidence
     lines:list[dict[str,str]]
     approval_status:str
+    required_approvals:int=1
+    approval_votes:list[dict]=Field(default_factory=list)
 class ProcessingResult(Schema):
     rows:list[OutputRow]
     requirements:list[RequirementResponse]

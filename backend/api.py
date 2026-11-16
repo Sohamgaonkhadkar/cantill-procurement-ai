@@ -27,6 +27,7 @@ from .suppliers import preferred
 from .amendments import policy_diff as field_diff
 from .language import interpret
 from .chat import parse_message
+from .security import consume_rate_limit
 from .schemas import RunResponse,Page,LoginResponse,RequirementResponse,PolicyResponse,PolicyDefinition,ComparisonResponse,SimulationResponse,ActionResponse,ChatResponse,ProcessingResult
 
 engine,Session=db.connect(); mutation_lock=RLock()
@@ -226,6 +227,7 @@ def masters(actor=Depends(user)):
 
 @app.post('/api/process-batch',tags=['Batch Lab'],response_model=RunResponse)
 async def batch(file:UploadFile=File(...),policy_version:str|None=Form(None),actor=Depends(user)):
+    consume_rate_limit(actor,'batch',60)
     rows=read_csv(await content(file,{'.csv'}),INPUT_COLUMNS)
     if role_of(actor)=='requester':
         for row in rows: row['requester']=str(actor)
@@ -293,11 +295,16 @@ def policy_schema(actor=Depends(user)):
 @app.get('/api/policies',tags=['Policy Studio'])
 def list_policies(actor=Depends(user)):
     with Session() as s: return {'items':[{**r.payload,'status':r.status,'id':r.id} for r in s.scalars(select(Policy))]}
+def policy_content_hash(policy):
+    definition=PolicyDefinition.model_validate(policy).model_dump(by_alias=True)
+    return digest({'parameters':definition['parameters'],'rules':definition['rules']})
+
 def new_policy(s,body,actor,interpretation=None):
     policy=validate_policy(body.policy.model_dump(by_alias=True))
     if s.get(Policy,policy['version']): raise HTTPException(409,'Policy version already exists')
     base=get(s,Policy,body.base_version)
-    payload={**policy,'governance':{'base_version':body.base_version,'source_text':body.source_text,'proposed_by':actor,'proposed_at':db.now(),'reviewed':False,'diff':field_diff(base.payload,policy)}}
+    content_hash=policy_content_hash(policy)
+    payload={**policy,'governance':{'base_version':body.base_version,'source_text':body.source_text,'original_source_text':body.source_text,'source_hash':hashlib.sha256(body.source_text.encode()).hexdigest(),'interpretation_definition_hash':content_hash,'manual_reconciled':False,'proposed_by':actor,'proposed_at':db.now(),'reviewed':False,'diff':field_diff(base.payload,policy)}}
     if interpretation: payload['governance']['interpretation']={k:v for k,v in interpretation.items() if k!='policy'}
     s.add(Policy(id=policy['version'],status='draft',payload=payload)); audit(s,actor,'policy.proposed',{'version':policy['version']})
     return {**payload,'status':'draft','id':policy['version']}
@@ -322,11 +329,15 @@ def edit_policy(policy_id:str,body:PolicyBody,actor=Depends(user)):
         p=validate_policy(body.policy.model_dump(by_alias=True))
         if p['version']!=policy_id: raise ValueError('Cannot rename policy version')
         base=get(s,Policy,body.base_version)
-        r.payload={**p,'governance':{**r.payload.get('governance',{}),'source_text':body.source_text,'base_version':body.base_version,'reviewed':False,'diff':field_diff(base.payload,p)}}
+        governance=r.payload.get('governance',{})
+        original_hash=governance.get('interpretation_definition_hash',policy_content_hash(r.payload))
+        reconciled=policy_content_hash(p)!=original_hash
+        r.payload={**p,'governance':{**governance,'interpretation_definition_hash':original_hash,'manual_reconciled':reconciled,'source_text':body.source_text,'base_version':body.base_version,'reviewed':False,'diff':field_diff(base.payload,p)}}
         audit(s,actor,'policy.edited',{'version':policy_id})
         return {**r.payload,'status':r.status,'id':r.id}
 @app.post('/api/policies/upload-amendment',tags=['Policy Studio'],response_model=PolicyResponse)
 async def upload_amendment(file:UploadFile=File(...),version:str=Form(...),effective_date:str=Form(...),base_version:str=Form('5.0'),actor=Depends(user)):
+    consume_rate_limit(actor,'policy-upload',20)
     require(actor,'admin'); raw=await content(file,{'.pdf','.txt','.json'})
     text_source=pdf_text(raw) if file.filename.lower().endswith('.pdf') else raw.decode('utf-8-sig')
     with Session.begin() as s:
@@ -336,6 +347,9 @@ async def upload_amendment(file:UploadFile=File(...),version:str=Form(...),effec
             interpreted={'policy':p,'detected_changes':['Structured policy document loaded'],'unresolved_clauses':[],'complete':True}
         else: interpreted=interpret(base,text_source,version,effective_date,current_data(s)); p=interpreted['policy']
         result=new_policy(s,PolicyBody(policy=p,source_text=text_source,base_version=base_version),actor,interpreted)
+        record=s.get(Policy,version)
+        record.payload={**record.payload,'governance':{**record.payload['governance'],'source_bytes_hash':hashlib.sha256(raw).hexdigest(),'source_bytes_hash_type':'sha256-upload-bytes'}}
+        result={**result,'governance':record.payload['governance']}
         return {**result,'interpretation':{k:v for k,v in interpreted.items() if k!='policy'}|{'requires_manual_review':True,'warning':'Review scope, operators and priority. Unresolved clauses require explicit manual verification; PDF signatures are not cryptographically verified.'}}
 @app.post('/api/policies/{policy_id}/review',tags=['Policy Studio'],response_model=PolicyResponse)
 def review_policy(policy_id:str,body:PolicyReviewBody,actor=Depends(user)):
@@ -343,7 +357,8 @@ def review_policy(policy_id:str,body:PolicyReviewBody,actor=Depends(user)):
     with Session.begin() as s:
         p=get(s,Policy,policy_id,lock=True)
         if p.status!='draft': raise HTTPException(409,'Only drafts can be reviewed')
-        if p.payload.get('governance',{}).get('interpretation',{}).get('unresolved_clauses') and not body.manual_verification: raise HTTPException(409,'Unresolved source clauses require structured manual authoring and manual_verification=true')
+        if p.payload.get('governance',{}).get('interpretation',{}).get('unresolved_clauses') and (not body.manual_verification or not p.payload.get('governance',{}).get('manual_reconciled')):
+            raise HTTPException(409,'Unresolved source clauses require saved structured corrections and explicit manual verification; a checkbox alone cannot implement them')
         p.payload={**p.payload,'governance':{**p.payload.get('governance',{}),'reviewed':True,'review_note':body.reason,'reviewed_by':actor,'reviewed_at':db.now(),'manual_verification':body.manual_verification}}
         audit(s,actor,'policy.reviewed',{'version':policy_id,'reason':body.reason})
         return {**p.payload,'id':p.id,'status':p.status}
@@ -362,6 +377,7 @@ def approve_policy(policy_id:str,body:Note,actor=Depends(user)):
 def activate_policy(policy_id:str,body:Note,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
+        db.transaction_lock(s,db.POLICY_CALENDAR_LOCK,exclusive=True)
         p=get(s,Policy,policy_id,lock=True)
         if p.status not in {'approved','superseded','active'}: raise HTTPException(409,'Approve policy first')
         p.status='active'; audit(s,actor,'policy.activation_scheduled',{'version':policy_id,'effective_date':p.payload['effective_date'],'reason':body.reason})
@@ -380,6 +396,7 @@ def simulate_policy(policy_id:str,body:Simulation,actor=Depends(user)):
 def deactivate_policy(policy_id:str,body:Note,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
+        db.transaction_lock(s,db.POLICY_CALENDAR_LOCK,exclusive=True)
         p=get(s,Policy,policy_id,lock=True)
         if p.status!='active': raise HTTPException(409,'Only active policies can be deactivated')
         p.status='superseded'
@@ -417,6 +434,7 @@ def contracts(as_of:date|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,g
         return {**page(rows,offset,limit),'as_of':day}
 @app.post('/api/contracts/upload',tags=['Contract Vault'])
 async def upload_contract(file:UploadFile=File(...),actor=Depends(user)):
+    consume_rate_limit(actor,'contract-upload',20)
     require(actor,'admin','buyer'); raw=await content(file,{'.pdf'}); source=pdf_text(raw,allow_empty=True)
     try: proposed=extract_contract(raw); error=None
     except ValueError as exc: proposed=None; error=str(exc)
@@ -433,10 +451,20 @@ async def upload_contract(file:UploadFile=File(...),actor=Depends(user)):
 def contract_proposals(actor=Depends(user)):
     require(actor,'admin','buyer')
     with Session() as s: return {'items':[r.payload for r in s.scalars(select(ContractProposal))]}
+@app.get('/api/contracts/{contract_id}',tags=['Contract Vault'])
+def contract_detail(contract_id:str,as_of:date|None=None,actor=Depends(user)):
+    with Session() as s:
+        d=current_data(s)
+        c=next((c for c in d.contracts if c['contract_id']==contract_id),None)
+        if c is None: raise HTTPException(404,'Contract not found')
+        day=(as_of or business_today()).isoformat()
+        committed=number(c['consumed_value'])-number(c['baseline_consumed_value'])
+        return {**c,'committed_value':str(committed),'remaining_value':str(number(c['value_cap'])-number(c['consumed_value'])),'supplier_status':d.suppliers[c['supplier_id']]['status'],'valid_as_of':c['start_date']<=day<=c['end_date']}
 @app.post('/api/contracts/proposals/{proposal_id}/approve',tags=['Contract Vault'])
 def approve_contract(proposal_id:str,body:ContractBody,actor=Depends(user)):
     require(actor,'admin','buyer')
     with mutation_lock,Session.begin() as s:
+        db.transaction_lock(s,db.CATALOG_LOCK,exclusive=True)
         proposal=get(s,ContractProposal,proposal_id,lock=True)
         if proposal.payload['status']!='pending_review': raise HTTPException(409,'Proposal already approved')
         c=validate_contract(deepcopy(body.contract),current_data(s))
@@ -451,31 +479,50 @@ def approve_contract(proposal_id:str,body:ContractBody,actor=Depends(user)):
 def commit_requirement(s,run_id,requirement_id,actor,reason):
     # Lock contracts in a stable order. PostgreSQL row locks serialize concurrent
     # approvals across processes; the local lock covers the SQLite demo process.
-    s.scalars(select(Contract).order_by(Contract.id).with_for_update()).all()
-    r=get(s,RequirementRecord,run_id+':'+requirement_id)
+    db.transaction_lock(s,db.CATALOG_LOCK)
+    locked_contracts={c.id:c for c in s.scalars(select(Contract).order_by(Contract.id).with_for_update())}
+    db.transaction_lock(s,db.POLICY_CALENDAR_LOCK)
+    policy_snapshot=policies(s,lock=True)
+    r=get(s,RequirementRecord,run_id+':'+requirement_id,lock=True)
     if r.payload['approval_status']!='pending': raise HTTPException(409,'Requirement already actioned')
     target=r.payload
     if target['route']=='NOT_PROCESSED': raise HTTPException(409,'Invalid requirement cannot be approved')
+    ensure_current_policy(s,target,policy_snapshot)
+    required=target.get('required_approvals',1)
+    if required>1:
+        votes=list(target.get('approval_votes',[]))
+        if any(v['actor']==str(actor) for v in votes): raise HTTPException(409,'A distinct second reviewer is required; you already recorded an approval')
+        votes.append({'actor':str(actor),'reason':reason,'at':db.now()})
+        r.payload={**target,'approval_votes':votes};target=r.payload
+        audit(s,actor,'sourcing.approval_recorded',{'run_id':run_id,'requirement_id':requirement_id,'approval_count':len(votes),'required_approvals':required,'reason':reason})
+        if len(votes)<required:
+            return {'id':'REVIEW-'+digest([run_id,requirement_id])[:16],'run_id':run_id,'requirements':[requirement_id],'recommendations':[target],'actor':str(actor),'approved_at':'','reason':reason,'status':'awaiting_approval','approval_count':len(votes),'required_approvals':required}
     records=[r]
     if target['po_id']:
         records=[x for x in s.scalars(select(RequirementRecord).where(RequirementRecord.run_id==run_id)) if x.payload['po_id']==target['po_id'] and x.payload['approval_status']=='pending']
     action_id=target['po_id'] or 'SRC-'+digest([run_id,requirement_id])[:16]
     d=current_data(s)
+    remaining={c['contract_id']:number(c['value_cap'])-number(c['consumed_value']) for c in d.contracts}
+    source_keys=[digest([line['pr_no'],line['pr_line']]) for record in records for line in record.payload['lines']]
+    if len(source_keys)!=len(set(source_keys)) or s.scalar(select(Commitment.id).where(Commitment.id.in_(source_keys)).limit(1)):
+        raise HTTPException(409,'A PR line has already been approved in another run')
     for record in records:
         rec=record.payload
+        ensure_current_policy(s,rec,policy_snapshot)
         for line in rec['lines']:
             key=digest([line['pr_no'],line['pr_line']])
-            if s.get(Commitment,key): raise HTTPException(409,'A PR line has already been approved in another run')
             s.add(Commitment(id=key,action_id=action_id))
         if rec['supplier_id'] and d.suppliers.get(rec['supplier_id'],{}).get('status')!='Active': raise HTTPException(409,'Supplier is no longer Active')
         cid=rec['evidence'].get('selected_contract')
         if cid:
-            c=get(s,Contract,cid).payload
+            c=locked_contracts[cid].payload
+            if c['supplier_id']!=rec['supplier_id'] or not c['start_date']<=rec['created_at'][:10]<=c['end_date']:
+                raise HTTPException(409,'Contract supplier or validity changed; reprocess batch')
             actual=next((l for l in c['lines'] if l['item_code']==rec['item_code']),None)
             if not actual or number(actual['rate'])!=number(rec['unit_price']): raise HTTPException(409,'Contract rate changed; reprocess batch')
             amount=number(rec['quantity'])*number(actual['rate'])
-            committed=sum((number(x.payload['amount']) for x in s.scalars(select(ContractLedger).where(ContractLedger.contract_id==cid))),number(0))
-            if number(c['consumed_value'])+committed+amount>number(c['value_cap']): raise HTTPException(409,'Contract headroom changed; reprocess batch')
+            if amount>remaining[cid]: raise HTTPException(409,'Contract headroom changed; reprocess batch')
+            remaining[cid]-=amount
             s.add(ContractLedger(id=run_id+':'+record.group_id,contract_id=cid,payload={'amount':str(amount),'action_id':action_id,'actor':actor,'timestamp':db.now()})); s.flush()
         record.payload={**rec,'approval_status':'approved','approved_by':actor,'approved_at':db.now(),'action_id':action_id}
     payload={'id':action_id,'run_id':run_id,'requirements':[x.group_id for x in records],'recommendations':[x.payload for x in records],'actor':actor,'approved_at':db.now(),'reason':reason,'status':'approved'}
@@ -486,6 +533,12 @@ def commit_requirement(s,run_id,requirement_id,actor,reason):
     audit(s,actor,'purchase_order.approved' if target['decision']=='PO' else 'sourcing.approved',{'id':action_id,'run_id':run_id,'requirements':payload['requirements'],'reason':reason})
     return payload
 
+def ensure_current_policy(s,requirement,policy_snapshot=None):
+    try: current=select_policy(policy_snapshot if policy_snapshot is not None else policies(s,lock=True),date.fromisoformat(requirement['created_at'][:10]))
+    except ValueError: raise HTTPException(409,'No active effective policy is available; reprocess after policy review')
+    if current['version']!=requirement['policy_version']:
+        raise HTTPException(409,'A newer effective policy applies; reprocess before recording a purchasing action')
+
 @app.post('/api/requirements/{requirement_id}/approve',tags=['Buyer Inbox'],response_model=ActionResponse)
 def approve_requirement(requirement_id:str,body:Note,run_id:str,actor=Depends(user)):
     require(actor,'buyer','admin')
@@ -494,8 +547,12 @@ def approve_requirement(requirement_id:str,body:Note,run_id:str,actor=Depends(us
 def override_requirement(requirement_id:str,body:OverrideBody,run_id:str,actor=Depends(user)):
     require(actor,'buyer','admin')
     with mutation_lock,Session.begin() as s:
-        r=get(s,RequirementRecord,run_id+':'+requirement_id)
+        db.transaction_lock(s,db.CATALOG_LOCK)
+        db.transaction_lock(s,db.POLICY_CALENDAR_LOCK)
+        r=get(s,RequirementRecord,run_id+':'+requirement_id,lock=True)
         if r.payload['approval_status']!='pending': raise HTTPException(409,'Requirement already actioned')
+        ensure_current_policy(s,r.payload)
+        if r.payload.get('required_approvals',1)>1: raise HTTPException(409,'This requirement needs distinct sourcing approvals; an override cannot bypass that control')
         original=deepcopy(r.payload); oid='OVR-'+uuid4().hex
         for line in original['lines']:
             key=digest([line['pr_no'],line['pr_line']])
@@ -535,12 +592,14 @@ def audit_events(action:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(5
 @app.post('/api/chat/messages',tags=['Request Desk'],response_model=ChatResponse)
 def chat_message(body:ChatBody,actor=Depends(user)):
     from zoneinfo import ZoneInfo
+    consume_rate_limit(actor,'chat',120)
     with mutation_lock,Session.begin() as s:
         session_id=body.session_id or 'CHAT-'+uuid4().hex
         record=s.scalar(select(Chat).where(Chat.id==session_id).with_for_update())
         if body.session_id and not record: raise HTTPException(404,'Chat session not found')
         payload=deepcopy(record.payload) if record else {'actor':actor,'messages':[],'state':{}}
         if payload['actor']!=actor: raise HTTPException(403,'This session belongs to another actor')
+        if len(payload['messages'])>=400: raise HTTPException(409,'Chat session limit reached; start a new session')
         payload['messages'].append({'role':'user','content':body.message,'timestamp':db.now()})
         result=None
         if body.message.strip().lower() in {'confirm','yes','submit'} and payload['state'].get('ready'):
@@ -595,6 +654,7 @@ async def import_data(file:UploadFile=File(...),actor=Depends(user)):
             if len(roots)!=1: raise ValueError('Expected exactly one master_data/item_master.csv')
             data=load_kit(roots[0].parent.parent)
             with mutation_lock,Session.begin() as s:
+                db.transaction_lock(s,db.CATALOG_LOCK,exclusive=True)
                 if s.scalars(select(Commitment)).first(): raise HTTPException(409,'Cannot replace master data after purchasing commitments; use a separate database')
                 snapshot=save_data(s,data); audit(s,actor,'data.imported',{'snapshot':snapshot,'items':len(data.items),'contracts':len(data.contracts)})
                 return {'snapshot_id':snapshot,'items':len(data.items),'suppliers':len(data.suppliers),'history_rows':len(data.history),'contracts':len(data.contracts)}
@@ -608,7 +668,7 @@ def custom_openapi():
     for path,methods in schema['paths'].items():
         for method,operation in methods.items():
             if method not in {'get','post','put','delete','patch'}: continue
-            statuses=[422,409,413,503] if method in {'post','put'} else [422,503]
+            statuses=[422,409,413,429,503] if method in {'post','put'} else [422,503]
             if path.startswith('/api/') and path not in {'/api/auth/login','/api/auth/register','/api/auth/options'}: statuses += [401,403,404]
             if path=='/api/auth/login': statuses += [401,429]
             if path=='/api/auth/register': statuses += [403,429]

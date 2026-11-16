@@ -103,6 +103,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -115,16 +125,6 @@
           },
           "401": {
             "description": "Sign-in required or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -235,6 +235,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -247,16 +257,6 @@
           },
           "403": {
             "description": "Role not permitted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -388,6 +388,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -489,6 +499,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -703,6 +723,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -960,6 +990,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -1141,6 +1181,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -1238,6 +1288,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -1623,6 +1683,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -2230,6 +2300,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -2328,6 +2408,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -2458,6 +2548,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -2551,6 +2651,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -2681,6 +2791,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -2798,6 +2918,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -2905,6 +3035,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -3030,6 +3170,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -3145,6 +3295,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -3236,6 +3396,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -3713,6 +3883,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -3835,6 +4015,108 @@
         ]
       }
     },
+    "/api/contracts/{contract_id}": {
+      "get": {
+        "tags": [
+          "Contract Vault"
+        ],
+        "summary": "Contract Detail",
+        "operationId": "contract_detail_api_contracts__contract_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role not permitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/contracts/proposals/{proposal_id}/approve": {
       "post": {
         "tags": [
@@ -3899,6 +4181,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -4033,6 +4325,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -4151,6 +4453,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -4749,6 +5061,16 @@
               }
             }
           },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
             "content": {
@@ -4930,6 +5252,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -6114,6 +6446,27 @@
           "frequency_cap": {
             "type": "integer",
             "title": "Frequency Cap"
+          },
+          "excluded_supplier_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Excluded Supplier Ids"
+          },
+          "contract_excluded_supplier_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contract Excluded Supplier Ids"
+          },
+          "additional_sourcing_approvals": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Additional Sourcing Approvals"
           }
         },
         "additionalProperties": true,
@@ -6606,6 +6959,19 @@
           "approval_status": {
             "type": "string",
             "title": "Approval Status"
+          },
+          "required_approvals": {
+            "type": "integer",
+            "title": "Required Approvals",
+            "default": 1
+          },
+          "approval_votes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Approval Votes"
           }
         },
         "additionalProperties": true,

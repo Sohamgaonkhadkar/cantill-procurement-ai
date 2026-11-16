@@ -19,5 +19,5 @@ def test_unparsed_source_cannot_be_silently_reviewed(client):
     assert not response.json()['interpretation']['complete']
     assert client.post('/api/policies/6.0/review',json={'reason':'Looks good without implementing the clause'}).status_code==409
     response=client.post('/api/policies/6.0/review',json={'reason':'Manually reconciled source with structured policy','manual_verification':True})
-    assert response.status_code==200
-    assert response.json()['governance']['manual_verification']
+    assert response.status_code==409
+    assert client.post('/api/policies/6.0/approve',json={'reason':'Unresolved source has not been implemented'}).status_code==409

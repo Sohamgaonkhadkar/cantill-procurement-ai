@@ -106,9 +106,15 @@ export default function BatchLab() {
         );
       const parsed = parseCsv((await f.text()).replace(/^\uFEFF/, ""));
       const missing = INPUT_HEADERS.filter((h) => !parsed[0]?.includes(h));
+      if (parsed[0] && new Set(parsed[0]).size !== parsed[0].length)
+        throw new Error("CSV headers must be unique.");
       if (missing.length)
         throw new Error("Missing CSV headers: " + missing.join(", "));
       if (parsed.length < 2) throw new Error("CSV contains no data rows.");
+      if (parsed.some((row) => row.length !== parsed[0].length))
+        throw new Error(
+          "Each CSV row must contain the same number of fields as the header.",
+        );
       setPreview(parsed.slice(0, 6));
       setFile(f);
     } catch (e) {
@@ -186,7 +192,14 @@ export default function BatchLab() {
       {existing.error ? (
         <ErrorBlock error={existing.error} />
       ) : !run ? (
-        <LoadingBlock label="Reading stored run" />
+        selection.runId ? (
+          <LoadingBlock label="Reading stored run" />
+        ) : (
+          <p className="surface-dark p-6">
+            No run selected. Upload a PR CSV to process real data, or select a
+            stored run above.
+          </p>
+        )
       ) : (
         <>
           <div className="toolbar">

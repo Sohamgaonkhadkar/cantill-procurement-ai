@@ -69,10 +69,12 @@ export function IndustrialImage({
         }
       : undefined,
   );
-  const y: MotionValue<number> | number =
-    parallax && !reduce
-      ? useTransform(scrollYProgress, [0, 1], [-parallax, parallax])
-      : 0;
+  const animatedY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [-parallax, parallax],
+  );
+  const y: MotionValue<number> | number = parallax && !reduce ? animatedY : 0;
 
   return (
     <div

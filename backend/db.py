@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import os
 from pathlib import Path
-from sqlalchemy import create_engine, String, JSON, ForeignKey, UniqueConstraint, event, Integer, Boolean
+from sqlalchemy import create_engine, String, JSON, ForeignKey, UniqueConstraint, event, Integer, Boolean,text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 class Base(DeclarativeBase): pass
@@ -144,6 +144,14 @@ class ContractProposal(Base):
     payload:Mapped[dict]=mapped_column(JSON)
 
 def now(): return datetime.now(timezone.utc).isoformat()
+
+CATALOG_LOCK=63827101
+POLICY_CALENDAR_LOCK=63827102
+
+def transaction_lock(session,key,exclusive=False):
+    if session.bind.dialect.name=='postgresql':
+        statement='SELECT pg_advisory_xact_lock(:key)' if exclusive else 'SELECT pg_advisory_xact_lock_shared(:key)'
+        session.execute(text(statement),{'key':key})
 
 def connect(url=None):
     if os.getenv('VERCEL') and not (url or os.getenv('DATABASE_URL')):

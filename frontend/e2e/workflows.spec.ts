@@ -641,6 +641,14 @@ test("amendment uploads preserve unresolved warnings and require manual reconcil
   await expect(
     page.getByRole("button", { name: "Review policy", exact: true }),
   ).toBeDisabled();
+  await page
+    .getByLabel(
+      "I manually reconciled all unresolved clauses into the structured rules.",
+    )
+    .check();
+  await expect(
+    page.getByRole("button", { name: "Review policy", exact: true }),
+  ).toBeDisabled();
   await noErrors(page);
 });
 
@@ -796,3 +804,95 @@ test("real run and requirement pagination use backend offsets and totals", async
   ).toHaveCount(1);
   await noErrors(page);
 });
+
+test("sourcing approval remains pending until a distinct second reviewer commits", async ({
+  page,
+}) => {
+  const meRequest = page.waitForRequest((r) =>
+    r.url().endsWith("/api/auth/me"),
+  );
+  await login(page);
+  const authorization = (await (await meRequest).headerValue("authorization"))!;
+  const headers = { Authorization: authorization };
+  const version = "dual-material-browser";
+  const draft = await page.request.post("/api/policies/propose-amendment", {
+    headers,
+    data: {
+      text: "For materials, require an additional sourcing approval",
+      version,
+      effective_date: "2026-04-03",
+    },
+  });
+  expect(draft.status()).toBe(200);
+  for (const action of ["review", "approve", "activate"]) {
+    const result = await page.request.post(
+      `/api/policies/${version}/${action}`,
+      {
+        headers,
+        data: { reason: "Verified additional independent sourcing review" },
+      },
+    );
+    expect(result.status()).toBe(200);
+  }
+  const result = await page.request.post("/api/process-batch", {
+    headers,
+    multipart: {
+      policy_version: version,
+      file: {
+        name: "dual.csv",
+        mimeType: "text/csv",
+        buffer: Buffer.from(
+          `${headersCsv()}\nPR-DUAL,1,2026-11-01 10:00,Synthetic user,Testing,P-A,ITM-9002,Hydraulic hose 1/2 inch 2 wire,1500,MTR,,2026-11-20,Normal\n`,
+        ),
+      },
+    },
+  });
+  expect(result.status()).toBe(200);
+  const run = await result.json();
+  await go(page, "Buyer Inbox");
+  await page.getByLabel("Processing run", { exact: true }).selectOption(run.id);
+  await expect(
+    page.getByText("0 of 2 independent approvals recorded.", { exact: false }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Buyer reason", { exact: true })
+    .fill("First reviewer checked the sourcing evidence");
+  await page.getByLabel("I reviewed the evidence and approval scope.").check();
+  await page
+    .getByRole("button", { name: "Approve recommendation", exact: true })
+    .click();
+  await expect(
+    page.getByText("1 of 2 independent approvals recorded.", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Approve recommendation", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Override to sourcing", exact: true }),
+  ).toBeDisabled();
+  const sourceBefore = await (
+    await page.request.get("/api/sourcing", { headers })
+  ).json();
+  expect(
+    sourceBefore.items.some((s: { run_id: string }) => s.run_id === run.id),
+  ).toBe(false);
+  await login(page, "buyer");
+  await go(page, "Buyer Inbox");
+  await page.getByLabel("Processing run", { exact: true }).selectOption(run.id);
+  await page
+    .getByLabel("Buyer reason", { exact: true })
+    .fill("Independent second reviewer verified the evidence");
+  await page.getByLabel("I reviewed the evidence and approval scope.").check();
+  const approved = page.waitForResponse((r) =>
+    r.url().includes("/approve?run_id="),
+  );
+  await page
+    .getByRole("button", { name: "Approve recommendation", exact: true })
+    .click();
+  expect((await approved).status()).toBe(200);
+  expect((await (await approved).json()).status).toBe("approved");
+  await noErrors(page);
+});
+function headersCsv() {
+  return headers;
+}

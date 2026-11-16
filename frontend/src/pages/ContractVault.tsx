@@ -37,17 +37,7 @@ export default function ContractVault() {
   const detail = useQuery({
     queryKey: ["contract", contractId, asOf],
     enabled: !!contractId,
-    queryFn: async () => {
-      let start = 0;
-      for (;;) {
-        const page = await api.contracts(start, asOf);
-        const found = page.items.find((c) => c.contract_id === contractId);
-        if (found) return found;
-        if (start + page.limit >= page.total)
-          throw new Error("Contract not found");
-        start += page.limit;
-      }
-    },
+    queryFn: () => api.contract(contractId!, asOf),
   });
   useEffect(() => {
     if (proposal) {

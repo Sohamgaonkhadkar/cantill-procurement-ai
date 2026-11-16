@@ -5,7 +5,7 @@ from collections import Counter
 from .domain import D, Line, Requirement, digest, number, money, rate_text, OUTPUT_COLUMNS
 from .matching import resolve
 from .policy import validate_policy,evaluate
-from .suppliers import history_for,preferred,suggestions
+from .suppliers import history_for,preferred,suggestions,eligible
 
 def validate_lines(rows,data):
     counts=Counter((r['pr_no'],r['pr_line']) for r in rows)
@@ -41,19 +41,22 @@ def select_policy(policies,when,explicit=None):
     return max(candidates,key=lambda p:(p['effective_date'],p['version']))
 
 def group_lines(lines,policies,explicit=None):
-    groups=[]; invalid=[]
+    groups=[]; invalid=[]; buckets={}
     for line in sorted(lines,key=lambda x:(x.created or datetime.max,x.raw['pr_no'],int(x.raw['pr_line']) if x.raw['pr_line'].isdigit() else 0,x.index)):
         if line.errors: invalid.append(line); continue
         try: policy=select_policy(policies,line.created.date(),explicit)
         except ValueError as e: line.errors.append(str(e)); invalid.append(line); continue
         match=None
+        key=(line.item_code,line.raw['plant'],policy['version'])
         if line.item_code!='NEW':
-            for g in groups:
+            for g in buckets.get(key,[]):
                 a=g.anchor; p=g.policy['parameters']
                 if a.item_code==line.item_code and a.raw['plant']==line.raw['plant'] and g.policy['version']==policy['version'] and 0<=(line.created.date()-a.created.date()).days<=p['group_days'] and abs((line.need-a.need).days)<=p['need_days']:
                     match=g; break
         if match: match.lines.append(line)
-        else: groups.append(Requirement('REQ-'+digest([line.raw['pr_no'],line.raw['pr_line']])[:12].upper(),[line],policy))
+        else:
+            group=Requirement('REQ-'+digest([line.raw['pr_no'],line.raw['pr_line']])[:12].upper(),[line],policy)
+            groups.append(group);buckets.setdefault(key,[]).append(group)
     return groups,invalid
 
 def contract_candidates(data,g,allocated):
@@ -62,7 +65,8 @@ def contract_candidates(data,g,allocated):
         for l in c['lines']:
             if l['item_code']!=g.anchor.item_code: continue
             reason=None
-            if data.suppliers.get(c['supplier_id'],{}).get('status')!='Active': reason='Supplier not Active'
+            if not eligible(data,c['supplier_id'],g.policy): reason='Supplier not Active or excluded by policy'
+            elif c['supplier_id'] in g.policy['parameters'].get('contract_excluded_supplier_ids',[]): reason='Contract supplier excluded by policy'
             elif not c['start_date']<=g.date.isoformat()<=c['end_date']: reason='Outside inclusive validity'
             rate=number(l['rate']); remaining=number(c['value_cap'])-number(c['consumed_value'])-allocated.get(c['contract_id'],D(0))
             applicable=reason is None
@@ -78,7 +82,7 @@ def decide(data,g,allocated):
     # Valuation history includes all recorded suppliers: a blocked supplier cannot
     # receive an order, but its historical invoice remains price evidence (3.1).
     valuation_history=history_for(data,item,g.date,params['history_days'],False)
-    qualifying=history_for(data,item,g.date,params['history_days'])
+    qualifying=history_for(data,item,g.date,params['history_days'],policy=p)
     if item=='NEW': rate=number(a.raw['estimated_unit_price']); source='requester_estimate'; reference=a.raw['pr_no']
     elif usable or applicable:
         chosen=usable or applicable; rate=number(chosen['rate']); source='contract'; reference=chosen['contract_id']
@@ -103,13 +107,14 @@ def decide(data,g,allocated):
         if ranking: sid=ranking[0]['supplier_id']; unit=number(ranking[0]['reference_price']); relied=ranking[0]['reference_source']
         else: route='NOT_PROCESSED'; is_po=False
     elif route not in {'NEW_ITEM_SOURCING','NOT_PROCESSED'} and item!='NEW':
-        suggested=suggestions(data,a.item,ranking,params['suggestions'].get(route,3))
+        suggested=suggestions(data,a.item,ranking,params['suggestions'].get(route,3),p)
     reason=f"Policy {p['version']} clause {rule['id']}: {rule['reason']}. Valuation {source} {reference}."
     if is_po: reason+=f' Order price evidence {relied}.'
     if route in params['suggestions'] and len(suggested)<params['suggestions'][route]: reason+=f' Only {len(suggested)} eligible suppliers available.'
     if route=='NOT_PROCESSED': reason+=' No safe executable outcome; buyer review required.'
     evidence={'facts':facts,'rule_trace':trace,'valuation':{'unit_price':str(rate),'source':source,'reference':reference,'quantity':str(g.quantity),'exact_value':str(value),'lookback_days':params['history_days']},'contracts':candidates,'ranking':ranking,'order_reference':relied,'selected_contract':usable['contract_id'] if route=='CONTRACT_PO' else None,'group_anchor':a.raw,'grouping':'Fixed first-line anchor; inclusive calendar-day and need-by windows','matching':[l.match for l in g.lines]}
-    return {'id':g.id,'item_code':item,'description':a.item['description'],'plant':a.raw['plant'],'created_at':a.created.isoformat(),'need_by_date':a.need.isoformat(),'quantity':str(g.quantity),'decision':'PO' if is_po else 'SOURCING_REQUEST' if route!='NOT_PROCESSED' else '', 'route':route,'supplier_id':sid,'unit_price':rate_text(unit),'group_value_inr':money(value),'suggested_supplier_ids':';'.join(suggested),'policy_version':p['version'],'reason':reason,'po_id':'','evidence':evidence,'lines':[l.raw for l in g.lines],'approval_status':'pending'}
+    approvals=1+(params.get('additional_sourcing_approvals',{}).get(a.item['item_type'],0) if not is_po and route!='NOT_PROCESSED' else 0)
+    return {'id':g.id,'item_code':item,'description':a.item['description'],'plant':a.raw['plant'],'created_at':a.created.isoformat(),'need_by_date':a.need.isoformat(),'quantity':str(g.quantity),'decision':'PO' if is_po else 'SOURCING_REQUEST' if route!='NOT_PROCESSED' else '', 'route':route,'supplier_id':sid,'unit_price':rate_text(unit),'group_value_inr':money(value),'suggested_supplier_ids':';'.join(suggested),'policy_version':p['version'],'reason':reason,'po_id':'','evidence':evidence,'lines':[l.raw for l in g.lines],'approval_status':'pending','required_approvals':approvals}
 
 def consolidate(decisions,groups):
     orders=[]; gm={g.id:g for g in groups}

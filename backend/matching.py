@@ -4,9 +4,13 @@ from rapidfuzz.fuzz import token_set_ratio
 
 def normalize(text):
     text=text.lower().replace('×','x').replace('"',' inch ')
-    text=re.sub(r'\b(?:inches|in)\b','inch',text)
+    text=re.sub(r'(?<=\d)(?:inches|in)\b\.?',' inch',text)
+    text=re.sub(r'\b(?:inches|in)\b\.?','inch',text)
+    text=re.sub(r'(\d+)[ -]+(\d+)\s*/\s*([1-9]\d*)\s*inch\b',lambda m:format(Decimal(m[1])+Decimal(m[2])/Decimal(m[3]),'f')+' inch',text)
     text=re.sub(r'(\d+)\s*/\s*([1-9]\d*)\s*inch\b',lambda m:format(Decimal(m[1])/Decimal(m[2]),'f')+' inch',text)
-    for a,b in {'brg':'bearing','pneu':'pneumatic','hyd':'hydraulic','welding rod':'welding electrode'}.items():
+    text=re.sub(r'(?<=\d)(?=inch\b)',' ',text)
+    text=re.sub(r'(?<!\w)(\d+\.\d+)(?=\s*(?:inch|mm|cm|kg|kw|hp|sqmm)\b)',lambda m:format(Decimal(m[1]).normalize(),'f'),text)
+    for a,b in {'brg':'bearing','pneu':'pneumatic','hyd':'hydraulic','assy':'assembly','ss':'stainless steel','ms':'mild steel','dia':'diameter','wldg':'welding','welding rod':'welding electrode'}.items():
         text=re.sub(r'\b'+a+r'\b',b,text)
     text=re.sub(r'\b(bearing|glove|cylinder|bolt|nut|washer|hose)s\b',r'\1',text)
     text=re.sub(r'\b(urgent|repeat|as per sample|for maintenance)\b',' ',text)

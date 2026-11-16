@@ -139,3 +139,12 @@ Known limitations include bounded language parsing, manual handling of scanned a
 ## Isolated demonstration data
 
 The optional Batch Lab demo uses explicit fictional inputs from backend/demo.py and the unchanged procurement engine. Authenticated preview/export endpoints compute in memory against a fresh synthetic dataset and v5.0 policy; they never invoke run persistence, current master-data loading or purchase approval services. Nine input rows exercise all supported route families, grouping and invalid-line handling. Uploaded demo CSVs can alter the calculations, with a 200-row resource bound. Responses identify synthetic_preview and persistent=false; downloads are named synthetic-demo-*.csv. Ordinary assessment processing is unchanged.
+
+
+## Evaluation hardening extensions
+
+Source interpretation now records proposed, preserved, unresolved and conflicting clauses separately. Explicit exceptions compile to negated conditions; dated rules use registered date predicates. Exclusions, ranking weights and additional sourcing approvals are validated policy parameters, so the UI does not implement a second procurement engine. All source ambiguities still stop ordinary approval.
+
+An additional-approval sourcing rule creates a pending vote record, then waits for a different authenticated reviewer. Only the quorum transaction creates the sourcing action and source commitments. Atomic row and advisory locks coordinate this flow with policy activation and catalog updates. Read-only simulations and immutable exports do not consume ceiling or trigger approvals.
+
+Grouping indexes candidate groups by item, plant and policy version while preserving chronological earliest-anchor selection. Commit approval checks source identities in a set query and reuses one current contract-headroom snapshot. Direct contract retrieval removes client-side register-page scanning. None of these changes alter the original routing thresholds or ranking formula.

@@ -5,12 +5,13 @@ from .db import Plant,Item,Supplier,History,Contract,ContractLine,Dataset,Policy
 from .domain import Data,digest,number
 from .engine import process
 from .policy import initial_policy,validate_policy
-from .db import Requisition,RequisitionLine,Membership
+from .db import Requisition,RequisitionLine,Membership,transaction_lock,CATALOG_LOCK
 
 def audit(session,actor,action,details):
     session.add(Audit(id=str(uuid4()),created_at=now(),payload={'actor':actor,'action':action,'details':details}))
 
 def current_data(session):
+    transaction_lock(session,CATALOG_LOCK)
     def keyed(model): return {r.id:r.payload for r in session.scalars(select(model)).all()}
     contracts=[deepcopy(r.payload) for r in session.scalars(select(Contract))]
     ledger={}
@@ -22,6 +23,7 @@ def current_data(session):
     return Data(keyed(Item),keyed(Supplier),keyed(Plant),[r.payload for r in session.scalars(select(History))],contracts)
 
 def save_data(session,data):
+    transaction_lock(session,CATALOG_LOCK,exclusive=True)
     for model,rows in [(Plant,data.plants),(Item,data.items),(Supplier,data.suppliers)]:
         existing={row.id:row for row in session.scalars(select(model))}
         for key,payload in rows.items():
@@ -48,8 +50,10 @@ def save_data(session,data):
     if not session.get(Policy,'5.0'): session.add(Policy(id='5.0',status='active',payload=initial_policy()))
     return key
 
-def policies(session):
-    return [{**r.payload,'status':r.status} for r in session.scalars(select(Policy))]
+def policies(session,lock=False):
+    statement=select(Policy).order_by(Policy.id)
+    if lock: statement=statement.with_for_update(read=True)
+    return [{**r.payload,'status':r.status} for r in session.scalars(statement)]
 
 def execute_run(session,rows,explicit,actor,data=None,policy_list=None):
     data=data or current_data(session); ps=policy_list or [p for p in policies(session) if p['status']=='active' or (explicit and p['status']=='superseded')]

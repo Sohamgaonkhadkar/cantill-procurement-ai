@@ -41,9 +41,20 @@ export function ApprovalPanel({
   const scope = r.po_id
     ? run.data?.orders.find((o) => o.id === r.po_id)?.requirements
     : [r.id];
+  const votes = r.approval_votes ?? [];
+  const required = r.required_approvals ?? 1;
+  const alreadyVoted = votes.some((vote) => vote.actor === identity?.id);
   return (
     <section className="surface-dark space-y-4 p-5" aria-label="Buyer actions">
       <h2 className="font-display text-xl">Review before committing</h2>
+      {required > 1 ? (
+        <p role="status" className="text-lime">
+          {votes.length} of {required} independent approvals recorded.
+          {alreadyVoted
+            ? " Your approval is recorded; another buyer must review."
+            : " Each approval must come from a different account."}
+        </p>
+      ) : null}
       <p className="text-sm text-lavender">
         {r.decision === "PO"
           ? `Approval commits all pending requirements on consolidated PO ${r.po_id}. Contract headroom is rechecked atomically.`
@@ -81,6 +92,7 @@ export function ApprovalPanel({
           reason.trim().length < 5 ||
           !ack ||
           !scope ||
+          alreadyVoted ||
           r.route === "NOT_PROCESSED"
         }
         busy={action.isPending}
@@ -103,7 +115,7 @@ export function ApprovalPanel({
         </label>
         <Button
           variant="danger"
-          disabled={reason.trim().length < 5 || !ack}
+          disabled={reason.trim().length < 5 || !ack || required > 1}
           busy={action.isPending}
           onClick={() => action.mutate("override")}
         >
@@ -113,7 +125,9 @@ export function ApprovalPanel({
       {action.error ? <ErrorBlock error={action.error} /> : null}
       {action.data ? (
         <p role="status" className="text-mint">
-          Recorded {action.data.id}
+          {action.data.status === "awaiting_approval"
+            ? "Approval vote recorded. Purchasing remains uncommitted until the required independent reviews are complete."
+            : `Recorded ${action.data.id}`}
         </p>
       ) : null}
     </section>

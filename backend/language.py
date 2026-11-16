@@ -24,8 +24,8 @@ def canonical(value,choices):
     value=value.strip().strip('"\'')
     exact=[x for x in choices if x.casefold()==value.casefold()]
     if len(exact)==1: return exact[0]
-    words=set(re.findall(r'\w+',value.casefold()))
-    partial=[x for x in choices if words and words<=set(re.findall(r'\w+',x.casefold()))]
+    words={w.rstrip('s') for w in re.findall(r'\w+',value.casefold())}
+    partial=[x for x in choices if words and words<={w.rstrip('s') for w in re.findall(r'\w+',x.casefold())}]
     if len(partial)==1: return partial[0]
     raise ValueError('Unknown or ambiguous scope value: '+value)
 
@@ -67,6 +67,7 @@ def conditions(text,data=None):
     placeholders={}
     for i in range(1,len(parts),2): placeholders[f'__quoted_{i}__']=parts[i]; parts[i]=f'__quoted_{i}__'
     text=''.join(parts)
+    text=re.sub(r'\d[\d,]*(?:\.\d+)?',lambda m:str(number(m[0])) if ',' in m[0] else m[0],text)
     text=re.sub(r',\s*(?:and\s+)?',' and ',text,flags=re.I)
     groups=[]
     for alternative in re.split(r'\s+or\s+(?!after\b|before\b|above\b|below\b)',text,flags=re.I):
@@ -79,10 +80,83 @@ def conditions(text,data=None):
         groups.append(terms[0] if len(terms)==1 else {'all':terms})
     return groups[0] if len(groups)==1 else {'any':groups}
 
-def apply_statement(policy,text,data=None):
+COUNT=r'(?:[0-9]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)'
+
+def count(value):
+    words=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty']
+    return int(value) if value.isdigit() else words.index(value.lower())
+
+def supplier_id(value,data):
+    if data is None: raise ValueError('Supplier restrictions require master-data validation')
+    choices={sid:sid for sid in data.suppliers}
+    for sid,supplier in data.suppliers.items():
+        name=supplier['name']
+        if name in choices and choices[name]!=sid:raise ValueError('Ambiguous supplier name; use its ID')
+        choices[name]=sid
+    return choices[canonical(value,choices)]
+
+def parse_date(value):
+    from datetime import date
+    value=value.strip()
+    if re.fullmatch(r'\d{4}-\d{2}-\d{2}',value):return date.fromisoformat(value).isoformat()
+    match=re.fullmatch(r'(\d{1,2}) (January|February|March|April|May|June|July|August|September|October|November|December) (\d{4})',value,re.I)
+    if not match:raise ValueError('Use an explicit ISO date or day month year')
+    months=['january','february','march','april','may','june','july','august','september','october','november','december']
+    return date(int(match[3]),months.index(match[2].lower())+1,int(match[1])).isoformat()
+
+def apply_statement(policy,text,data=None,context=None):
     text=text.strip().rstrip('.').strip()
     prefix=r'(?:(?:please|change|set|update|revise|increase|decrease|reduce|the|new)\s+)*'
-    m=re.fullmatch(prefix+r'(spot|emergency|rfq|rfp)\s+(?:PO\s+)?(?:limit|threshold)\s*(?:to|of|is|=|:)?\s*'+AMOUNT,text,re.I)
+    # Explicit preservation is recorded, never interpreted as a request to mutate.
+    m=re.fullmatch(r"(?:do not|don't) change (?:the )?(spot|emergency|rfq|rfp)(?:[- ](?:purchase|purchasing|PO))? (?:limit|threshold)",text,re.I)
+    if m:
+        if context is not None: context.setdefault('preserved_labels',set()).add(m[1].lower())
+        return 'Preserve '+m[1].lower()+' threshold without changing it'
+    if re.fullmatch(r'exclude (?:inactive|blocked|inactive and blocked|blocked and inactive) suppliers from all (?:purchasing )?(?:recommendations|purchases)',text,re.I):
+        return 'Preserve mandatory Active-only supplier eligibility'
+    m=re.fullmatch(r'(?:exclude contracts from|do not use contracts from) (?:supplier )?(.+)',text,re.I)
+    if m:
+        sid=supplier_id(m[1],data);key='contract_excluded_supplier_ids'
+        policy['parameters'][key]=sorted(set(policy['parameters'].get(key,[])+[sid]))
+        return 'Exclude contracts and contract-only reference relationships from '+sid
+    m=re.fullmatch(r'(?:exclude|do not recommend) supplier (.+?)(?: from all (?:purchasing )?(?:recommendations|purchases))?',text,re.I)
+    if m:
+        sid=supplier_id(m[1],data);key='excluded_supplier_ids'
+        policy['parameters'][key]=sorted(set(policy['parameters'].get(key,[])+[sid]))
+        return 'Exclude '+sid+' from purchasing eligibility and suggestions'
+    m=re.fullmatch(prefix+r'(frequency|recency|contract|delivery|quality)(?: ranking)? weight (?:to|is|=|:)\s*([0-9]+(?:\.[0-9]+)?)%?',text,re.I)
+    if m:
+        policy['parameters']['weights'][m[1].lower()]=float(number(m[2]))
+        return m[1].lower()+' ranking weight proposed: '+m[2]
+    m=re.fullmatch(r'(?:increase|change|set) (?:the )?(?:preferred )?supplier count for '+ROUTE+r'(?: from '+COUNT+r')? to ('+COUNT+r')',text,re.I)
+    if m:
+        route=m[1].upper()
+        if route not in {'RFQ','RFP','CAPEX_SOURCING'}: raise ValueError('Supplier counts apply to sourcing')
+        policy['parameters']['suggestions'][route]=count(m[2])
+        return route+' supplier count proposed: '+str(count(m[2]))
+    m=re.fullmatch(r'for (capital equipment|capex|materials|services),? require (?:an |one )?additional sourcing approval',text,re.I)
+    if m:
+        kind={'capital equipment':'Capex','capex':'Capex','materials':'Material','services':'Service'}[m[1].lower()]
+        policy['parameters'].setdefault('additional_sourcing_approvals',{})[kind]=1
+        return kind+' sourcing requires two distinct approving identities'
+    m=re.fullmatch(r'(?:apply|make) (?:the )?(policy|version|new rule|rule) (?:effective )?(?:only )?from (.+)',text,re.I)
+    if m:
+        effective=parse_date(m[2])
+        if 'rule' in m[1].lower():
+            ids=(context or {}).get('added_rule_ids',[])
+            if len(ids)!=1: raise ValueError('Effective-date instruction must identify one new rule, or specify policy effective date')
+            rule=next(r for r in policy['rules'] if r['id']==ids[0])
+            rule['when']={'all':[rule['when'],condition('requirement.date','gte',effective)]}
+            return 'New rule applies on or after '+effective
+        policy['effective_date']=effective
+        return 'Policy effective date proposed: '+effective
+    m=re.fullmatch(r'at plant (.+?),? require '+ROUTE+r' for (.+?) purchases (above|below|at least|at most) '+AMOUNT+r'(?: (except|unless) (.+))?',text,re.I)
+    if m:
+        plant,route,category,operator,value,unit,exception,exclusion=m.groups()
+        scope='plant '+plant.rstrip(',')+' and category '+category+' and value '+operator+' '+value+(' '+unit if unit else '')
+        if exception:scope+=' except '+exclusion
+        return apply_statement(policy,'If '+scope+' require '+route,data,context)
+    m=re.fullmatch(prefix+r'(spot|emergency|rfq|rfp)(?:[- ](?:purchase|purchasing|PO))?\s+(?:limit|threshold)\s*(?:to|of|is|=|:)?\s*'+AMOUNT,text,re.I)
     if m:
         label=m[1].lower(); value=amount(m[2],m[3])
         routes={'spot':['SPOT_PO'],'emergency':['EMERGENCY_PO'],'rfq':['RFQ','RFP'],'rfp':['RFQ','RFP']}[label]
@@ -94,11 +168,11 @@ def apply_statement(policy,text,data=None):
                 if leaf['fact']=='requirement.group_value_inr': leaf['value']=value; changed+=1
         if not changed: raise ValueError('No amount predicate was found')
         return f'{label} global limit proposed: INR {value}'
-    m=re.fullmatch(prefix+r'(grouping|clubbing|need.by|history|preferred.history|PO consolidation)\s+(?:window|period)\s+(?:to|is|=)?\s*(\d+)\s+(days?|hours?)',text,re.I)
+    m=re.fullmatch(prefix+r'(grouping|clubbing|need.by|history|preferred.history|PO consolidation)\s+(?:window|period)\s+(?:to|is|=)?\s*('+COUNT+r')\s+(?:calendar\s+)?(days?|hours?)',text,re.I)
     if m:
         key={'grouping':'group_days','clubbing':'group_days','need-by':'need_days','need by':'need_days','history':'history_days','preferred history':'preferred_days','preferred-history':'preferred_days','po consolidation':'po_hours'}.get(m[1].lower())
         if not key or (key=='po_hours')!=m[3].lower().startswith('hour'): raise ValueError('Window unit does not match parameter')
-        policy['parameters'][key]=int(m[2]); return f'{key} proposed: {m[2]}'
+        policy['parameters'][key]=count(m[2]); return f'{key} proposed: {m[2]}'
     m=re.fullmatch(r'(?:suggest|use)\s+(\d+)\s+suppliers?\s+for\s+'+ROUTE,text,re.I)
     if m:
         route=m[2].upper()
@@ -107,8 +181,10 @@ def apply_statement(policy,text,data=None):
     m=re.fullmatch(r'(?:if|when)\s+(.+?)[,;]?\s+(?:then\s+)?(?:require|use|route to|raise)\s+'+ROUTE+r'(?:\s*\(priority\s+(-?\d+)\))?',text,re.I)
     if m:
         scope=m[1].strip().rstrip(',;').strip()
-        if re.search(r'\b(?:unless|except)\b',scope,re.I): raise ValueError('Exception clauses require manual structured authoring')
-        node=conditions(scope,data); route=m[2].upper()
+        exception=re.split(r'\s+(?:unless|except(?:\s+when)?)\s+',scope,maxsplit=1,flags=re.I)
+        node=conditions(exception[0],data)
+        if len(exception)==2: node={'all':[node,{'not':conditions(exception[1],data)}]}
+        route=m[2].upper()
         rid='amendment-'+digest([node,route])[:12]
         if any(r['id']==rid for r in policy['rules']): raise ValueError('Equivalent amendment rule already exists')
         priorities={r['priority'] for r in policy['rules']}
@@ -118,31 +194,57 @@ def apply_statement(policy,text,data=None):
         return f'New {route} rule proposed at priority {priority}; review scope and precedence'
     raise ValueError('Statement needs structured manual authoring')
 
+def limit_signature(policy,label):
+    routes={'spot':{'SPOT_PO'},'emergency':{'EMERGENCY_PO'},'rfq':{'RFQ','RFP'},'rfp':{'RFQ','RFP'}}[label]
+    return [(r['id'],[(x['op'],str(x['value'])) for x in leaves(r['when']) if x['fact']=='requirement.group_value_inr']) for r in policy['rules'] if r['route'] in routes and not any(x['fact'] in {'requirement.plant','item.category','item.item_type','item.item_code'} for x in leaves(r['when']))]
+
+
 def interpret(base,text,version,effective_date,data=None):
+    from .amendments import policy_diff
     policy=deepcopy(base); policy.pop('status',None); policy.pop('governance',None)
     policy.update(version=version,effective_date=effective_date)
-    detected=[]; unresolved=[]
-    # Each nonempty line/semicolon statement must be accounted for. Decimal
-    # points are not sentence separators, and no prose is silently discarded.
+    detected=[];unresolved=[];coverage=[];conflicts=[];updates={}
+    context={'preserved_labels':set(),'added_rule_ids':[]}
     if len(text)>100000: raise ValueError('Policy text exceeds the 100,000-character interpretation limit')
-    lines=[x.strip() for x in re.split(r'[\n;]+',text) if x.strip()]
+    commands=r'if|when|change|set|update|revise|increase|decrease|reduce|suggest|use|do not|exclude|at plant|for |apply|make'
+    lines=[re.sub(r'^\s*(?:[0-9]+[.)]|[-•])\s+','',x.strip()) for x in re.split(r'[\n;]+|(?<=[.!?])\s+(?=(?:'+commands+r')\b)',text,flags=re.I) if x.strip()]
     if len(lines)>500: raise ValueError('Policy has too many source lines for automatic interpretation')
-    statements=[]; buffer=''
+    statements=[];buffer=''
     for line in lines:
         complete=False
         if buffer:
-            try: apply_statement(deepcopy(policy),buffer,data); complete=True
+            try: apply_statement(deepcopy(policy),buffer,data,deepcopy(context));complete=True
             except ValueError: pass
-        starts_statement=bool(re.match(r'^(?:if|when|change|set|update|revise|increase|decrease|reduce|suggest|use)\b',line,re.I))
-        if buffer and (complete or starts_statement): statements.append(buffer); buffer=line
-        else: buffer=(buffer+' '+line).strip()
-    if buffer: statements.append(buffer)
+        starts=bool(re.match(r'^(?:'+commands+r')\b',line,re.I))
+        if buffer and (complete or starts):statements.append(buffer);buffer=line
+        else:buffer=(buffer+' '+line).strip()
+    if buffer:statements.append(buffer)
     for statement in statements:
-        candidate=deepcopy(policy)
+        candidate=deepcopy(policy);candidate_context=deepcopy(context)
         try:
-            description=apply_statement(candidate,statement,data)
+            description=apply_statement(candidate,statement,data,candidate_context)
             validate_policy(candidate)
-            policy=candidate; detected.append(description)
-        except ValueError as exc: unresolved.append({'text':statement,'reason':str(exc)})
+            for label in candidate_context['preserved_labels']:
+                if limit_signature(candidate,label)!=limit_signature(base,label):
+                    raise ValueError('Conflicting instruction: preserve '+label+' threshold but another clause changes it')
+            diffs=policy_diff(policy,candidate)
+            for diff in diffs:
+                previous=updates.get(diff['path'])
+                if previous and previous['value']!=diff['after']:
+                    raise ValueError('Conflicting amendments target '+diff['path'])
+            added=[r for r in candidate['rules'] if r['id'] not in {x['id'] for x in policy['rules']}]
+            for rule in added:
+                for existing in policy['rules']:
+                    if existing['id'] in context['added_rule_ids'] and digest(existing['when'])==digest(rule['when']) and existing['route']!=rule['route']:
+                        raise ValueError('Conflicting new routes for the same condition: '+existing['route']+' and '+rule['route'])
+            candidate_context['added_rule_ids'] += [r['id'] for r in added]
+            for diff in diffs:updates[diff['path']]={'value':diff['after'],'source':statement}
+            policy=candidate;context=candidate_context;detected.append(description)
+            coverage.append({'text':statement,'status':'proposed' if diffs else 'preserved','description':description,'changed_paths':[x['path'] for x in diffs]})
+        except ValueError as exc:
+            entry={'text':statement,'reason':str(exc)};unresolved.append(entry)
+            conflicting='conflict' in str(exc).lower()
+            if conflicting:conflicts.append(entry)
+            coverage.append({'text':statement,'status':'conflict' if conflicting else 'unresolved','reason':str(exc)})
     validate_policy(policy)
-    return {'policy':policy,'detected_changes':detected,'unresolved_clauses':unresolved,'complete':not unresolved}
+    return {'policy':policy,'detected_changes':detected,'unresolved_clauses':unresolved,'conflicts':conflicts,'source_clauses':coverage,'complete':not unresolved}

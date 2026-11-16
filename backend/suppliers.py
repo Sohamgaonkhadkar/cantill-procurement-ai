@@ -3,16 +3,20 @@ from decimal import Decimal as D
 from math import log1p
 from .domain import number
 
-def history_for(data,item,asof,days,active_only=True):
-    return sorted([p for p in data.history if p['item_code']==item and 0<(asof-date.fromisoformat(p['po_date'])).days<=days and (not active_only or data.suppliers.get(p['supplier_id'],{}).get('status')=='Active')], key=lambda p:(p['po_date'],p['po_number'],p['supplier_id']),reverse=True)
+def eligible(data,supplier_id,policy=None):
+    excluded=(policy or {}).get('parameters',{}).get('excluded_supplier_ids',[])
+    return data.suppliers.get(supplier_id,{}).get('status')=='Active' and supplier_id not in excluded
+
+def history_for(data,item,asof,days,active_only=True,policy=None):
+    return sorted([p for p in data.history if p['item_code']==item and 0<(asof-date.fromisoformat(p['po_date'])).days<=days and (not active_only or eligible(data,p['supplier_id'],policy))], key=lambda p:(p['po_date'],p['po_number'],p['supplier_id']),reverse=True)
 
 def preferred(data,item,asof,policy):
-    p=policy['parameters']; history=history_for(data,item,asof,p['preferred_days'])
-    contracts=[dict(c,rate=l['rate']) for c in data.contracts for l in c['lines'] if l['item_code']==item and c['start_date']<=asof.isoformat()]
+    p=policy['parameters']; history=history_for(data,item,asof,p['preferred_days'],policy=policy)
+    contracts=[dict(c,rate=l['rate']) for c in data.contracts for l in c['lines'] if l['item_code']==item and c['start_date']<=asof.isoformat() and c['supplier_id'] not in p.get('contract_excluded_supplier_ids',[])]
     result=[]
     max_frequency=max([sum(h['supplier_id']==sid for h in history) for sid in data.suppliers]+[1])
     for sid,s in sorted(data.suppliers.items()):
-        if s['status']!='Active': continue
+        if not eligible(data,sid,policy): continue
         ph=[h for h in history if h['supplier_id']==sid]
         ch=sorted([c for c in contracts if c['supplier_id']==sid],key=lambda c:(c['start_date'],c['contract_id']),reverse=True)
         if not ph and not ch: continue
@@ -24,7 +28,7 @@ def preferred(data,item,asof,policy):
         result.append({'supplier_id':sid,'name':s['name'],'purchase_count':len(ph),'last_purchase':ph[0]['po_date'] if ph else None,'contract_history':bool(ch),'reference_price':str(ref),'reference_source':ph[0]['po_number'] if ph else ch[0]['contract_id'],'components':{k:str(v) for k,v in components.items()},'score':str(sum(components.values(),D(0)))})
     return sorted(result,key=lambda s:(-D(s['score']),s['supplier_id']))
 
-def suggestions(data,item,ranking,count):
-    ids=[x['supplier_id'] for x in ranking]
-    extra=sorted([(sid,s) for sid,s in data.suppliers.items() if s['status']=='Active' and item['category'] in s['categories'].split(';') and sid not in ids],key=lambda x:(-(number(x[1]['on_time_pct'])/100+number(x[1]['quality_rating'])/5),-number(x[1]['on_time_pct']),x[0]))
+def suggestions(data,item,ranking,count,policy=None):
+    ids=[x['supplier_id'] for x in ranking if eligible(data,x['supplier_id'],policy)]
+    extra=sorted([(sid,s) for sid,s in data.suppliers.items() if eligible(data,sid,policy) and item['category'] in s['categories'].split(';') and sid not in ids],key=lambda x:(-(number(x[1]['on_time_pct'])/100+number(x[1]['quality_rating'])/5),-number(x[1]['on_time_pct']),x[0]))
     return (ids+[sid for sid,_ in extra])[:count]

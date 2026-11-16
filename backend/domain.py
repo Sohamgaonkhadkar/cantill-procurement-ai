@@ -40,17 +40,22 @@ def number(value):
 
 def read_csv(content: bytes, required=None):
     text = content.decode('utf-8-sig')
-    reader = csv.DictReader(io.StringIO(text, newline=''))
-    headers = reader.fieldnames or []
+    if '\x00' in text: raise ValueError('CSV contains a NUL character')
+    reader = csv.DictReader(io.StringIO(text, newline=''),strict=True)
+    try: headers = reader.fieldnames or []
+    except csv.Error as exc: raise ValueError('Malformed CSV header') from exc
     if len(headers) != len(set(headers)):
         raise ValueError('Duplicate CSV columns are not permitted')
     if any(not header.strip() for header in headers):
         raise ValueError('Blank CSV column names are not permitted')
     if required and (set(required) - set(reader.fieldnames or [])):
         raise ValueError('Missing CSV columns: ' + ', '.join(sorted(set(required)-set(reader.fieldnames or []))))
-    rows = list(reader)
-    if len(rows) > 20000:
-        raise ValueError('Maximum 20,000 rows per batch')
+    rows=[]
+    try:
+        for row in reader:
+            if len(rows)>=20000: raise ValueError('Maximum 20,000 rows per batch')
+            rows.append(row)
+    except csv.Error as exc: raise ValueError('Malformed CSV content or field exceeds supported length') from exc
     if any(None in r or any(v is None for v in r.values()) for r in rows):
         raise ValueError('Malformed CSV row: column count mismatch')
     return [{k: v.strip() for k,v in r.items()} for r in rows]
@@ -60,8 +65,14 @@ def csv_bytes(rows, columns=OUTPUT_COLUMNS):
     writer = csv.DictWriter(stream, fieldnames=columns, extrasaction='ignore', lineterminator='\n')
     writer.writeheader()
     for row in rows:
-        # Prevent spreadsheet formula execution in free text, preserving numeric fields.
-        writer.writerow({k: ("'"+str(v) if k=='reason' and str(v).startswith(('=','+','-','@')) else v) for k,v in row.items()})
+        # Text identifiers and names are untrusted too. Preserve strict numeric
+        # cells, but neutralize spreadsheet formulas in every other column.
+        numeric={'pr_line','quantity','estimated_unit_price','unit_price','group_value_inr','reference_price','rank','rate','value_cap','consumed_value','standard_price','quality_rating','on_time_pct'}
+        def safe(key,value):
+            text=str(value)
+            if key in numeric and re.fullmatch(r'[+-]?\d+(?:\.\d+)?',text): return value
+            return "'"+text if text.lstrip(' \t\r\n').startswith(('=','+','-','@')) else value
+        writer.writerow({k:safe(k,v) for k,v in row.items()})
     return stream.getvalue().encode('utf-8')
 
 @dataclass

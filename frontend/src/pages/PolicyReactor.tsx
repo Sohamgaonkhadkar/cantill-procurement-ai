@@ -69,6 +69,7 @@ export default function PolicyReactor() {
   const unresolved = Array.isArray(interpretation.unresolved_clauses)
     ? interpretation.unresolved_clauses
     : [];
+  const changes = Array.isArray(gov.diff) ? gov.diff.map(object) : [];
   async function saveImported(promise: Promise<PolicyResponse>) {
     const p = await promise;
     qc.setQueryData<{ items: PolicyResponse[] }>(["policies"], (previous) => ({
@@ -161,6 +162,44 @@ export default function PolicyReactor() {
           <Json value={interpretation} label="Interpretation coverage" />
           <Json value={gov.source_text ?? ""} label="Original source text" />
           <Json value={gov} label="Governance history and diff" />
+          {changes.length ? (
+            <div
+              className="overflow-x-auto"
+              tabIndex={0}
+              aria-label="Policy changes"
+            >
+              <table className="w-full text-left text-xs">
+                <caption className="mb-2 text-left text-lime">
+                  Saved changes from the base policy
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Field</th>
+                    <th scope="col">Before</th>
+                    <th scope="col">After</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {changes.map((change, i) => (
+                    <tr
+                      key={String(change.path) + i}
+                      className="border-t border-lavender/20"
+                    >
+                      <th scope="row" className="max-w-40 break-words p-2 num">
+                        {String(change.path)}
+                      </th>
+                      <td className="max-w-48 break-words p-2">
+                        {JSON.stringify(change.before) ?? "Absent"}
+                      </td>
+                      <td className="max-w-48 break-words p-2">
+                        {JSON.stringify(change.after) ?? "Absent"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
           <label className="field">
             Governance reason
             <textarea
@@ -196,7 +235,8 @@ export default function PolicyReactor() {
                         reason.trim().length < 5 ||
                         (action === "review" &&
                           (selected.status !== "draft" ||
-                            (unresolved.length > 0 && !manual))) ||
+                            (unresolved.length > 0 &&
+                              (!manual || !gov.manual_reconciled)))) ||
                         (action === "approve" && selected.status !== "draft") ||
                         (action === "activate" &&
                           !["approved", "superseded"].includes(

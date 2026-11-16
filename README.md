@@ -16,8 +16,8 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-150_passed-28A745?style=flat-square)
-![Browser verification](https://img.shields.io/badge/Browser_scenarios-14_passed-6246FF?style=flat-square)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-204_passed-28A745?style=flat-square)
+![Browser verification](https://img.shields.io/badge/Browser_scenarios-15_passed-6246FF?style=flat-square)
 ![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-D7FF3F?style=flat-square&labelColor=171335)
 
 </div>
@@ -69,7 +69,7 @@ Demo previews are labeled **synthetic / not saved**. They do not read or modify 
 | **Persistence** | PostgreSQL · SQLAlchemy · Alembic · psycopg | Durable records, migrations, transactional approvals and snapshots |
 | **Documents** | pypdf | Contract and amendment text extraction with human review |
 | **Delivery** | Docker Compose · Vercel · Neon PostgreSQL | Reproducible local setup and persistent hosted application |
-| **Verification** | pytest · Playwright | Engine/API/concurrency regressions and real-backend browser workflows |
+| **Verification** | pytest · Playwright · Node test runner · ESLint | Engine/API/concurrency regressions and real-backend browser workflows |
 
 SQLite supports isolated tests and a Python-only local backend. Hosted production uses persistent PostgreSQL.
 
@@ -198,9 +198,9 @@ Replace version, paths and filenames with the supplied values. This read-only to
 
 | Evidence | Result |
 |---|---|
-| Linux / PostgreSQL suite | **150 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **148 passed**, with two PostgreSQL-only skips |
-| Real-backend browser suite | **14 scenarios passed** |
+| Linux / PostgreSQL suite | **204 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **200 passed**, with four PostgreSQL-only skips |
+| Real-backend browser suite | **15 scenarios passed** |
 | Disclosed worked examples | **14 procurement decisions + 3 supplier rankings match** |
 | Original sample | **186 outputs · 149 requirements · 2 explicit invalid lines** |
 | Amendment rehearsal | Five policy changes, **55 affected lines**, three exports and matching replays |
@@ -210,10 +210,14 @@ These results describe executed checks, not a predicted blind-test score. See [V
 
 ```sh
 python -m pytest -q
+npm run test:unit --prefix frontend
+npm run lint --prefix frontend
 npm run typecheck --prefix frontend
 npm run build --prefix frontend
 npm run test:e2e --prefix frontend
 python -m scripts.generate_frontend_contract --check
+# Hosted smoke: set CORVO_PASSWORD privately in your environment first
+python -m scripts.smoke_deployment --base-url https://corvo-procurement.vercel.app --username evaluator --input /private/batch.csv
 ```
 
 Browser tests start isolated FastAPI/SQLite with synthetic data. Install Chromium first from `frontend/` using `npx playwright install chromium`. The repository's Python virtual environment must exist; `CORVO_PYTHON` can select another interpreter. Original task data and private reports are excluded from public test fixtures.

@@ -308,6 +308,8 @@ export const api = {
       "/api/contracts/proposals",
       z.object({ items: z.array(ProposalSchema) }),
     ),
+  contract: (contractId: string, as_of = "") =>
+    call("/api/contracts/" + id(contractId) + qs({ as_of }), ContractSchema),
   uploadContract: (file: File) =>
     call("/api/contracts/upload", ProposalSchema, form(file)),
   approveContract: (proposalId: string, contract: unknown, reason: string) =>

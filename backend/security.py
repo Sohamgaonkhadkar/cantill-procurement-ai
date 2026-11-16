@@ -94,6 +94,24 @@ def authenticate(name,password):
     return result
 
 bearer=HTTPBearer(auto_error=False)
+
+def consume_rate_limit(actor,bucket,limit=60,window=60):
+    """Persist a bounded-operation budget across workers and cold starts."""
+    current=int(time.time())
+    key='budget-'+hashlib.sha256((bucket+':'+str(actor)).encode()).hexdigest()
+    with _sessions().begin() as s:
+        if s.bind.dialect.name=='postgresql':
+            from sqlalchemy.dialects.postgresql import insert
+        else:
+            from sqlalchemy.dialects.sqlite import insert
+        s.execute(insert(AuthThrottle).values(id=key,failures=0,window_started=current).on_conflict_do_nothing(index_elements=['id']))
+        row=s.scalar(select(AuthThrottle).where(AuthThrottle.id==key).with_for_update())
+        if current-row.window_started>=window:
+            row.failures=0;row.window_started=current
+        limited=row.failures>=limit
+        retry=max(1,window-(current-row.window_started))
+        if not limited: row.failures+=1
+    if limited: raise HTTPException(429,'Operation limit reached; retry after the current window',headers={'Retry-After':str(retry)})
 def user(credentials:HTTPAuthorizationCredentials|None=Depends(bearer)):
     try:
         token=credentials.credentials if credentials else ''

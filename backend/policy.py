@@ -72,6 +72,13 @@ def _validate_policy(policy):
     for key in ['group_days','need_days','history_days','preferred_days','po_hours','preferred_count','frequency_cap']:
         if type(p.get(key)) is not int or not 0<=p[key]<=10000: raise ValueError(f'Invalid parameter {key}')
     if p['frequency_cap']<1: raise ValueError('frequency_cap must be positive')
+    for key in ['excluded_supplier_ids','contract_excluded_supplier_ids']:
+        values=p.get(key,[])
+        if not isinstance(values,list) or len(values)>1000 or any(not isinstance(v,str) or not v.strip() or len(v)>128 for v in values) or len(values)!=len(set(values)):
+            raise ValueError(f'{key} requires unique supplier IDs')
+    approvals=p.get('additional_sourcing_approvals',{})
+    if not isinstance(approvals,dict) or any(k not in {'Material','Service','Capex'} or type(v) is not int or not 0<=v<=4 for k,v in approvals.items()):
+        raise ValueError('Additional sourcing approvals must be 0–4 per supported item type')
     for route,count in p['suggestions'].items():
         if route not in ROUTES or type(count) is not int or not 0<=count<=20: raise ValueError('Invalid suggestion count')
     if len(p['recency_days'])!=2 or not 0<=p['recency_days'][0]<=p['recency_days'][1]: raise ValueError('Invalid recency tiers')

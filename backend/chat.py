@@ -2,7 +2,18 @@ from datetime import datetime,timedelta,date
 from zoneinfo import ZoneInfo
 import re
 from .matching import normalize,specs,model_tokens
-from .domain import digest
+from .domain import digest,number
+
+NUMERIC=r'[+-]?\d[\d,]*(?:\.\d+)?(?:e[+-]?\d+)?'
+QUANTITY=r'\b(?:need|quantity|qty|around|about|make it)\s*(?:is|to|:|=)?\s*('+NUMERIC+r')\b(?![-/][a-z0-9])(?!\s*(?:inch|mm|hp|kw|gb|tons?)\b)'
+UNITS=r'(?<![\w.])('+NUMERIC+r')\s*(?:units?|pieces?|nos|pairs?|kg|ltr|litres?|meters?|mtr)\b'
+
+def specification_text(text,data):
+    text=re.sub(QUANTITY,' ',text,flags=re.I)
+    text=re.sub(UNITS,' ',text,flags=re.I)
+    text=re.sub(r'\b\d{4}-\d{2}-\d{2}\b|\bin\s+\d+\s+days?\b',' ',text,flags=re.I)
+    for pid in data.plants:text=re.sub(r'\b'+re.escape(pid)+r'\b',' ',text,flags=re.I)
+    return text
 
 def parse_message(state,message,data):
     state=dict(state); state.setdefault('description','')
@@ -13,15 +24,40 @@ def parse_message(state,message,data):
         state['description']=message; state.pop('estimated_unit_price',None); state.pop('uom',None)
     if re.search(r'\b(?:normal|routine)\b|\bnot\s+(?:urgent|(?:an?\s+)?emergency)\b',text): state['urgency']='Normal'
     elif re.search(r'\bemergency|\burgent\b',text): state['urgency']='Emergency'
-    estimate=re.search(r'(?:price|estimate)\s*(?:is|:|=)?\s*(\d+(?:\.\d+)?)',text)
-    if estimate and (state.get('item_code')=='NEW' or 'new item' in text): state['estimated_unit_price']=estimate[1]
+    estimate=re.search(r'(?:price|estimate)\s*(?:is|:|=)?\s*('+NUMERIC+r')',text)
+    if estimate and (state.get('item_code')=='NEW' or 'new item' in text):
+        try:
+            value=number(estimate[1])
+            if value<=0:raise ValueError()
+            state['estimated_unit_price']=str(value)
+        except ValueError:
+            state.pop('estimated_unit_price',None);state['ready']=False
+            return state,'Please provide a positive, finite estimated unit price in INR.'
+    mentioned=[]
     for pid,plant in data.plants.items():
         names=[pid.lower()]+[x for x in normalize(plant['name']).split() if len(x)>4 and x!='plant']
-        if any(re.search(r'\b'+re.escape(n)+r'\b',text) for n in names): state['plant']=pid
-    quantity=re.search(r'\b(?:need|quantity|qty|around|about|make it)\s*(?:is|to|:|=)?\s*(\d+(?:\.\d+)?)\b(?![-/][a-z0-9])(?!\s*(?:inch|mm|hp|kw|gb|tons?)\b)',text)
-    if not quantity: quantity=re.search(r'\b(\d+(?:\.\d+)?)\s*(?:units?|pieces?|nos|pairs?|kg|ltr|litres?|meters?|mtr)\b',text)
-    if quantity: state['quantity']=quantity[1]
-    elif re.fullmatch(r'\s*\d+(?:\.\d+)?\s*',text): state['quantity']=text.strip()
+        found=any(re.search(r'\b'+re.escape(n)+r'\b',text) for n in names)
+        negated=any(re.search(r'\b(?:not|instead of)\s+(?:plant\s+)?'+re.escape(n)+r'\b',text) for n in names)
+        if found and not negated:mentioned.append(pid)
+        elif negated and state.get('plant')==pid:state.pop('plant',None)
+    if len(mentioned)>1:
+        state.pop('plant',None);state['ready']=False
+        return state,'I found multiple plants. Choose one plant for this request: '+', '.join(mentioned)
+    if mentioned:state['plant']=mentioned[0]
+    quantity=re.search(QUANTITY,text)
+    if not quantity: quantity=re.search(UNITS,text)
+    raw_quantity=quantity[1] if quantity else text.strip() if re.fullmatch(NUMERIC,text.strip(),re.I) else None
+    if raw_quantity is not None:
+        try:
+            value=number(raw_quantity)
+            if value<=0:raise ValueError()
+            state['quantity']=str(value)
+        except ValueError:
+            state.pop('quantity',None);state['ready']=False
+            return state,'Quantity must be a positive, finite number within the supported range.'
+    elif re.search(r'\b(?:quantity|qty)\b',text):
+        state.pop('quantity',None);state['ready']=False
+        return state,'Please enter a positive numeric quantity.'
     today=datetime.now(ZoneInfo('Asia/Kolkata')).date()
     if state.get('item_code')=='NEW':
         aliases={'nos':'NOS','units':'NOS','unit':'NOS','pieces':'NOS','piece':'NOS','pair':'PAIR','pairs':'PAIR','kg':'KG','mtr':'MTR','metres':'MTR','meters':'MTR','ltr':'LTR','litres':'LTR','liters':'LTR','set':'SET','sets':'SET'}
@@ -46,7 +82,18 @@ def parse_message(state,message,data):
                 delta=(day-today.weekday())%7 or 7
                 if 'next '+name in text and today.weekday()<day: delta+=7
                 state['need_by_date']=(today+timedelta(days=delta)).isoformat()
-    code=re.search(r'ITM-\d+',message,re.I)
+    known=[key for key in data.items if re.search(r'\b'+re.escape(key)+r'\b',message,re.I)]
+    selected=None
+    for key in known:
+        if re.search(r'\b(?:to|use|select|choose)\s+(?:item\s+)?'+re.escape(key)+r'\b',message,re.I):selected=key
+    if len(known)>1 and selected is None:
+        state.pop('item_code',None);state['ready']=False
+        return state,'I found multiple item codes. Select exactly one intended catalog item.'
+    if len(known)==1 and re.search(r'\bnot\s+(?:item\s+)?'+re.escape(known[0])+r'\b',message,re.I):
+        state.pop('item_code',None);state['ready']=False
+        return state,'Which item should replace the excluded code?'
+    selected=selected or (known[0] if known else None)
+    code=(selected,) if selected else re.search(r'ITM-\d+',message,re.I)
     if code and code[0].upper() not in data.items:
         state.pop('item_code',None); state['ready']=False
         return state,'That item code is not in the master. Select a valid code or describe a new item explicitly.'
@@ -62,7 +109,7 @@ def parse_message(state,message,data):
     # Reconsider a clearly described item in every turn. Looking only while the
     # item field is empty silently ignores corrections after confirmation-ready.
     for query_text in [message,state['description']+' '+message]:
-        query=normalize(query_text); qwords=set(query.split()); qspecs=specs(query)
+        query=normalize(specification_text(query_text,data)); qwords=set(query.split()); qspecs=specs(query)
         candidates=[]
         for key,item in data.items.items():
             target=normalize(item['description']); words=set(target.split()); numeric=specs(target)
