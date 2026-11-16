@@ -44,7 +44,7 @@ Local API: http://localhost:8000. Public API base: https://corvo-procurement.ver
 
 ## Hosted release verification — 16 November 2026
 
-Production deployment `dpl_BwHyjpsts9fb7anRqw9oCWv14tVR` runs application commit `af0f30ad932ae84a7ccee4de7f6ed606866da317`. It was built with production environment secrets, staged without changing the public alias, then promoted after a successful build. Public health stayed available during the next release build. Vercel CLI source uploads were used because the Vercel Git connection is not installed; GitHub pushes alone do not currently trigger deployment. Documentation-only commits after this application commit do not alter the deployed code.
+Current production deployment `dpl_6dyCFY72tKGsFFzo7bdtbyCCg3HT` runs application commit `f1abfcb88a88bea0be50fe5b2880267ef6b64b36`. It was built with production environment secrets, staged without changing the public alias, then promoted after a successful build. Public health stayed available during the next release build. Vercel CLI source uploads were used because the Vercel Git connection is not installed; GitHub pushes alone do not currently trigger deployment. Documentation-only commits after this application commit do not alter the deployed code.
 
 - Public Chromium verification loaded all eleven screens against FastAPI, with zero browser exceptions and exclusively same-origin API calls.
 - The private sample produced 186 rows / 149 requirements / two invalid lines, with output hash `9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f`. Authenticated 13-column CSV download, replay, supplier ranking and database-backed logout revocation passed.
@@ -58,3 +58,5 @@ Private screenshots, reports, exports and access values remain ignored. No origi
 ## Submission access update
 
 At the owner's explicit request, SUBMISSION_ACCESS=true enables published role passwords and individual requester self-registration. The login page fills and shows the selected role's submission password. This deliberately makes shared Admin/Buyer/Requester workflows available to assessment visitors. Private environment passwords and SESSION_SECRET are never returned by the options endpoint. Set SUBMISSION_ACCESS=false and redeploy to disable public submission credentials and self-registration. Registration is requester-only, hash-backed, audited, duplicate-safe and persistently rate limited. The procurement engine and migrations remain unchanged.
+
+Public Chromium verification of this update passed visible password autofill for all three roles, Admin sign-in, mobile individual signup, requester-only permissions and later individual login. The temporary verification account was disabled afterward. Live OpenAPI equals the checked-in specification, public health is 200 with PostgreSQL connected, and no browser exceptions were recorded. The transparent hero and login page were visually inspected from actual public production screenshots.
