@@ -2,7 +2,7 @@
 
 Deterministic procurement decisions, versioned policy amendments, exact contract accounting and auditable buyer workflows for the Cantill assessment. The authoritative backend is implemented here. Arena's React + TypeScript + Vite frontend is integrated with this API, preserving its custom 3D scenes, media and visual identity.
 
-Live application: **https://corvo-procurement.vercel.app**. Health: [database connectivity](https://corvo-procurement.vercel.app/health). API reference: [Swagger UI](https://corvo-procurement.vercel.app/docs). Integration contract: [FRONTEND_API_CONTRACT.md](FRONTEND_API_CONTRACT.md). Production credentials are separate from local demo credentials and remain in the ignored local access file.
+Live application: **https://corvo-procurement.vercel.app**. Health: [database connectivity](https://corvo-procurement.vercel.app/health). API reference: [Swagger UI](https://corvo-procurement.vercel.app/docs). Integration contract: [FRONTEND_API_CONTRACT.md](FRONTEND_API_CONTRACT.md). For submission, select a controlled role: its public submission password fills and displays automatically. Individual users can create their own Requester account. Private operational credentials remain in the ignored local access file.
 
 Local API: **http://localhost:8000**.
 

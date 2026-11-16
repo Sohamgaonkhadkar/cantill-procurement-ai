@@ -541,7 +541,7 @@ h3 {
   inset: 0 0 150px 40% !important;
   width: auto !important;
   height: auto !important;
-  opacity: 0.6;
+  opacity: 1;
 }
 .industrial-hero .hero-type {
   position: relative !important;
@@ -558,6 +558,9 @@ h3 {
   height: 480px !important;
   margin: 0 !important;
   grid-row: 2;
+}
+.hero-machine-view {
+  mask-image: radial-gradient(ellipse at 50% 45%, #000 48%, transparent 80%);
 }
 .industrial-hero .hero-metrics {
   position: relative !important;

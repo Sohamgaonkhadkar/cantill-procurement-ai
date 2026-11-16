@@ -11,6 +11,10 @@ from .db import User,AuthSession,AuthThrottle,Audit,now as timestamp
 SECRET=os.getenv('SESSION_SECRET') or secrets.token_hex(32)
 DEMO=os.getenv('DEMO_MODE','true').lower()=='true'
 ROLES={'requester','buyer','admin'}
+SUBMISSION_PASSWORDS={role:f'corvo-{role}-demo' for role in sorted(ROLES)}
+
+def submission_access():
+    return os.getenv('SUBMISSION_ACCESS','false').lower()=='true'
 if not DEMO and (not os.getenv('SESSION_SECRET') or any(not os.getenv(r.upper()+'_PASSWORD') for r in ROLES)):
     raise RuntimeError('Production requires SESSION_SECRET and all three role passwords')
 _sessions=None
@@ -66,6 +70,10 @@ def authenticate(name,password):
             if not stored: stored=fallback_hash(name if name in ROLES else '__missing__')
             usable_credential=bool(account and (account.payload.get('password_hash') or (name in ROLES and account.payload.get('type')=='controlled_demo_account')))
             valid=verify_password(password,stored) and usable_credential
+            # Explicit public submission access uses published demo credentials,
+            # never exposes or substitutes the private operational passwords.
+            if submission_access() and name in ROLES and account and account.payload.get('type')=='controlled_demo_account':
+                valid=valid or hmac.compare_digest(password.encode(),SUBMISSION_PASSWORDS[name].encode())
             if not account or account.payload.get('enabled',True) is False or not valid:
                 throttle.failures+=1
                 failure=HTTPException(401,'Invalid credentials')

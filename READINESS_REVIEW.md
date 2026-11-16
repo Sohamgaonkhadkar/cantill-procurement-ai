@@ -2,7 +2,7 @@
 
 Reviewed 16 November 2026. This is an implementation self-review, not an independent security audit or an evaluator score. No weakness-free or 10/10 guarantee is made.
 
-The backend is integrated with Arena and deployed on Vercel. The hardening suite passes 127 tests on Linux/PostgreSQL and 125 on Windows/SQLite, with two PostgreSQL-only concurrency tests skipped on SQLite. Private checks match all 14 supplied procurement examples and three supplier-ranking examples. The 186-row sample retains its original business-output hash after hardening. Known-case success does not establish unseen blind-test accuracy.
+The backend is integrated with Arena and deployed on Vercel. The hardening suite passes 130 tests on Linux/PostgreSQL and 128 on Windows/SQLite, with two PostgreSQL-only concurrency tests skipped on SQLite. Private checks match all 14 supplied procurement examples and three supplier-ranking examples. The 186-row sample retains its original business-output hash after hardening. Known-case success does not establish unseen blind-test accuracy.
 
 Closed gaps:
 

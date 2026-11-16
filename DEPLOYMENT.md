@@ -53,3 +53,8 @@ Production deployment `dpl_BwHyjpsts9fb7anRqw9oCWv14tVR` runs application commit
 - Public health returns HTTP 200 with database connected and DEMO_MODE false. Business endpoints return HTTP 401 without an application session. Deployment previews retain Vercel Authentication protection.
 
 Private screenshots, reports, exports and access values remain ignored. No original assessment data or secrets were committed or bundled into the frontend.
+
+
+## Submission access update
+
+At the owner's explicit request, SUBMISSION_ACCESS=true enables published role passwords and individual requester self-registration. The login page fills and shows the selected role's submission password. This deliberately makes shared Admin/Buyer/Requester workflows available to assessment visitors. Private environment passwords and SESSION_SECRET are never returned by the options endpoint. Set SUBMISSION_ACCESS=false and redeploy to disable public submission credentials and self-registration. Registration is requester-only, hash-backed, audited, duplicate-safe and persistently rate limited. The procurement engine and migrations remain unchanged.

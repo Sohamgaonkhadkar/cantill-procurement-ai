@@ -2,6 +2,7 @@ import { z } from "zod";
 import { API_BASE_URL } from "@/lib/config";
 import {
   LoginResponseSchema,
+  AuthOptionsSchema,
   RunResponseSchema,
   RequirementResponseSchema,
   PolicyResponseSchema,
@@ -105,6 +106,12 @@ export const qs = (values: Record<string, string | number | undefined>) => {
 };
 const id = encodeURIComponent;
 export const api = {
+  authOptions: () => call("/api/auth/options", AuthOptionsSchema),
+  register: (body: {
+    username: string;
+    display_name: string;
+    password: string;
+  }) => call("/api/auth/register", LoginResponseSchema, json(body)),
   login: (identity: { role?: string; username?: string; password: string }) =>
     call("/api/auth/login", LoginResponseSchema, json(identity)),
   me: () =>

@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
-import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
+import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -91,8 +91,10 @@ const atmosphereFrag = /* glsl */ `
     float g = hash(gl_FragCoord.xy + fract(uTime) * 100.0) - 0.5;
     col += g * 0.016;
     col *= 0.86 + n2 * 0.1;
-    // Emissive-only output: the photographic layer behind stays visible.
-    gl_FragColor = vec4(col * 0.62, 1.0);
+    // Local, translucent glow. A full-alpha plane hides the photograph even
+    // when the WebGL renderer itself has a transparent clear colour.
+    float feather = 1.0 - smoothstep(0.12, 0.55, length(vUv - 0.5));
+    gl_FragColor = vec4(col * 0.62, feather * 0.18);
   }
 `;
 
@@ -114,10 +116,8 @@ function Atmosphere({
           uEnergy: { value: 0.5 },
         },
         depthWrite: false,
-        // Additive: the atmosphere becomes light laid over the footage behind
-        // the canvas instead of an opaque painted backdrop.
         transparent: true,
-        blending: THREE.AdditiveBlending,
+        blending: THREE.NormalBlending,
       }),
     [],
   );
@@ -579,7 +579,7 @@ export function CoreScene(props: CoreProps) {
     <div ref={wrap} className="absolute inset-0">
       <Canvas
         dpr={tier === "high" ? [1, 1.75] : [1, 1.25]}
-        camera={{ position: [0, 0.2, 9.2], fov: 34 }}
+        camera={{ position: [0, 0.2, 11.4], fov: 34 }}
         gl={{
           antialias: tier !== "mobile",
           alpha: true,
@@ -620,12 +620,11 @@ export function CoreScene(props: CoreProps) {
         {tier === "high" ? (
           <EffectComposer multisampling={0}>
             <Bloom
-              intensity={0.5}
+              intensity={0.28}
               luminanceThreshold={0.62}
               luminanceSmoothing={0.25}
               mipmapBlur
             />
-            <Vignette eskil={false} offset={0.28} darkness={0.7} />
           </EffectComposer>
         ) : null}
       </Canvas>

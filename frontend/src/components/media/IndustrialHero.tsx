@@ -23,8 +23,7 @@ import { formatDate, pad } from "@/lib/format";
 import { cn } from "@/utils/cn";
 import { CinematicVideo } from "./CinematicVideo";
 import { EditorialReveal, SweepLine, VerticalLabel } from "./EditorialReveal";
-import { HERO_POSTER, HERO_VIDEO, VISUALS } from "./assets";
-import { IndustrialImage } from "./IndustrialImage";
+import { HERO_POSTER, HERO_VIDEO } from "./assets";
 
 const STAGE_TARGET = [
   "/request-studio",
@@ -54,19 +53,6 @@ export function IndustrialHero({
   const reduce = useReducedMotion();
   const heroRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
-  const [isLg, setIsLg] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(min-width: 1024px)").matches,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const onChange = () => setIsLg(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
   const overview = useOverview();
   const policies = usePolicies();
   const requests = useRequests();
@@ -95,7 +81,7 @@ export function IndustrialHero({
   );
   const typeY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : -26]);
   const typeOpacity = useTransform(scrollYProgress, [0.35, 0.95], [1, 0.15]);
-  const scrim = useTransform(scrollYProgress, [0, 1], [0.18, 0.62]);
+  const scrim = useTransform(scrollYProgress, [0, 1], [0.06, 0.4]);
 
   const firstQueued = requests.data?.items.find(
     (r) => r.approval_status === "pending",
@@ -188,31 +174,6 @@ export function IndustrialHero({
             aria-hidden
           />
         </CinematicVideo>
-
-        {/* Secondary physical frame: machined still, offset for asymmetry.
-            Mounted only at lg+ so small screens never carry an unused image. */}
-        {isLg ? (
-          <motion.div
-            className="absolute bottom-8 right-8 w-[210px]"
-            initial={reduce ? false : { opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.5, duration: 0.9, ease: EASE_OUT }}
-            style={{
-              clipPath: "polygon(0 0, 100% 0, 100% 82%, 82% 100%, 0 100%)",
-            }}
-          >
-            <IndustrialImage
-              asset={VISUALS.coolant}
-              className="h-[124px] w-full"
-              grade="violet"
-            />
-            <div className="num mt-2 text-[9px] leading-relaxed tracking-[0.14em] text-lavender/80">
-              MATERIAL FLOW · COOLANT PHASE
-              <br />
-              <span className="text-lavender/50">PHOTOGRAPHY · PEXELS</span>
-            </div>
-          </motion.div>
-        ) : null}
       </motion.div>
 
       {/* Precision line sweeping across the whole hero once */}
@@ -223,24 +184,26 @@ export function IndustrialHero({
         className="hero-core relative z-10 -mt-[13vh] h-[38vh] w-full md:absolute md:bottom-[132px] md:right-0 md:top-0 md:mt-0 md:h-auto md:w-[60%]"
         style={{ scale: coreScale, rotate: coreRotate }}
       >
-        <CoreScene
-          activeStage={hover}
-          onHoverStage={setHover}
-          onSelectStage={(i) =>
-            navigate(
-              i === 2 && firstQueued
-                ? `/decision-xray/${firstQueued}?run_id=${String(requests.data?.items[0]?.run_id ?? overview.data?.latest_run?.id ?? "")}`
-                : STAGE_TARGET[i],
-            )
-          }
-          onCoreClick={() =>
-            navigate(
-              firstQueued
-                ? `/decision-xray/${firstQueued}?run_id=${String(requests.data?.items[0]?.run_id ?? overview.data?.latest_run?.id ?? "")}`
-                : "/decision-xray",
-            )
-          }
-        />
+        <div className="hero-machine-view absolute inset-0 bottom-[140px]">
+          <CoreScene
+            activeStage={hover}
+            onHoverStage={setHover}
+            onSelectStage={(i) =>
+              navigate(
+                i === 2 && firstQueued
+                  ? `/decision-xray/${firstQueued}?run_id=${String(requests.data?.items[0]?.run_id ?? overview.data?.latest_run?.id ?? "")}`
+                  : STAGE_TARGET[i],
+              )
+            }
+            onCoreClick={() =>
+              navigate(
+                firstQueued
+                  ? `/decision-xray/${firstQueued}?run_id=${String(requests.data?.items[0]?.run_id ?? overview.data?.latest_run?.id ?? "")}`
+                  : "/decision-xray",
+              )
+            }
+          />
+        </div>
         {/* Stage rail — DOM overlay, focusable and screen-reader reachable.
             Hovering syncs with the in-canvas nodes; clicking opens that stage's workspace. */}
         <div className="absolute right-5 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-1.5 md:flex">
@@ -478,9 +441,6 @@ function Metric({
           format={(n) => pad(Math.round(n))}
           className="font-display text-[40px] font-medium leading-none tracking-[-0.04em] text-porcelain md:text-[60px]"
         />
-        <span className={`num text-[11px] ${color}`}>
-          / {label.split(" ")[0]}
-        </span>
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ from .engine import process,select_policy
 from .policy import initial_policy,validate_policy,FACTS,OPS,ROUTES
 from .ingest import pdf_text,extract_contract,validate_contract
 from .service import current_data,execute_run,policies,audit,comparison,save_data
-from .security import authenticate,user,require,DEMO,configure_sessions,role_of,hash_password
+from .security import authenticate,user,require,DEMO,configure_sessions,role_of,hash_password,submission_access,SUBMISSION_PASSWORDS
 from .suppliers import preferred
 from .amendments import policy_diff as field_diff
 from .language import interpret
@@ -75,6 +75,17 @@ class CreateUserBody(Body):
     display_name:str=Field(min_length=1,max_length=100)
     role:Literal['requester','buyer','admin']
     password:str=Field(min_length=15,max_length=128)
+class RegisterBody(Body):
+    username:str=Field(pattern=r'^[a-z][a-z0-9._-]{2,63}$')
+    display_name:str=Field(min_length=1,max_length=100)
+    password:str=Field(min_length=15,max_length=128)
+class PublicRole(Body):
+    role:Literal['requester','buyer','admin']
+    password:str
+class AuthOptions(Body):
+    submission_access:bool
+    registration_enabled:bool
+    roles:list[PublicRole]
 class PolicyBody(Body):
     policy:PolicyDefinition
     source_text:str=''
@@ -127,6 +138,38 @@ def health():
 def sign_in(body:LoginBody):
     if bool(body.username)==bool(body.role): raise ValueError('Supply exactly one of username or role')
     return authenticate(body.username or body.role,body.password)
+@app.get('/api/auth/options',tags=['Authentication'],response_model=AuthOptions)
+def auth_options():
+    enabled=submission_access()
+    return {'submission_access':enabled,'registration_enabled':enabled,'roles':[{'role':role,'password':password} for role,password in SUBMISSION_PASSWORDS.items()] if enabled else []}
+
+@app.post('/api/auth/register',tags=['Authentication'],response_model=LoginResponse,status_code=201)
+def register(body:RegisterBody,request:Request):
+    if not submission_access(): raise HTTPException(403,'Self-registration is disabled')
+    # Requester-only registration, with an atomic persistent per-address quota.
+    # Never accept a role from this public endpoint.
+    from .db import AuthThrottle
+    import time
+    now=int(time.time())
+    key=hashlib.sha256(('registration:'+str(request.client.host if request.client else 'unknown')).encode()).hexdigest()
+    limited=False
+    with Session.begin() as s:
+        if s.bind.dialect.name=='postgresql':
+            from sqlalchemy.dialects.postgresql import insert
+        else:
+            from sqlalchemy.dialects.sqlite import insert
+        s.execute(insert(AuthThrottle).values(id=key,failures=0,window_started=now).on_conflict_do_nothing(index_elements=['id']))
+        throttle=s.scalar(select(AuthThrottle).where(AuthThrottle.id==key).with_for_update())
+        if now-throttle.window_started>=900: throttle.failures=0; throttle.window_started=now
+        if throttle.failures>=5: limited=True
+        else: throttle.failures+=1
+        delay=max(1,900-(now-throttle.window_started))
+    if limited: raise HTTPException(429,'Too many account creation attempts; retry later',headers={'Retry-After':str(delay)})
+    with Session.begin() as s:
+        if body.username in SUBMISSION_PASSWORDS or s.get(User,body.username): raise HTTPException(409,'Username already exists')
+        s.add(User(id=body.username,role='requester',payload={'display_name':body.display_name,'password_hash':hash_password(body.password),'enabled':True,'type':'individual'}))
+        audit(s,body.username,'user.self_registered',{'user_id':body.username,'role':'requester'})
+    return authenticate(body.username,body.password)
 @app.get('/api/auth/me',tags=['Authentication'])
 def me(actor=Depends(user)): return {'id':str(actor),'role':role_of(actor),'demo_mode':DEMO}
 @app.post('/api/auth/logout',tags=['Authentication'])

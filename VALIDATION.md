@@ -4,8 +4,8 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 
 | Check | Actual result |
 |---|---|
-| Synthetic Python unit/API/migration/serverless suite on Windows, Python 3.14, SQLite API fixtures | **125 passed, 2 PostgreSQL-only tests skipped** |
-| Synthetic suite on Linux/Python 3.12 with API fixtures using isolated PostgreSQL `corvo_test` | **127 passed**, including independent concurrent approvals contending for a contract ceiling, account isolation, session revocation, login throttling, amendment governance, matching/numeric adversarial cases and randomized determinism invariants |
+| Synthetic Python unit/API/migration/serverless suite on Windows, Python 3.14, SQLite API fixtures | **128 passed, 2 PostgreSQL-only tests skipped** |
+| Synthetic suite on Linux/Python 3.12 with API fixtures using isolated PostgreSQL `corvo_test` | **130 passed**, including independent concurrent approvals contending for a contract ceiling, account isolation, session revocation, login throttling, amendment governance, matching/numeric adversarial cases and randomized determinism invariants |
 | Full sample batch | 186 output rows, 149 requirements, 2 explicit invalid-line outcomes |
 | Worked procurement examples | All 14 privately checked against original source examples, using exact rates instead of presentation rounding |
 | Worked supplier rankings | All 3 privately checked and matched |
@@ -24,7 +24,7 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 
 The suite reports one Starlette deprecation warning concerning its httpx TestClient compatibility adapter. It does not affect the passing assertions. Original worked-example fixtures and exported sample results remain private and are not included in the public tests.
 
-The hardening pass increased the synthetic suite from 79 to 127 tests. It covers individual identities and requester ownership, persisted logout/disable/throttling, redacted validation errors, scoped policy upload through activation, unresolved-source review gating, incomplete item specifications, inch/model-suffix matching, numeric resource bounds, manual scanned-contract proposals, randomized input-order invariants and two independent PostgreSQL approval transactions. Private procurement/ranking checks still match the original sample business hash.
+The hardening pass increased the synthetic suite from 79 to 130 tests. It covers individual identities and requester ownership, persisted logout/disable/throttling, redacted validation errors, scoped policy upload through activation, unresolved-source review gating, incomplete item specifications, inch/model-suffix matching, numeric resource bounds, manual scanned-contract proposals, randomized input-order invariants and two independent PostgreSQL approval transactions. Private procurement/ranking checks still match the original sample business hash.
 
 The managed-preview HTTP hardening check passed (9 affected sample lines, 269.75 seconds), separately exercising individual requester accounts, cross-user run/export/requirement isolation, persistent logout, login throttling, a scoped plant/category amendment, simulation, review/approval/activation, reprocessing/comparison and historical replay. Synthetic identities are disabled and the test amendment withdrawn afterward. This uses a local listener with a remote preview database; it is not a public deployment test.
 
@@ -40,9 +40,9 @@ See `DEPLOYMENT.md` for the authorized repository/project and the release sequen
 
 ## Arena integration verification
 
-All nine Playwright scenarios pass against isolated real FastAPI/SQLite: CSV/export/replay, approvals, duplicate commitment rejection, sourcing override, policy proposal/upload/simulation/review/approval/activation, chat confirmation and session continuity, manual scanned-contract review, session revocation, throttling, outage states and pagination. All eleven pages were captured and visually inspected at 1440px and 390px with automated horizontal-overflow checks.
+All eleven Playwright scenarios pass against isolated real FastAPI/SQLite: CSV/export/replay, approvals, duplicate commitment rejection, sourcing override, policy proposal/upload/simulation/review/approval/activation, chat confirmation and session continuity, manual scanned-contract review, session revocation, throttling, outage states and pagination. All eleven pages were captured and visually inspected at 1440px and 390px with automated horizontal-overflow checks.
 
-The production Vite build served directly by Docker/FastAPI/PostgreSQL separately passed an actual Chromium run over the original private sample: 186 outputs, 149 requirements, two invalid lines, authenticated export, replay and supplier view, with zero browser exceptions. Its output hash remains 9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f. The final image passes 127 PostgreSQL tests; Windows passes 125 with two PostgreSQL-only skips. TypeScript, production build and generated-client drift checks pass.
+The production Vite build served directly by Docker/FastAPI/PostgreSQL separately passed an actual Chromium run over the original private sample: 186 outputs, 149 requirements, two invalid lines, authenticated export, replay and supplier view, with zero browser exceptions. Its output hash remains 9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f. The final image passes 130 PostgreSQL tests; Windows passes 128 with two PostgreSQL-only skips. TypeScript, production build and generated-client drift checks pass.
 
 Hosted checks exposed and fixed a frontend draft-selection race and reuse of a PR identity across submissions in one chat. New regressions assert the simulation policy ID, distinct chat commitments and cross-instance confirmation serialization. Procurement routing algorithms and schema migrations are unchanged.
 
@@ -50,3 +50,5 @@ Hosted checks exposed and fixed a frontend draft-selection race and reuse of a P
 ## Hosted browser verification
 
 Public production Chromium passed all eleven screens, the original 186-row sample, authenticated 13-column CSV export, deterministic replay, supplier ranking and persisted logout, with zero browser exceptions and no foreign API origins. A preexisting run and its immutable output hash survived redeployment and replayed successfully. Hosted preview additionally passed the full mutable policy/chat/PO/override/contract workflows against its separate Neon database; the amendment comparison changed 48 sample lines and the test policy was withdrawn afterward. Production purchasing commitments were not used for synthetic verification.
+
+Submission access update: 130 PostgreSQL tests and 128 Windows/SQLite tests (two PostgreSQL-only skips) pass. All eleven browser scenarios pass, including role password autofill, requester-only signup, automatic sign-in and later individual login. A targeted rerun captures the final transparent hero at desktop/mobile widths.

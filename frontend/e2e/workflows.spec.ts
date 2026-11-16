@@ -5,6 +5,83 @@ const headers =
 const csv =
   headers +
   "\nPR-E2E-A,1,2026-11-01 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-B,1,2026-11-02 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-C,1,2026-11-03 10:00,Synthetic user,Testing,P-A,ITM-9002,Hydraulic hose 1/2 inch 2 wire,3,MTR,,2026-11-20,Normal\nPR-E2E-BAD,1,2026-11-04 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing,abc,NOS,,2026-11-20,Normal\n";
+test("submission role passwords fill visibly and the core leaves its background visible", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("corvo.intro.seen.v1", "1"),
+  );
+  await page.goto("/");
+  for (const role of ["requester", "buyer", "admin"]) {
+    await page.getByLabel("Role", { exact: true }).selectOption(role);
+    await expect(page.getByLabel("Password", { exact: true })).toHaveValue(
+      `corvo-${role}-demo`,
+    );
+    await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+      "type",
+      "text",
+    );
+  }
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: /PROCUREMENT/ }),
+  ).toBeVisible();
+  await page.waitForTimeout(3000);
+  const bounds = await page.evaluate(() => {
+    const a = document
+      .querySelector(".hero-machine-view")!
+      .getBoundingClientRect();
+    const b = document
+      .querySelector(".hero-stage-note")!
+      .getBoundingClientRect();
+    return { sceneBottom: a.bottom, noteTop: b.top };
+  });
+  expect(bounds.sceneBottom).toBeLessThanOrEqual(bounds.noteTop + 1);
+  await page.screenshot({ path: "../.private/hero-refined-desktop.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: "../.private/hero-refined-mobile.png" });
+});
+test("individual creates a real requester account and can sign in again", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() =>
+    localStorage.setItem("corvo.intro.seen.v1", "1"),
+  );
+  await page.goto("/");
+  await page.getByLabel("Account type").selectOption("individual");
+  await page.getByRole("button", { name: "New here? Create account" }).click();
+  await page.getByLabel("Username", { exact: true }).fill("browser-new-user");
+  await page.getByLabel("Full name", { exact: true }).fill("Browser New User");
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("Synthetic-new-password-123");
+  await page.screenshot({ path: "../.private/signup-mobile.png" });
+  const registration = page.waitForResponse((r) =>
+    r.url().endsWith("/api/auth/register"),
+  );
+  await page.getByRole("button", { name: "Create account & sign in" }).click();
+  const r = await registration;
+  expect(r.status()).toBe(201);
+  expect((await r.json()).role).toBe("requester");
+  await expect(
+    page.getByRole("heading", { level: 1, name: /PROCUREMENT/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Policy Reactor", exact: true }),
+  ).toHaveCount(0);
+  await page.reload();
+  await page.getByLabel("Account type").selectOption("individual");
+  await page.getByLabel("Username", { exact: true }).fill("browser-new-user");
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("Synthetic-new-password-123");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { level: 1, name: /PROCUREMENT/ }),
+  ).toBeVisible();
+});
 async function login(page: Page, role = "admin") {
   await page.addInitScript(() =>
     localStorage.setItem("corvo.intro.seen.v1", "1"),
