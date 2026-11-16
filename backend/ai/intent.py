@@ -96,9 +96,23 @@ def validate_updates(state,plan,message,data):
         elif field=='uom':
             allowed={item['uom'].upper() for item in data.items.values()}|{'NOS','PAIR','KG','MTR','LTR','SET'}
             aliases={'NOS':['nos','units','pieces','piece'],'PAIR':['pair','pairs'],'KG':['kg','kilogram','kilograms'],'MTR':['mtr','metres','meters','metre','meter'],'LTR':['ltr','litres','liters','litre','liter'],'SET':['set','sets']}
-            if value.upper() in allowed and any(re.search(r'\b'+re.escape(word)+r'\b',fragment,re.I) for word in aliases.get(value.upper(),[value])):state['uom']=value.upper()
+            canonical=next((key for key,words in aliases.items() if value.casefold() in words),value.upper())
+            if canonical in allowed and any(re.search(r'\b'+re.escape(word)+r'\b',fragment,re.I) for word in aliases.get(canonical,[value])):state['uom']=canonical
             else:warnings.append('Unsupported unit of measure')
         elif field=='description':state['description']=value[:1000] if value.casefold() in fragment.casefold() else fragment[:1000]
+    # Explicit catalog IDs are deterministic user evidence even when a language
+    # model omits them. This never resolves an incomplete description to a SKU.
+    mentioned=[]
+    for code in data.items:
+        if not re.search(r'(?<![\w-])'+re.escape(code)+r'(?![\w-])',message,re.I):continue
+        negative=re.search(r"\b(?:not|except|exclude|avoid|without|don't\s+use|do\s+not\s+use)\s+(?:(?:the|item|that)\s+)?"+re.escape(code)+r'(?![\w-])',message,re.I)
+        if not negative:mentioned.append(code)
+        elif state.get('item_code')==code:state.pop('item_code',None)
+    selected=[code for code in mentioned if re.search(r'\b(?:use|select|choose)\s+(?:item\s+)?'+re.escape(code)+r'(?![\w-])',message,re.I)]
+    if len(mentioned)==1:state['item_code']=mentioned[0]
+    elif len(mentioned)>1:
+        if len(selected)==1:state['item_code']=selected[0]
+        else:state.pop('item_code',None);warnings.append('Select exactly one catalog item for this draft')
     return validate_draft(state,data),warnings
 
 def validate_draft(state,data):

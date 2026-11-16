@@ -145,6 +145,12 @@ def test_hallucinated_fields_rejected_and_negative_model_cleared(data):
     assert not validate_updates({},invented,'I need a bearing',data)[0].get('plant')
     state,_=validate_updates({'item_code':'I-A'},IntentPlan(intent='correct_purchase_request'),'not 6205-2RS',data)
     assert not state.get('item_code')
+    pair_data=deepcopy(data);pair_data.items['I-A']['uom']='PAIR'
+    omitted=IntentPlan(intent='create_purchase_request',updates={'quantity':'30','uom':'pairs'},evidence={'quantity':'thirty','uom':'pairs'})
+    state,warnings=validate_updates({},omitted,'I need thirty pairs of I-A',pair_data)
+    assert state['item_code']=='I-A' and state['quantity']=='30' and state['uom']=='PAIR' and not warnings
+    state,_=validate_updates({},IntentPlan(intent='create_purchase_request'),'Need I-A and I-B',data)
+    assert not state.get('item_code')
 
 def test_grounding_rejects_unknown_citation_and_financial_invention():
     citations=[{'id':'real'}];evidence={'value':'100.00'}
