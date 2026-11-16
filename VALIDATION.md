@@ -67,3 +67,5 @@ The standalone read-only checker accepted all three rehearsal files with supplie
 ## Synthetic demo isolation
 
 Five backend regressions check calculated demo responses against the real engine, quantity-sensitive outcomes, CSV fidelity, authentication, assessment-record isolation and the 200-row demo limit. The real-browser demo scenario calculates nine rows, downloads a synthetic export, uploads an edited demo CSV, verifies the changed route and confirms unchanged live overview data. The demo uses fictional input data rather than precomputed output fixtures.
+
+The public production browser check also passed: nine computed demo rows spanning eight route families, authenticated synthetic CSV export, changed-quantity RFP routing, identical live overview and contract-register responses before/after, unchanged assessment sample hash and zero browser exceptions. Live OpenAPI matches the checked-in schema.
