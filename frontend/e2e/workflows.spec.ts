@@ -2,6 +2,32 @@ import { test, expect, type Page } from "@playwright/test";
 import path from "node:path";
 const headers =
   "pr_no,pr_line,created_at,requester,department,plant,item_code,description,quantity,uom,estimated_unit_price,need_by_date,urgency";
+test("startup survives blocked storage and fonts", async ({ page }) => {
+  await page.addInitScript(() =>
+    Object.defineProperty(window, "localStorage", {
+      get() {
+        throw new DOMException("Storage denied", "SecurityError");
+      },
+    }),
+  );
+  await page.route("https://fonts.googleapis.com/**", (r) => r.abort());
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Sign in", exact: true }),
+  ).toBeVisible();
+});
+test("blocked entry script shows reload recovery instead of a blank page", async ({
+  page,
+}) => {
+  await page.route("**/src/main.tsx", (r) => r.abort());
+  await page.goto("/");
+  await expect(
+    page.getByRole("link", { name: "Reload workspace", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Let’s reload your workspace.", { exact: true }),
+  ).toBeVisible();
+});
 const csv =
   headers +
   "\nPR-E2E-A,1,2026-11-01 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-B,1,2026-11-02 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-C,1,2026-11-03 10:00,Synthetic user,Testing,P-A,ITM-9002,Hydraulic hose 1/2 inch 2 wire,3,MTR,,2026-11-20,Normal\nPR-E2E-BAD,1,2026-11-04 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing,abc,NOS,,2026-11-20,Normal\n";

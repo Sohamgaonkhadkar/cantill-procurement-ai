@@ -26,12 +26,20 @@ const AuditTrail = lazy(() =>
 );
 
 export default function App() {
-  const [intro, setIntro] = useState(
-    () => !localStorage.getItem(INTRO_KEY) && !prefersReducedMotion(),
-  );
+  const [intro, setIntro] = useState(() => {
+    try {
+      return !localStorage.getItem(INTRO_KEY) && !prefersReducedMotion();
+    } catch {
+      return false;
+    }
+  });
 
   const finishIntro = useCallback(() => {
-    localStorage.setItem(INTRO_KEY, "1");
+    try {
+      localStorage.setItem(INTRO_KEY, "1");
+    } catch {
+      /* Storage restrictions must not prevent sign-in. */
+    }
     setIntro(false);
   }, []);
 

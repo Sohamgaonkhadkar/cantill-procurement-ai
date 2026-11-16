@@ -544,7 +544,7 @@ def chat_session(session_id:str,actor=Depends(user)):
 def index():
     root=Path(__file__).parent.parent
     built=root/'frontend'/'dist'/'index.html'
-    return FileResponse(built if built.is_file() else root/'frontend'/'index.html')
+    return FileResponse(built if built.is_file() else root/'frontend'/'index.html',headers={'Cache-Control':'no-store'})
 
 @app.post('/api/admin/import-data',tags=['Private Administration'])
 async def import_data(file:UploadFile=File(...),actor=Depends(user)):
@@ -601,5 +601,9 @@ def frontend_route(frontend_path:str,request:Request):
     root=(Path(__file__).parent.parent/'frontend'/'dist').resolve()
     candidate=(root/frontend_path).resolve()
     if candidate.is_relative_to(root) and candidate.is_file(): return FileResponse(candidate)
-    if (root/'index.html').is_file(): return FileResponse(root/'index.html')
+    # Never serve SPA HTML for a missing chunk, stylesheet or image. Browsers
+    # otherwise report MIME errors and a cached release can render blank.
+    if frontend_path.startswith('assets/') or Path(frontend_path).suffix.lower() in {'.js','.css','.map','.png','.jpg','.jpeg','.webp','.svg','.woff','.woff2','.mp4','.ico','.json'}:
+        raise HTTPException(404,'Frontend asset not found; reload the current application')
+    if (root/'index.html').is_file(): return FileResponse(root/'index.html',headers={'Cache-Control':'no-store'})
     raise HTTPException(404,'Arena frontend has not been integrated')

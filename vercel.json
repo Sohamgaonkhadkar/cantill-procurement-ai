@@ -3,6 +3,10 @@
   "framework": "fastapi",
   "regions": ["sin1"],
   "buildCommand": "python -m scripts.build_vercel",
+  "headers": [
+    {"source":"/","headers":[{"key":"Cache-Control","value":"no-store"}]},
+    {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-store"}]}
+  ],
   "functions": {
     "app.py": {
       "maxDuration": 300,
