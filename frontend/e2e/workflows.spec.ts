@@ -581,5 +581,40 @@ test("real run and requirement pagination use backend offsets and totals", async
   expect(second.offset).toBe(25);
   expect(second.total).toBe(30);
   expect(second.items).toHaveLength(5);
+  await go(page, "Decision X-Ray");
+  await page.getByLabel("Processing run", { exact: true }).selectOption(run.id);
+  const tracePage = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/requirements?") &&
+      new URL(response.url()).searchParams.get("offset") === "25",
+  );
+  await page
+    .locator(".trace-chooser")
+    .getByRole("button", { name: "Next", exact: true })
+    .click();
+  const traceItems = await (await tracePage).json();
+  expect(traceItems.total).toBe(30);
+  await page
+    .getByLabel("Trace requirement", { exact: true })
+    .selectOption(traceItems.items[0].id);
+  await expect(page.locator(".trace-chooser")).toContainText("of 30");
+  const otherRunId = await page
+    .getByLabel("Processing run", { exact: true })
+    .locator("option")
+    .nth(1)
+    .getAttribute("value");
+  const changedRun = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/requirements?") &&
+      new URL(response.url()).searchParams.get("run_id") === otherRunId &&
+      new URL(response.url()).searchParams.get("offset") === "0",
+  );
+  await page
+    .getByLabel("Processing run", { exact: true })
+    .selectOption(otherRunId!);
+  expect((await (await changedRun).json()).total).toBe(1);
+  await expect(
+    page.getByLabel("Trace requirement", { exact: true }).locator("option"),
+  ).toHaveCount(1);
   await noErrors(page);
 });

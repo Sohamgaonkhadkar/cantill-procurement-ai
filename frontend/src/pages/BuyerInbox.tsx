@@ -13,7 +13,10 @@ import { ErrorBlock, LoadingBlock } from "@/components/ui";
 import { ApprovalPanel } from "@/components/ApprovalPanel";
 export default function BuyerInbox() {
   const selection = useRunSelection();
-  const [offset, setOffset] = useState(0);
+  const [paging, setPaging] = useState({ runId: "", offset: 0 });
+  const offset = paging.runId === selection.runId ? paging.offset : 0;
+  const setOffset = (value: number) =>
+    setPaging({ runId: selection.runId, offset: value });
   const [status, setStatus] = useState("pending");
   const [route, setRoute] = useState("");
   const [search, setSearch] = useState("");

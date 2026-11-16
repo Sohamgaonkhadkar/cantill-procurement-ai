@@ -1,9 +1,15 @@
 import { useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
 import { useRequests } from "@/api/hooks";
-import { Page, RunPicker, useRunSelection, Json } from "@/components/Workflow";
+import {
+  Page,
+  RunPicker,
+  useRunSelection,
+  Json,
+  Pagination,
+} from "@/components/Workflow";
 import { Button, ErrorBlock, LoadingBlock, RouteTag } from "@/components/ui";
 import { XRayScene, type XPlate, type ViewState } from "@/components/XRayScene";
 import { ApprovalPanel } from "@/components/ApprovalPanel";
@@ -17,10 +23,16 @@ const TITLES = [
 ];
 export default function DecisionXray() {
   const { requestId } = useParams();
+  const navigate = useNavigate();
   const selection = useRunSelection();
+  const [paging, setPaging] = useState({ runId: "", offset: 0 });
+  const offset = paging.runId === selection.runId ? paging.offset : 0;
+  const setOffset = (value: number) =>
+    setPaging({ runId: selection.runId, offset: value });
   const requests = useRequests({
     run_id: selection.runId || undefined,
-    limit: 100,
+    limit: 25,
+    offset,
   });
   const pick = requestId ?? requests.data?.items[0]?.id;
   const req = useQuery({
@@ -69,17 +81,42 @@ export default function DecisionXray() {
       title="Inspect the machine."
       lede="Matching, grouping, exact valuation and policy evidence come from the stored procurement run."
     >
-      <RunPicker selection={selection} />
-      <div className="toolbar">
-        {requests.data?.items.map((x) => (
-          <Link
-            key={x.id}
-            className="text-xs text-lavender underline"
-            to={`/decision-xray/${x.id}?run_id=${encodeURIComponent(selection.runId)}`}
+      <RunPicker
+        selection={{
+          ...selection,
+          setRunId: (value) =>
+            navigate(`/decision-xray?run_id=${encodeURIComponent(value)}`),
+        }}
+      />
+      <div className="trace-chooser surface-dark toolbar p-4">
+        <label className="field">
+          Trace requirement
+          <select
+            aria-label="Trace requirement"
+            value={pick ?? ""}
+            onChange={(event) =>
+              navigate(
+                `/decision-xray/${encodeURIComponent(event.target.value)}?run_id=${encodeURIComponent(selection.runId)}`,
+              )
+            }
           >
-            {x.item_code} · {x.id}
-          </Link>
-        ))}
+            {pick && !requests.data?.items.some((item) => item.id === pick) ? (
+              <option value={pick}>
+                {r?.item_code ?? "Requirement"} · {pick}
+              </option>
+            ) : null}
+            {requests.data?.items.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.item_code} · {item.id} · {item.route}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Pagination
+          page={requests.data}
+          pending={requests.isFetching}
+          onChange={setOffset}
+        />
       </div>
       {requests.error ? <ErrorBlock error={requests.error} /> : null}
       {req.error ? (
