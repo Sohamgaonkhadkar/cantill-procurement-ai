@@ -149,6 +149,8 @@ def test_hallucinated_fields_rejected_and_negative_model_cleared(data):
     omitted=IntentPlan(intent='create_purchase_request',updates={'quantity':'30','uom':'pairs'},evidence={'quantity':'thirty','uom':'pairs'})
     state,warnings=validate_updates({},omitted,'I need thirty pairs of I-A',pair_data)
     assert state['item_code']=='I-A' and state['quantity']=='30' and state['uom']=='PAIR' and not warnings
+    spelled=IntentPlan(intent='create_purchase_request',updates={'quantity':'thirty'},evidence={'quantity':'thirty pairs of I-A by 2099-11-20'})
+    assert validate_updates({},spelled,'Need thirty pairs of I-A by 2099-11-20',pair_data)[0]['quantity']=='30'
     state,_=validate_updates({},IntentPlan(intent='create_purchase_request'),'Need I-A and I-B',data)
     assert not state.get('item_code')
 

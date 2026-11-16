@@ -28,6 +28,7 @@ SMALL={word:i for i,word in enumerate(['zero','one','two','three','four','five',
 TENS={word:10*(i+2) for i,word in enumerate(['twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'])}
 
 def spoken_number(fragment):
+    fragment=re.sub(r'\b\d{4}-\d{2}-\d{2}\b',' ',fragment)
     numeric=re.search(r'(?<![\w.])[+-]?\d[\d,]*(?:\.\d+)?(?:e[+-]?\d+)?',fragment,re.I)
     if numeric:return number(numeric[0])
     words=re.findall(r'[a-z]+',fragment.lower());total=0;part=0;seen=False
@@ -60,7 +61,7 @@ def validate_updates(state,plan,message,data):
         if not _literal(fragment,message):warnings.append(field+' has no literal user evidence');continue
         if field in {'quantity','estimated_unit_price'}:
             try:
-                candidate=number(value)
+                candidate=spoken_number(value) if field=='quantity' and re.fullmatch(r'[A-Za-z -]+',value) else number(value)
                 if candidate<=0 or candidate!=spoken_number(fragment):raise ValueError()
                 state[field]=str(candidate)
             except ValueError:state.pop(field,None);warnings.append('Provide a positive, supported '+field.replace('_',' '))
