@@ -51,6 +51,39 @@ def test_live_knowledge_yes_never_creates_pr(client,monkeypatch):
     assert answer['run'] is None and answer['ai_status']=='local_only'
     assert chat(client,'yes',session_id=result['session_id']).json()['run'] is None
 
+@pytest.mark.parametrize('message',['thanks','Thank you!','hello','What details do you need?','Tell me the item or specification, quantity, plant, need-by date and whether this is Normal or Emergency.'])
+def test_social_and_intake_help_never_retrieve_or_call_provider(client,monkeypatch,message):
+    monkeypatch.setenv('AI_EXTERNAL_CALLS_ENABLED','true');monkeypatch.setattr(safety,'isolated_demo',lambda:True)
+    monkeypatch.setattr(Provider,'structured',lambda *args:pytest.fail('Social/help turn reached model'))
+    result=chat(client,message,demo_data_acknowledged=True)
+    assert result.status_code==200,result.text
+    answer=result.json()
+    assert answer['ai_status']=='local_only' and not answer['tools_used'] and not answer['citations']
+    assert answer['run'] is None and answer['state']=={} and not answer['grounded']
+    assert 'source passages' not in answer['message'] and 'provided procurement evidence' not in answer['message']
+
+
+def test_acknowledgments_preserve_draft_and_knowledge_confirmation_boundary(client):
+    draft=chat(client,'Need 10 units I-A P-A 2099-11-20 Normal').json()
+    assert draft['state']['ready']
+    question=chat(client,'What is the current policy?',session_id=draft['session_id']).json()
+    thanks=chat(client,'thanks',session_id=draft['session_id']).json()
+    assert thanks['state']==question['state']==draft['state']
+    assert thanks['mode']=='knowledge' and not thanks['citations'] and thanks['run'] is None
+    assert chat(client,'yes',session_id=draft['session_id']).json()['run'] is None
+    confirmed=chat(client,'confirm',session_id=draft['session_id'],action='confirm').json()
+    assert confirmed['run'] and not confirmed['run']['issues']
+
+
+def test_social_prefix_does_not_hide_question_or_purchase():
+    from backend.ai.intent import conversational_reply,local_intent
+    assert conversational_reply('Thanks, what is the RFQ limit?',{}) is None
+    assert local_intent('Thanks, what is the RFQ limit?',{})=='policy_question'
+    message='Can you help me order 10 I-A at P-A tomorrow Normal?'
+    assert conversational_reply(message,{}) is None
+    assert local_intent(message,{})=='create_purchase_request'
+
+
 def test_model_cannot_redirect_policy_question_to_unrelated_tools(client,monkeypatch):
     monkeypatch.setenv('AI_EXTERNAL_CALLS_ENABLED','true');monkeypatch.setattr(safety,'isolated_demo',lambda:True)
     monkeypatch.setattr(Provider,'structured',lambda *args:ProviderResult(IntentPlan(intent='general_procurement_question'),'mock',1,1,1))

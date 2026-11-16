@@ -6,7 +6,7 @@ Reviewed 17 November 2026. Results distinguish pure business checks, API tests, 
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **229 passed, 4 PostgreSQL-only tests skipped** |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **236 passed, 4 PostgreSQL-only tests skipped**, after the conversational-routing fix |
 | Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **233 passed**, including independent approval and chat-confirmation transactions |
 | Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **17 passed before Arena visual restoration**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
 | Restored Arena regression checks | Chromium / real isolated FastAPI and SQLite / Vite | **4 targeted checks passed**: isolated-demo autofill, private live credentials and hero layout, chat confirmation, keyboard/focus and 3D-to-2D navigation; build and lint passed |
@@ -102,9 +102,15 @@ Hosted checks call the real direct Gemini API from Vercel Functions using the Se
 
 Both public deployments retain the original Arena palette, typography, navigation, page layouts and custom scenes. Gemini consent, citations, server-session handling, authentication fixes and keyboard focus safeguards are retained. The four targeted browser checks and build/lint results above apply to this interface; the complete 17-scenario run and hosted Gemini workflow preceded the visual restoration. Backend code, migrations and tests were unchanged by that restoration.
 
-The live and isolated demo deployments published source commit `5a984fe05f943f83aa748fc0ab0ce9beb22bd05c`. Public browser checks confirmed the dark interface, live sign-in, demo-only requester autofill and HTTP 200 health responses on both deployments. Documentation-only commits may follow this application release.
+The Arena restoration was published in source commit `5a984fe05f943f83aa748fc0ab0ce9beb22bd05c`. Public browser checks confirmed the dark interface, live sign-in, demo-only requester autofill and HTTP 200 health responses on both deployments. Subsequent releases retain this interface.
 
 | Deployment | Application | Health |
 |---|---|---|
 | Private live workspace | [Corvo](https://corvo-procurement.vercel.app) | [Live health](https://corvo-procurement.vercel.app/health) |
 | Isolated fictional workspace | [Corvo demo](https://corvo-procurement-demo.vercel.app) | [Demo health](https://corvo-procurement-demo.vercel.app/health) |
+
+## Conversational routing regression — 17 November 2026
+
+Greetings, acknowledgments and intake-help prompts are handled locally without model calls, retrieval, citations or draft mutation. Questions phrased as purchase requests retain the intake path. A substantive question prefixed by thanks still reaches knowledge routing. Acknowledgments preserve the preceding conversation mode, so thanking a policy answer cannot make a subsequent yes confirm an existing purchase draft.
+
+Seven additional regressions cover the reported messages, provider bypass, draft preservation and confirmation safety. The focused chat suite passed 46 tests with one PostgreSQL-only skip; the complete Windows backend suite passed 236 tests with four PostgreSQL-only skips. The previous PostgreSQL result of 233 is retained as a prior executed baseline; these seven additions have not been rerun against PostgreSQL.

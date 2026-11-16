@@ -10,11 +10,37 @@ from .schemas import IntentPlan
 
 QUESTION_INTENTS={'policy_question','contract_question','supplier_question','decision_explanation','general_procurement_question'}
 
+def conversational_reply(message,state):
+    """Handle whole social/help turns locally without changing drafts or consent.
+
+    Whole-turn matches leave substantive follow-up questions and purchases on
+    the ordinary, validated knowledge/intake paths.
+    """
+    text=re.sub(r'\s+',' ',message.casefold()).strip().rstrip('.!?')
+    if re.fullmatch(r'(?:thanks(?: a lot| so much)?|thank you(?: very much)?|thx|ty|cheers|ok(?:ay)?|got it|understood)(?:[, ]+(?:thanks|thank you))?',text):
+        if state.get('ready'):
+            return "You're welcome. Your draft is unchanged. Review it and select Confirm and create PR when you are ready; this message has not created a request."
+        return "You're welcome. You can continue your purchase draft or ask about a policy, supplier or contract."
+    greeting=bool(re.fullmatch(r'(?:hi|hello|hey|good morning|good afternoon|good evening)(?: corvo)?',text))
+    help_request=bool(re.fullmatch(r'(?:help|help me|what can you do|how (?:do i|can i) (?:start|use (?:this|the chatbot)|create (?:a |my )?(?:pr|purchase request))|(?:what|which) (?:details|information|fields) (?:do you need|should i provide))',text))
+    echoed_prompt=bool(re.fullmatch(r'tell me the item or specification, quantity, plant, need-by date and whether this is normal or emergency',text))
+    if not (greeting or help_request or echoed_prompt):return None
+    if state.get('ready'):
+        return 'Your purchase draft is complete. Review the specification panel, send any corrections, or select Confirm and create PR. No request is created until you confirm.'
+    guidance='Describe what you want to buy: item code or specification, quantity, plant, need-by date and Normal or Emergency urgency. These details must come from you; I will not invent them.'
+    missing=state.get('missing_fields',[])
+    if missing:guidance+=' Your draft still needs: '+', '.join(field.replace('_',' ') for field in missing)+'.'
+    else:guidance+=' You can also ask a specific policy, supplier or contract question.'
+    return ('Hello. ' if greeting else '')+guidance
+
+
 def local_intent(message,state):
     text=message.lower().strip()
     if re.fullmatch(r'(?:cancel|reset|cancel (?:the |my )?(?:request|draft))',text):return 'cancel_purchase_request'
     if text in {'confirm','yes','submit'}:return 'confirm_purchase_request'
     if re.search(r'\b(?:approve|activate|override|delete|execute|run sql|change supplier status)\b',text) and not text.endswith('?'):return 'unsupported'
+    if re.match(r'^(?:can|could|would) you (?:please )?(?:help me )?(?:buy|order|request|prepare|create|raise)\b',text):
+        return 'correct_purchase_request' if state else 'create_purchase_request'
     question=bool(re.search(r'\b(?:what|which|when|why|how|explain|show|list|can|tell me)\b',text) or '?' in text)
     if question:
         if any(word in text for word in ['decision','this pr','this request','grouped','benchmark','rejected']):return 'decision_explanation'

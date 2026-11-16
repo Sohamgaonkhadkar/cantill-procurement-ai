@@ -20,7 +20,7 @@ from .safety import ExternalContext,PrivacyBoundaryError,assert_external_allowed
 from .provider import Provider,ProviderUnavailable
 from .budget import BudgetExceeded
 from .schemas import IntentPlan,GroundedAnswer
-from .intent import local_intent,QUESTION_INTENTS,validate_updates,validate_draft
+from .intent import local_intent,conversational_reply,QUESTION_INTENTS,validate_updates,validate_draft
 from .prompts import INTENT_PROMPT,ANSWER_PROMPT
 from .tools import execute,definitions,today
 from .grounding import provenance,model_evidence,citations_for,local_answer,validate_answer
@@ -83,6 +83,10 @@ def _compute(factory,body,actor,payload,session_id):
     with factory() as session:
         authorize_actor(session,actor);data=current_data(session)
     state=deepcopy(payload.get('state',{}));intent=local_intent(body.message,state)
+    if body.action=='message':
+        guidance=conversational_reply(body.message,state)
+        if guidance is not None:
+            return state,guidance,'general_procurement_question',payload.get('mode','intake'),[],[],False,[],'local_only',False
     if body.action=='confirm':intent='confirm_purchase_request'
     if body.action=='cancel':intent='cancel_purchase_request'
     status='local_only';plan=None;outputs=[];followups=[]

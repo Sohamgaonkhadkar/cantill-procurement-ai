@@ -216,7 +216,7 @@ Replace version, paths and filenames with the supplied values. This read-only to
 | Evidence | Result |
 |---|---|
 | Linux / PostgreSQL suite | **233 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **229 passed**, with four PostgreSQL-only skips |
+| Windows / SQLite suite | **236 passed**, with four PostgreSQL-only skips |
 | Complete real-backend browser suite | **17 scenarios passed** before the Arena visual restoration |
 | Restored Arena interface | **4 targeted browser checks passed**; build and lint passed |
 | Hosted Gemini and retrieval | Real cited response, confirmed stored request and eight persisted demo embeddings; repeat embedding produced no duplicates |
