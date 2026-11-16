@@ -48,7 +48,7 @@ The blind-test rehearsal used sample-derived altered PR identities/quantities an
 
 OpenAI Codex assisted with implementation, review, synthetic tests, debugging, documentation and deployment in this workspace. Arena AI generated the frontend visual foundation, which was exported and integrated on 16 November 2026. No other candidate's implementation was copied. No coding subagents were used.
 
-The running backend does not invoke an LLM. Procurement arithmetic and routing are deterministic. Document text extraction uses pypdf within the application; no supplied dataset is sent by the application to an external LLM or document-extraction service. AI assistance does not replace the candidate's responsibility to understand and explain every design choice in the interview.
+The live procurement workspace uses local retrieval and deterministic intake. The separate fictional demo can invoke Google's Gemini API for constrained language planning, read-only tool selection and cited explanations after explicit acknowledgment. Procurement arithmetic and routing remain deterministic in both environments. Document text extraction uses pypdf within the application; private assessment documents and live procurement records are excluded from external model requests. AI assistance does not replace the candidate's responsibility to understand and explain every design choice in the interview.
 
 ## Scope boundaries
 
@@ -60,4 +60,4 @@ The optional LLM acts as a constrained language interface. It proposes structure
 
 Retrieval runs locally over reviewed, versioned sources. Source metadata, clause/page identifiers, hashes, visibility and effective dates travel with every citation. The isolated fictional demo can use direct Gemini free-tier generation and embeddings after explicit acknowledgment. Live data stays local. Provider outages, quota limits and unsupported grounding preserve a usable local workflow and are reported as fallback states.
 
-The original Arena interface is retained. Financial values remain decimal strings, and its 3D views supplement the stored backend decision evidence.
+The original Arena interface is retained: dark industrial styling, kinetic core, animated navigation and five-stage Decision X-Ray. A 2D evidence view supports direct inspection. Gemini consent and citation controls integrate with Request Studio without changing financial authority. Financial values remain decimal strings, and visual scenes supplement stored backend evidence.

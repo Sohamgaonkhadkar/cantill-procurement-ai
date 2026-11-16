@@ -8,7 +8,8 @@ Reviewed 17 November 2026. Results distinguish pure business checks, API tests, 
 |---|---|---|
 | Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **229 passed, 4 PostgreSQL-only tests skipped** |
 | Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **233 passed**, including independent approval and chat-confirmation transactions |
-| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **17 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
+| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **17 passed before Arena visual restoration**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
+| Restored Arena regression checks | Chromium / real isolated FastAPI and SQLite / Vite | **4 targeted checks passed**: isolated-demo autofill, private live credentials and hero layout, chat confirmation, keyboard/focus and 3D-to-2D navigation; build and lint passed |
 | CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
 | OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
 | Generated frontend models | OpenAPI-derived TypeScript and Zod | Drift check passes; release build enforces TypeScript compilation |
@@ -31,7 +32,7 @@ The sample does not provide a complete answer key. Passing all disclosed example
 
 ## Browser and deployment evidence
 
-The browser suite exercises a real isolated FastAPI server and synthetic database. It contains fifteen scenarios: blocked startup resources, visible script-failure recovery, privileged-password non-disclosure, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling pagination and independent two-reviewer sourcing approval.
+The complete 17-scenario browser suite exercises a real isolated FastAPI server and synthetic database. Coverage includes blocked startup resources, visible script-failure recovery, privileged-password non-disclosure, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling, pagination, independent two-reviewer sourcing approval and demo isolation. The four targeted Arena checks are a subsequent regression pass, not a second execution of the complete suite.
 
 All eleven screens have desktop/mobile captures at 1440px and 390px, horizontal-overflow checks and visual inspection. The custom Arena 3D scenes remain; the hero's opaque shader, oversized composition and overlapping inset/caption issues were corrected. Startup recovery was additionally checked with denied localStorage, blocked external fonts and a deliberately blocked entry script.
 
@@ -71,9 +72,9 @@ Five backend regressions check calculated demo responses against the real engine
 The public production browser check also passed: nine computed demo rows spanning eight route families, authenticated synthetic CSV export, changed-quantity RFP routing, identical live overview and contract-register responses before/after, unchanged assessment sample hash and zero browser exceptions. Live OpenAPI matches the checked-in schema.
 
 
-## Evaluation-readiness hardening — 16 November 2026
+## Historical hardening baseline — 16 November 2026
 
-The PostgreSQL suite now contains 204 passing tests. Added independent expectations cover twelve exact monetary boundaries, competing contract ceilings, a 500-line mixed-item/plant batch with shuffled-input equivalence, unrelated-plant isolation, industrial aliases/mixed fractions and explicit UoM/model protection. These synthetic cases have literal expectations and invariants; they do not import an assessment answer key.
+At this intermediate milestone, the PostgreSQL suite contained 204 passing tests. The current counts appear at the top of this document. Added independent expectations cover twelve exact monetary boundaries, competing contract ceilings, a 500-line mixed-item/plant batch with shuffled-input equivalence, unrelated-plant isolation, industrial aliases/mixed fractions and explicit UoM/model protection. These synthetic cases have literal expectations and invariants; they do not import an assessment answer key.
 
 New API/security checks cover private evaluator scope, non-disclosure of legacy privileged aliases, owner-specific run IDs, persisted expiry, malformed CSV quoting, spreadsheet formula injection, operation budgets, exact amendment-upload hashes, direct contract retrieval, manual source reconciliation, stale-policy approval rejection and additional sourcing approvals. Four PostgreSQL-specific tests exercise separate transactions: contract ceiling contention, chat confirmation, policy edit versus approval, and simultaneous distinct sourcing votes.
 
@@ -91,10 +92,19 @@ Hosted sign-in configuration update: both Controlled role account and Individual
 
 Public demo extension: seven additional backend checks reject non-isolated database configurations, keep public passwords disabled on the live deployment and verify all demo roles remain unable to administer identities. The full backend suite passed 211 cases on PostgreSQL and 207 plus four PostgreSQL-only skips on SQLite. The demo uses a separate restricted PostgreSQL role/schema and session key, not request-based switching of the live connection. Existing migrations initialize that schema; only fictional inputs are seeded through the real engine.
 
-## Corvo 2 and Gemini verification
+## Gemini and retrieval verification
 
 The additional AI tests cover live-data egress rejection before client creation, fictional-input acknowledgment, private-source provenance, credential/identifier rejection, source review and ACLs, index idempotency, effective policy filtering, source revision isolation, unknown/write-tool rejection, independent field evidence, spoken quantities, negative SKU corrections, citation/numeric guards, distributed budgets, duplicate confirmation and concurrent turn leases. Native embedding tests check 1536-dimensional normalized vectors and label token estimates when the provider omits usage.
 
 Hosted checks call the real direct Gemini API from Vercel Functions using the Sensitive server-side key. Successful generation was observed with `gemini-3.5-flash-lite`, including a current-policy answer with a backend-generated citation. The native `gemini-embedding-001` endpoint embedded eight approved fictional policy chunks; an immediate repeat embedded zero chunks, demonstrating persistent idempotency. Provider 503 responses and rejected grounding were also observed: the application showed local source evidence rather than fabricating success. Free-tier latency and availability are external limitations, not a guaranteed service level.
 
-The original Arena UI/UX was restored at the user's request on 17 November 2026. The redesign's palette, typography, navigation and page layouts were reverted. Gemini consent, citations, server-session handling, authentication fixes, and keyboard focus safeguards remain functional. The previous redesign performance figures are not claims about the restored interface.
+## Current published interface — 17 November 2026
+
+Both public deployments retain the original Arena palette, typography, navigation, page layouts and custom scenes. Gemini consent, citations, server-session handling, authentication fixes and keyboard focus safeguards are retained. The four targeted browser checks and build/lint results above apply to this interface; the complete 17-scenario run and hosted Gemini workflow preceded the visual restoration. Backend code, migrations and tests were unchanged by that restoration.
+
+The live and isolated demo deployments published source commit `5a984fe05f943f83aa748fc0ab0ce9beb22bd05c`. Public browser checks confirmed the dark interface, live sign-in, demo-only requester autofill and HTTP 200 health responses on both deployments. Documentation-only commits may follow this application release.
+
+| Deployment | Application | Health |
+|---|---|---|
+| Private live workspace | [Corvo](https://corvo-procurement.vercel.app) | [Live health](https://corvo-procurement.vercel.app/health) |
+| Isolated fictional workspace | [Corvo demo](https://corvo-procurement-demo.vercel.app) | [Demo health](https://corvo-procurement-demo.vercel.app/health) |

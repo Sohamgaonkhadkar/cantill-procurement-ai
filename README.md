@@ -78,12 +78,13 @@ Demo previews are labeled **synthetic / not saved**. They do not read or modify 
 | Layer | Technologies | Responsibility |
 |---|---|---|
 | **Frontend** | React 19 · TypeScript 5.9 · Vite 7 · Tailwind CSS 4 | Responsive workspaces and typed interaction |
-| **Visual experience** | Three.js · React Three Fiber · GSAP · Motion | Custom 3D scenes, animation and industrial visual identity |
+| **Visual experience** | Three.js · React Three Fiber · GSAP · Motion | Original Arena dark interface, kinetic core and five-stage Decision X-Ray with a 2D evidence view |
 | **Client data** | TanStack Query · Zod · React Router | Live queries, runtime response validation and role-aware navigation |
 | **API** | FastAPI · Pydantic · Uvicorn | Typed endpoints, validation, authentication and OpenAPI |
 | **Procurement engine** | Python · Decimal · RapidFuzz · validated policy DSL | Deterministic matching, valuation, routing and supplier selection |
 | **Persistence** | PostgreSQL · SQLAlchemy · Alembic · psycopg | Durable records, migrations, transactional approvals and snapshots |
 | **Documents** | pypdf | Contract and amendment text extraction with human review |
+| **Conversational assistance** | Direct Gemini API · PostgreSQL full-text retrieval · optional Gemini embeddings | Demo-only external assistance; local retrieval and deterministic intake for live data |
 | **Delivery** | Docker Compose · Vercel · Neon PostgreSQL | Reproducible local setup and persistent hosted application |
 | **Verification** | pytest · Playwright · Node test runner · ESLint | Engine/API/concurrency regressions and real-backend browser workflows |
 
@@ -214,15 +215,17 @@ Replace version, paths and filenames with the supplied values. This read-only to
 
 | Evidence | Result |
 |---|---|
-| Linux / PostgreSQL suite | **211 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **207 passed**, with four PostgreSQL-only skips |
-| Real-backend browser suite | **15 scenarios passed** |
+| Linux / PostgreSQL suite | **233 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **229 passed**, with four PostgreSQL-only skips |
+| Complete real-backend browser suite | **17 scenarios passed** before the Arena visual restoration |
+| Restored Arena interface | **4 targeted browser checks passed**; build and lint passed |
+| Hosted Gemini and retrieval | Real cited response, confirmed stored request and eight persisted demo embeddings; repeat embedding produced no duplicates |
 | Disclosed worked examples | **14 procurement decisions + 3 supplier rankings match** |
 | Original sample | **186 outputs · 149 requirements · 2 explicit invalid lines** |
 | Amendment rehearsal | Five policy changes, **55 affected lines**, three exports and matching replays |
 | Hosted checks | Real API workflows, authenticated downloads, persistence after redeployment and startup recovery |
 
-These results describe executed checks, not a predicted blind-test score. See [VALIDATION.md](VALIDATION.md) for scope and limitations.
+These results describe executed checks, not a predicted blind-test score. The Arena restoration preserved backend code, migrations and tests; the complete browser suite was not rerun after that visual change. Both public deployments were checked for successful startup and health. See [VALIDATION.md](VALIDATION.md) for scope and limitations.
 
 ```sh
 python -m pytest -q
@@ -251,7 +254,7 @@ Browser tests start isolated FastAPI/SQLite with synthetic data. Install Chromiu
 
 ## Boundaries
 
-Chat and amendment parsing use bounded deterministic grammars. Unresolved clauses require faithful structured authoring and review; new rules must use registered facts and supported operations. Scanned policies need transcription, and PDF extraction does not establish signature authenticity. Corporate SSO/MFA/recovery, external supplier dispatch and exhaustive load/security audits are outside the implemented scope. Approvals create durable internal purchasing records.
+Live chat and amendment parsing use bounded deterministic grammars; the isolated demo additionally supports optional Gemini-assisted conversation. External calls require fictional-data acknowledgment and approved provenance. Known sensitive patterns are blocked, but this is not a guarantee that arbitrary user text can be classified perfectly. Unresolved amendment clauses require faithful structured authoring and review; new rules must use registered facts and supported operations. Scanned policies need transcription, and PDF extraction does not establish signature authenticity. Corporate SSO/MFA/recovery, external supplier dispatch and exhaustive load/security audits are outside the implemented scope. Approvals create durable internal purchasing records.
 
 ---
 

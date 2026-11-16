@@ -63,4 +63,4 @@ Created for this project, no third-party rights involved:
 - Bearing technical schematic — original drawing, not a catalog image (`src/components/BearingSchematic.tsx`)
 - Policy Reactor node geometry, Batch Lab pipeline graphics, Supplier Constellation plot, procedural fallback textures
 
-No challenge dataset is published in source. The integrated application has no mock-data mode; automated tests seed clearly synthetic records into an isolated real backend database.
+No challenge dataset is published in source. Live mode has no synthetic response fallback. The separate public demo persists explicitly fictional records in an isolated database schema; Batch Lab also offers a labeled, non-persisting synthetic preview. Both calculate outcomes through the real procurement engine. Automated tests seed synthetic records into an isolated real backend database. Photography, footage and procedural scenes are presentation assets, not evidence of supplier inventory or an exact catalog SKU.

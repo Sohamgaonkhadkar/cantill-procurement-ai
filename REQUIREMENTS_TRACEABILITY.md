@@ -5,7 +5,7 @@ This matrix maps the supplied assessment requirements to implemented components 
 | Requirement | Implementation | Evidence and limits |
 |---|---|---|
 | Frontend, backend and database | Arena React/Vite; FastAPI; SQLAlchemy/PostgreSQL; Alembic migrations | Public application, health, auth and persistent data verified; Docker supports local operation |
-| Conversational intake | Request Studio → `/api/chat/messages`; persisted sessions and corrections | Browser and API tests require explicit confirmation; grammar is bounded |
+| Conversational intake | Request Studio → `/api/chat/messages`; persisted sessions and corrections | Browser and API tests require explicit confirmation; deterministic live intake and optional isolated-demo Gemini assistance |
 | Unknown/vague items | Normalization, numeric-specification protection, candidate evidence and clarification | Matching/new-item tests; no invented catalog identity |
 | CSV processing | `/api/process-batch`; complete input headers; malformed-header rejection | One output per input line; invalid business rows retain explicit NOT_PROCESSED reasons |
 | Policy as data | Registered fact/operator DSL, priorities, configurable thresholds/windows/counts | Policy mutation, exact-boundary and validation tests |
@@ -28,8 +28,20 @@ This matrix maps the supplied assessment requirements to implemented components 
 | Two-run blind test | Explicit v5.0 run, amendment governance, same-input reprocessing, preferred export | Rehearsal produced three files and 55 affected lines; evaluator files not yet received |
 | Reproducibility | Input/data/policy hashes, immutable snapshots, replay | Original sample hash retained; persisted run survives redeployment |
 | Setup and delivery | One-command Docker startup, same-origin Vercel app, Neon persistence | Hosted browser verification, production health and clean repository checks |
-| Documentation and judgment | DECISIONS, APPROACH, SOLUTION_DESIGN, API contract, runbook | Explicit alternatives, rationale, AI disclosure and known limitations |
+| Documentation and judgment | DECISIONS, APPROACH, SOLUTION_DESIGN, README and authoritative `openapi.json` | Explicit alternatives, rationale, AI disclosure, evaluation procedure and known limitations |
 | Freeze/privacy obligations | Ignored source kit/secrets, public code, output-only submission folder | No fabricated outputs; assessment form and timed output push remain human obligations |
+
+## Optional capabilities beyond the assessment baseline
+
+| Capability | Implementation | Verification boundary |
+|---|---|---|
+| Grounded conversation | Direct Gemini, typed read-only tools, server-validated fields and backend citations | Real hosted responses observed; availability depends on free-tier quotas |
+| Local RAG | PostgreSQL search, reviewed/versioned chunks, source ACLs and effective-date filtering | Remains available without an external provider; private sources stay local |
+| Demo embeddings | Native Gemini embeddings for approved fictional/public sources | Eight hosted chunks persisted; repeat request embedded zero duplicates |
+| External-data isolation | Separate demo database, explicit flags, per-turn consent and provenance checks | Live egress rejected before client creation; known sensitive patterns blocked; arbitrary text classification is not infallible |
+| Public demonstration access | Autofilled controlled roles only in the isolated fictional workspace | Separate session key and restricted database role; live privileged credentials remain private |
+
+These extensions assist exploration and intake. They do not replace the assessment's deterministic procurement engine or permit model-authored financial decisions.
 
 ## Code and test navigation
 
