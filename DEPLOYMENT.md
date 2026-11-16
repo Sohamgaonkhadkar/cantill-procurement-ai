@@ -4,6 +4,12 @@ Authorized repository: https://github.com/Sohamgaonkhadkar/cantill-procurement-a
 
 Authorized Vercel project: `corvo-procurement`, project ID `prj_7RIb7YlCS7VbCwYxK2hkUqhyxKHf`, team ID `team_oZevuRFeSWvyGYcMBdfiQAp5` (team slug `gaonkhadkarsoham2006-5043`). The project exists; a final application deployment has **not** been published.
 
+Provisioned managed PostgreSQL: `corvo-procurement-db` for production and `corvo-procurement-preview-db` for preview, both on Neon's `free_v3` plan in `sin1` (Singapore). The user completed Vercel CLI authentication and accepted Neon's integration terms. Both databases have migrated schemas, privately imported master/contract data and a verified persisted sample run. Production and preview data are isolated. Only v5.0 is initially active in each managed database.
+
+Server-only SESSION_SECRET and all three role passwords are configured as distinct production/preview Secrets. DEMO_MODE is false. Empty CORS_ORIGINS restricts cross-origin calls; the final frontend is intended to use same-origin relative API paths. Local recovery/access values are saved only in the ignored `.private/deployment-access.json`, not in public source or documentation. Database connection files are likewise ignored.
+
+The Python function region is pinned to Singapore (`sin1`) to colocate it with the databases. All 69 synthetic tests pass on both Windows/SQLite and Linux/PostgreSQL. A Vercel-like local HTTP listener backed by managed preview Neon also passed chat, policy lifecycle, batch/export, synthetic purchasing approval, override, audit and replay checks. This is not a substitute for the pending public Vercel deployment/browser checks.
+
 The final Arena frontend has not been supplied. `scripts/build_vercel.py` deliberately refuses to build a final release without its package.json, reviewed package-lock.json and Vite output. This prevents an outdated frontend or the temporary integration page from being published as the final application.
 
 ## Vercel compatibility
@@ -30,7 +36,7 @@ Serverless differences are handled at the infrastructure boundary:
 4. Configure SESSION_SECRET, DEMO_MODE=false, REQUESTER_PASSWORD, BUYER_PASSWORD, ADMIN_PASSWORD and exact CORS_ORIGINS in Vercel. Keep private values server-only. Secrets should be marked Secret; never prefix them with VITE_.
 5. Inspect and integrate Arena's exported ZIP into `frontend/`; remove live-mode mocks and test all API paths. Preserve backend source, migrations and tests.
 6. Run unit/API tests, frontend type/build checks and full UI flows. Regenerate OpenAPI if a transport schema changes.
-7. Build a staged Vercel release, run migrations/seed, import source kit privately using admin upload, and smoke-test the actual hosted API. Vercel deployment protection must be addressed through the platform's normal authenticated access or an approved public production configuration.
+7. Build a staged Vercel release, run migrations/seed, verify the preloaded private data (import through admin upload only if needed), and smoke-test the actual hosted API. Vercel deployment protection must be addressed through the platform's normal authenticated access or an approved public production configuration.
 8. Promote only the tested final integrated application. Check public access and persistence after redeployment. Record the actual URLs and verification evidence here.
 
 Current local API: http://localhost:8000. Public app and health URLs are pending verified deployment; no guessed production URL is advertised.

@@ -90,7 +90,11 @@ Migrations are frozen schema files in `migrations/versions/`. New changes must a
 
 ## Deployment
 
-`Dockerfile`, `compose.yaml` and `render.yaml` are supplied. The Render blueprint requires private environment variables and an external managed PostgreSQL URL; no resource has been provisioned through it yet. The database must allow the host's connections and retain data across restarts. The API respects `PORT`; route `/health` checks database connectivity. After deploying, import privately, then run batch, amendment, replay, download, contract and persistence smoke checks against the actual HTTPS origin. Configure CORS for Arena's deployed origin. A source repository and hosting destination are still needed for public delivery.
+The public repository is [Sohamgaonkhadkar/cantill-procurement-ai](https://github.com/Sohamgaonkhadkar/cantill-procurement-ai). The Vercel project `corvo-procurement` and separate production/preview Neon PostgreSQL databases have been provisioned. Schemas and private initial data are loaded; secure role/session environment variables are configured. See [DEPLOYMENT.md](DEPLOYMENT.md) for the current target and checks.
+
+`app.py` and `vercel.json` adapt the existing backend to Vercel's Python ASGI runtime. The final build refuses to publish until the reviewed Arena frontend is present. Its Vite build is served from the same origin; purchasing data persists in PostgreSQL, not the function filesystem. Hosted request/response limits are tighter than the portable API upload limit; see the deployment notes. Final public HTTP, browser and redeployment checks remain pending.
+
+`Dockerfile`, `compose.yaml` and `render.yaml` also remain available for local deployment or a backend fallback. No Render resource has been created. The API respects `PORT`; `/health` checks database connectivity.
 
 ## Blind-test runbook
 
@@ -104,6 +108,6 @@ Complete the repository, hosted application and assessment form before **19 Nove
 
 ## Current boundaries
 
-The final Arena frontend, public GitHub remote and hosted end-to-end verification are pending. Shared demo identity is not enterprise authentication. Chat uses a basic local parser. Scanned PDFs need transcription and signatures require human verification. Buyer overrides support safer sourcing routes, not arbitrary direct orders. There are no live supplier integrations or outbound PO dispatches. Approval creates persisted internal purchasing records only.
+The final Arena frontend and hosted end-to-end verification are pending. Shared role identity is not enterprise authentication. Chat uses a basic local parser. Scanned PDFs need transcription and signatures require human verification. Buyer overrides support safer sourcing routes, not arbitrary direct orders. There are no live supplier integrations or outbound PO dispatches. Approval creates persisted internal purchasing records only.
 
 AI usage and actual architecture are documented in [APPROACH.md](APPROACH.md); detailed business judgments are in [DECISIONS.md](DECISIONS.md).

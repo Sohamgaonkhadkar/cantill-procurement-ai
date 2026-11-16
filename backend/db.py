@@ -140,8 +140,8 @@ def connect(url=None):
     if url.startswith('postgres://'): url=url.replace('postgres://','postgresql+psycopg://',1)
     if url.startswith('postgresql://'): url=url.replace('postgresql://','postgresql+psycopg://',1)
     if url.startswith('sqlite:///.private/'): Path('.private').mkdir(exist_ok=True)
-    options={'connect_args':{'check_same_thread':False}} if url.startswith('sqlite') else {'connect_args':{'prepare_threshold':None},'pool_size':2,'max_overflow':1,'pool_recycle':240}
-    engine=create_engine(url,**options,pool_pre_ping=True)
+    options={'connect_args':{'check_same_thread':False}} if url.startswith('sqlite') else {'connect_args':{'prepare_threshold':None,'connect_timeout':20},'pool_size':2,'max_overflow':1,'pool_recycle':240}
+    engine=create_engine(url,**options,pool_pre_ping=True,hide_parameters=True)
     if url.startswith('sqlite'):
         @event.listens_for(engine,'connect')
         def configure(dbapi,_):

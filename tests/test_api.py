@@ -59,11 +59,12 @@ def test_policy_upload_review_approve_activate_compare(client):
     assert client.post('/api/policies/6.0/activate',json={'reason':'Activate reviewed version'}).status_code==200
     after=upload(client,version='6.0').json()
     assert after['rows'][0]['route']=='RFQ'
+    assert upload(client,version='5.0').json()['id']==before['id']
     assert client.get(f"/api/runs/{before['id']}/compare/{after['id']}").json()['affected_lines']==1
     assert client.post(f"/api/runs/{before['id']}/replay").json()['matches']
     assert client.put('/api/policies/6.0',json={'policy':p}).status_code==409
     assert client.post('/api/policies/6.0/deactivate',json={'reason':'Withdraw test amendment after comparison'}).status_code==200
-    assert upload(client,version='6.0').json()['rows'][0]['route']=='RFQ'
+    assert upload(client,version='6.0').json()['id']==after['id']
 
 def test_approval_actual_po_idempotence_and_audit(client):
     result=upload(client).json(); req=result['requirements'][0]['id']; url=f'/api/requirements/{req}/approve?run_id='+result['id']

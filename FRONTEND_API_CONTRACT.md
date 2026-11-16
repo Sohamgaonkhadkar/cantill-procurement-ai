@@ -4,7 +4,7 @@ The Python backend is authoritative. Keep all financial decisions in this API. A
 
 Local API origin: **http://localhost:8000**. Interactive reference: **http://localhost:8000/docs**. Machine-readable specification: **http://localhost:8000/openapi.json**; a checked-in copy is at `openapi.json`. No verified public deployment URL exists yet.
 
-Set Arena's `VITE_API_BASE_URL=http://localhost:8000`. Paths below already include `/api`; do not append it to the environment variable. Configure backend `CORS_ORIGINS` with Arena's exact origin (scheme, hostname and port), comma-separated for multiple origins. Production uses the deployed backend HTTPS origin or an empty base URL with a same-origin reverse proxy. Never put backend passwords or `SESSION_SECRET` in Vite variables.
+Set Arena's local `VITE_API_BASE_URL=http://localhost:8000`. Paths below already include `/api`; do not append it to the environment variable. Configure backend `CORS_ORIGINS` with Arena's exact origin (scheme, hostname and port), comma-separated for multiple origins. Production and preview Vercel environments are configured with an **empty** VITE_API_BASE_URL for same-origin calls. Preserve that empty value; use `import.meta.env.VITE_API_BASE_URL ?? ''`, not a truthiness fallback to localhost. Never put backend passwords or `SESSION_SECRET` in Vite variables.
 
 ## Authentication and common conventions
 
@@ -237,4 +237,4 @@ Use one typed API client, a bearer-token provider, and one error adapter. Refetc
 
 ## Verification and limitations
 
-Synthetic engine/API tests and private worked-example regression are executed locally; see `VALIDATION.md` for results. Hosted deployment, production PostgreSQL and Arena browser end-to-end integration remain unverified until those environments/artifacts are available. Authentication currently identifies three controlled shared role accounts; there is no per-employee identity/ownership boundary for run reads. Do not advertise this as enterprise tenancy or SSO. PDF cryptographic authenticity and broad amendment/chat AI extraction are not implemented; human-reviewed structured correction is the supported path.
+Synthetic engine/API tests and private worked-example regression are executed locally; see `VALIDATION.md` for results. Production and preview managed PostgreSQL are provisioned, migrated and privately loaded; sample persistence/replay is verified through direct database connections. Public Vercel HTTP deployment and Arena browser end-to-end integration remain unverified until the final frontend is available. Authentication currently identifies three controlled shared role accounts; there is no per-employee identity/ownership boundary for run reads. Do not advertise this as enterprise tenancy or SSO. PDF cryptographic authenticity and broad amendment/chat AI extraction are not implemented; human-reviewed structured correction is the supported path.

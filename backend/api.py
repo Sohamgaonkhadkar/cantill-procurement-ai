@@ -46,7 +46,7 @@ async def lifespan(app):
 
 app=FastAPI(title='Corvo Procurement OS API',version='1.0.0',lifespan=lifespan,
  description='Deterministic procurement, immutable runs and governed policy amendments. All business APIs require bearer authentication. Monetary values are decimal strings.')
-app.add_middleware(CORSMiddleware,allow_origins=os.getenv('CORS_ORIGINS','http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000').split(','),allow_credentials=False,allow_methods=['GET','POST','PUT'],allow_headers=['Authorization','Content-Type'])
+app.add_middleware(CORSMiddleware,allow_origins=[origin.strip() for origin in os.getenv('CORS_ORIGINS','http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000').split(',') if origin.strip()],allow_credentials=False,allow_methods=['GET','POST','PUT'],allow_headers=['Authorization','Content-Type'])
 
 @app.exception_handler(ValueError)
 async def value_error(_,exc): return JSONResponse(status_code=422,content={'error':{'code':'VALIDATION_ERROR','message':str(exc),'details':[]}})
