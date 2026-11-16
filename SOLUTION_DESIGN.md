@@ -94,6 +94,8 @@ stateDiagram-v2
   Active --> Superseded: withdrawal
 ```
 
+ReviewedDraft in the diagram means a draft with its governance review flag set; it is not a separate API status. Editing a draft clears its review state.
+
 The interpreter accepts registered facts, typed comparisons and nested AND/OR/NOT conditions. Limits, windows, supplier counts, weights, priorities and routes are policy data. Unknown facts/operators are rejected. Uploaded content cannot execute Python or JavaScript.
 
 The following is an illustrative rule fragment, not a complete upload document:
