@@ -375,6 +375,29 @@ test("all major screens render real data at desktop and mobile widths without pa
       await expect
         .poll(() => main.evaluate((e) => e.scrollWidth - e.clientWidth))
         .toBeLessThanOrEqual(2);
+      const bands = await page
+        .locator(".material-band")
+        .evaluateAll((elements) =>
+          elements.map((element) => {
+            const copy = element.querySelector(".material-copy")!;
+            const box = element.getBoundingClientRect();
+            const text = copy.getBoundingClientRect();
+            return {
+              top: text.top - box.top,
+              bottom: box.bottom - text.bottom,
+              left: text.left - box.left,
+              right: box.right - text.right,
+              overflow: copy.scrollHeight - copy.clientHeight,
+            };
+          }),
+        );
+      for (const band of bands) {
+        expect(band.top).toBeGreaterThanOrEqual(0);
+        expect(band.bottom).toBeGreaterThanOrEqual(0);
+        expect(band.left).toBeGreaterThanOrEqual(-1);
+        expect(band.right).toBeGreaterThanOrEqual(-1);
+        expect(band.overflow).toBeLessThanOrEqual(2);
+      }
       await page.screenshot({
         path: path.resolve(
           `../.private/screens/${width}-${label.replaceAll(" ", "-")}.png`,

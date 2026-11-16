@@ -57,8 +57,11 @@ export function MaterialBand({
   return (
     <div
       ref={ref}
-      className={cn("relative overflow-hidden bg-midnight", className)}
-      style={{ height }}
+      className={cn(
+        "material-band relative overflow-hidden bg-midnight",
+        className,
+      )}
+      style={{ minHeight: height }}
     >
       <motion.div className="absolute inset-0" style={{ y }}>
         <IndustrialImage
@@ -74,10 +77,16 @@ export function MaterialBand({
       />
       <SweepLine className="top-0" delay={0.1} color="#32e6d2" />
 
-      <div className="relative flex h-full items-center justify-between gap-8 px-8 md:px-12">
-        <motion.div className="max-w-[62%]" style={{ x: labelX }}>
+      <div
+        className="relative flex items-center justify-between gap-8 px-8 py-8 md:px-12"
+        style={{ minHeight: height }}
+      >
+        <motion.div
+          className="material-copy max-w-full md:max-w-[62%]"
+          style={{ x: labelX }}
+        >
           <div className="eyebrow text-mint">MATERIAL RECORD</div>
-          <p className="mt-2 font-display text-[clamp(24px,3vw,42px)] font-medium leading-[0.98] tracking-[-0.03em] text-porcelain">
+          <p className="mt-2 font-display text-[clamp(24px,3vw,42px)] font-medium leading-[1.1] tracking-[-0.03em] text-porcelain">
             {statement}
           </p>
           {caption ? (

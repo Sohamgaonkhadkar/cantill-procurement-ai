@@ -670,3 +670,9 @@ h1 {
 .eyebrow {
   line-height: 1.6;
 }
+
+@media (max-width: 767px) {
+  .material-band .material-copy {
+    transform: none !important;
+  }
+}
