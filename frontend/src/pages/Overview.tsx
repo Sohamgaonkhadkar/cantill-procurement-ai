@@ -1,4 +1,10 @@
 import { Link } from "react-router-dom";
+import {
+  ArrowUpRight,
+  MessageSquarePlus,
+  Layers,
+  ScanLine,
+} from "lucide-react";
 import { useOverview, useRequests } from "@/api/hooks";
 import { IndustrialHero } from "@/components/media/IndustrialHero";
 import { MaterialBand } from "@/components/media/MaterialBand";
@@ -16,6 +22,43 @@ export default function Overview() {
   return (
     <div>
       <IndustrialHero scrollRef={useMainScroll()} />
+      <section className="overview-actions" aria-label="Workspace shortcuts">
+        {[
+          {
+            to: "/request-studio",
+            icon: MessageSquarePlus,
+            title: "Start a request",
+            copy: "Describe what you need. We’ll clarify the details.",
+            step: "01",
+          },
+          {
+            to: "/batch-lab",
+            icon: Layers,
+            title: "Process a batch",
+            copy: "Turn a CSV into decisions with a trace for every line.",
+            step: "02",
+          },
+          {
+            to: "/decision-xray",
+            icon: ScanLine,
+            title: "Follow the evidence",
+            copy: "Explore the matching, policy and supplier behind a decision.",
+            step: "03",
+          },
+        ].map(({ to, icon: Icon, title, copy, step }) => (
+          <Link to={to} key={to} className="overview-action">
+            <div className="overview-action-top">
+              <Icon size={21} strokeWidth={1.5} aria-hidden="true" />
+              <span className="num">{step}</span>
+            </div>
+            <h2>
+              {title}
+              <ArrowUpRight size={19} aria-hidden="true" />
+            </h2>
+            <p>{copy}</p>
+          </Link>
+        ))}
+      </section>
       <MaterialBand
         asset={VISUALS.gears}
         statement="Steel becomes a requirement. A requirement becomes a decision."

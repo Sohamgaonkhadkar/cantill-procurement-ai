@@ -10,6 +10,7 @@ import { api, ApiError } from "@/api";
 import { setToken } from "@/api/http";
 import { Button, ErrorBlock } from "@/components/ui";
 import { Wordmark } from "@/components/Monogram";
+import { HERO_POSTER } from "@/components/media/assets";
 type Identity = { id: string; role: "admin" | "buyer" | "requester" };
 type Auth = {
   identity: Identity | null;
@@ -119,182 +120,225 @@ export function Login() {
   }, []);
   const wait = Math.max(0, Math.ceil((until - now) / 1000));
   return (
-    <main className="login-page grid-bg">
-      <form
-        className="surface-dark login-card"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          setError(null);
-          try {
-            if (creating && kind === "individual")
-              await auth.register({
-                username,
-                display_name: displayName,
-                password,
-              });
-            else
-              await auth.login(
-                kind === "role" ? { role, password } : { username, password },
-              );
-            setPassword("");
-          } catch (e) {
-            setError(e);
-            if (e instanceof ApiError && e.retryAfter)
-              setUntil(Date.now() + e.retryAfter * 1000);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <Wordmark className="text-[40px]" />
-        <div className="eyebrow mt-6 text-lime">PROCUREMENT OPERATIONS</div>
-        <h1 className="font-display mt-3 text-[32px]">
-          {creating ? "Create your account." : "Enter your workspace."}
-        </h1>
-        <p className="mt-3 text-lavender">
-          Sign in to work with live procurement data.
-        </p>
-        <label className="field mt-6">
-          Account type
-          <select
-            aria-label="Account type"
-            value={kind}
-            onChange={(e) => {
-              setKind(e.target.value);
-              setCreating(false);
+    <main className="login-page">
+      <aside className="login-story" aria-label="About Corvo">
+        <img
+          className="login-story-image"
+          src={HERO_POSTER.src}
+          alt=""
+          aria-hidden="true"
+        />
+        <div className="login-story-top">
+          <Wordmark className="text-[28px]" />
+          <span className="eyebrow">PROCUREMENT OPERATIONS</span>
+        </div>
+        <div className="login-story-copy">
+          <span className="login-kicker">
+            <span aria-hidden="true" /> BUILT FOR THE DECISION
+          </span>
+          <h2>
+            Every request.
+            <br />A reasoned <em>decision.</em>
+          </h2>
+          <p>
+            Bring requests, suppliers and policy together. Move forward with the
+            evidence in view.
+          </p>
+        </div>
+        <div className="login-story-bottom">
+          <div className="login-process">
+            <span>01 / Request</span>
+            <span>02 / Evaluate</span>
+            <span>03 / Approve</span>
+          </div>
+          <p>Clarity at every stage. Control at every step.</p>
+        </div>
+      </aside>
+      <div className="login-form-region">
+        <form
+          className="surface-dark login-card"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            setError(null);
+            try {
+              if (creating && kind === "individual")
+                await auth.register({
+                  username,
+                  display_name: displayName,
+                  password,
+                });
+              else
+                await auth.login(
+                  kind === "role" ? { role, password } : { username, password },
+                );
               setPassword("");
-              setShowPassword(false);
-              setError(null);
-            }}
-          >
-            {options.data?.submission_access !== false ? (
-              <option value="role">Controlled role account</option>
-            ) : null}
-            <option value="individual">Individual account</option>
-          </select>
-        </label>
-        {kind === "role" ? (
-          <label className="field">
-            Role
+            } catch (e) {
+              setError(e);
+              if (e instanceof ApiError && e.retryAfter)
+                setUntil(Date.now() + e.retryAfter * 1000);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <div className="login-form-brand">
+            <Wordmark className="text-[32px]" />
+          </div>
+          <div className="eyebrow mt-6 text-lime">PROCUREMENT OPERATIONS</div>
+          <h1 className="font-display mt-3 text-[32px]">
+            {creating ? "Create your account." : "Enter your workspace."}
+          </h1>
+          <p className="mt-3 text-lavender">
+            Sign in to work with live procurement data.
+          </p>
+          <label className="field mt-6">
+            Account type
             <select
-              aria-label="Role"
-              value={role}
+              aria-label="Account type"
+              value={kind}
               onChange={(e) => {
-                setRole(e.target.value);
+                setKind(e.target.value);
+                setCreating(false);
                 setPassword("");
                 setShowPassword(false);
                 setError(null);
               }}
             >
-              <option value="requester">Requester</option>
-              <option value="buyer">Buyer</option>
-              <option value="admin">Admin</option>
+              {options.data?.submission_access !== false ? (
+                <option value="role">Controlled role account</option>
+              ) : null}
+              <option value="individual">Individual account</option>
             </select>
           </label>
-        ) : (
+          {kind === "role" ? (
+            <label className="field">
+              Role
+              <select
+                aria-label="Role"
+                value={role}
+                onChange={(e) => {
+                  setRole(e.target.value);
+                  setPassword("");
+                  setShowPassword(false);
+                  setError(null);
+                }}
+              >
+                <option value="requester">Requester</option>
+                <option value="buyer">Buyer</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+          ) : (
+            <label className="field">
+              Username
+              <input
+                autoComplete="username"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </label>
+          )}
+          {kind === "individual" && options.data?.registration_enabled ? (
+            <div className="mt-4 mb-4">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setCreating(!creating);
+                  setError(null);
+                  setPassword("");
+                  setShowPassword(false);
+                }}
+              >
+                {creating
+                  ? "Already have an account? Sign in"
+                  : "New here? Create account"}
+              </Button>
+              {creating ? (
+                <p className="text-sm text-lavender mt-3">
+                  Create a Requester account for your own procurement requests.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {creating ? (
+            <label className="field">
+              Full name
+              <input
+                aria-label="Full name"
+                required
+                maxLength={100}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+            </label>
+          ) : null}
+          {creating ? (
+            <p className="text-sm text-lavender mb-3">
+              Username: 3–64 lowercase letters, digits, dots, underscores or
+              hyphens; start with a letter. Password: at least 15 characters.
+            </p>
+          ) : null}
+          {publicPassword ? (
+            <p className="text-sm text-lavender mt-3 mb-3">
+              Submission password is filled automatically for the selected
+              shared role.
+            </p>
+          ) : null}
+          {!options.isPending && !options.data?.submission_access ? (
+            <p className="text-sm text-lavender mb-3">
+              Use your private individual credentials. Ask the workspace
+              administrator for access.
+            </p>
+          ) : null}
           <label className="field">
-            Username
+            Password
             <input
-              autoComplete="username"
+              type={showPassword ? "text" : "password"}
+              autoComplete={creating ? "new-password" : "current-password"}
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              minLength={creating ? 15 : 1}
+              maxLength={128}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </label>
-        )}
-        {kind === "individual" && options.data?.registration_enabled ? (
-          <div className="mt-4 mb-4">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                setCreating(!creating);
-                setError(null);
-                setPassword("");
-                setShowPassword(false);
-              }}
-            >
-              {creating
-                ? "Already have an account? Sign in"
-                : "New here? Create account"}
-            </Button>
-            {creating ? (
-              <p className="text-sm text-lavender mt-3">
-                Create a Requester account for your own procurement requests.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-        {creating ? (
-          <label className="field">
-            Full name
+          <label className="mt-3 mb-3 flex items-center gap-2 text-sm text-lavender">
             <input
-              aria-label="Full name"
-              required
-              maxLength={100}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) => setShowPassword(e.target.checked)}
             />
+            Show password
           </label>
-        ) : null}
-        {creating ? (
-          <p className="text-sm text-lavender mb-3">
-            Username: 3–64 lowercase letters, digits, dots, underscores or
-            hyphens; start with a letter. Password: at least 15 characters.
+          {options.error ? <ErrorBlock error={options.error} /> : null}
+          {error ? <ErrorBlock error={error} /> : null}
+          <Button
+            type="submit"
+            variant="lime"
+            busy={busy}
+            disabled={wait > 0}
+            className="mt-5 w-full"
+          >
+            {wait
+              ? `Try again in ${wait}s`
+              : creating
+                ? "Create account & sign in"
+                : "Sign in"}
+          </Button>
+          <p className="mt-5 text-[12px] text-lavender">
+            Your session stays in memory. Reloading requires sign-in.
           </p>
-        ) : null}
-        {publicPassword ? (
-          <p className="text-sm text-lavender mt-3 mb-3">
-            Submission password is filled automatically for the selected shared
-            role.
-          </p>
-        ) : null}
-        {!options.isPending && !options.data?.submission_access ? (
-          <p className="text-sm text-lavender mb-3">
-            Use your private individual credentials. Ask the workspace
-            administrator for access.
-          </p>
-        ) : null}
-        <label className="field">
-          Password
-          <input
-            type={showPassword ? "text" : "password"}
-            autoComplete={creating ? "new-password" : "current-password"}
-            required
-            minLength={creating ? 15 : 1}
-            maxLength={128}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        <label className="mt-3 mb-3 flex items-center gap-2 text-sm text-lavender">
-          <input
-            type="checkbox"
-            checked={showPassword}
-            onChange={(e) => setShowPassword(e.target.checked)}
-          />
-          Show password
-        </label>
-        {options.error ? <ErrorBlock error={options.error} /> : null}
-        {error ? <ErrorBlock error={error} /> : null}
-        <Button
-          type="submit"
-          variant="lime"
-          busy={busy}
-          disabled={wait > 0}
-          className="mt-5 w-full"
-        >
-          {wait
-            ? `Try again in ${wait}s`
-            : creating
-              ? "Create account & sign in"
-              : "Sign in"}
-        </Button>
-        <p className="mt-5 text-[12px] text-lavender">
-          Your session stays in memory. Reloading requires sign-in.
-        </p>
-      </form>
+        </form>
+        <div className="login-footer">
+          <span className="login-secure-mark" aria-hidden="true">
+            ↗
+          </span>{" "}
+          A private workspace for considered decisions.
+        </div>
+      </div>
     </main>
   );
 }

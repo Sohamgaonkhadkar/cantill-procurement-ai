@@ -262,7 +262,7 @@ function Header({
     ) ?? NAV[0];
 
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex h-[68px] items-center justify-between gap-4 px-4 md:left-[96px] md:px-6">
+    <header className="workspace-header pointer-events-none fixed inset-x-0 top-0 z-40 flex h-[68px] items-center justify-between gap-4 px-4 md:left-[96px] md:px-6">
       <div className="pointer-events-auto flex min-w-0 items-center gap-3">
         <button
           onClick={onOpenMenu}

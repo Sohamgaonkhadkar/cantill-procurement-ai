@@ -95,7 +95,7 @@ export const Button = forwardRef<
       disabled={disabled || busy}
       style={{ clipPath: CHAMFER_SM }}
       className={cn(
-        "group inline-flex items-center justify-center gap-2 font-medium tracking-tight transition-colors duration-200 disabled:opacity-40",
+        "corvo-button group inline-flex items-center justify-center gap-2 font-medium tracking-tight transition-colors duration-200 disabled:opacity-40",
         BTN[variant],
         sizes[size],
         className,
@@ -520,7 +520,7 @@ export function PageHeading({
   size?: "lg" | "xl";
 }) {
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("page-heading space-y-4", className)}>
       <Eyebrow>
         <span className="text-lime">●</span> {eyebrow}
       </Eyebrow>
