@@ -184,3 +184,18 @@ def test_google_float_embeddings_and_missing_usage_are_handled(client,monkeypatc
     with api.Session() as session:
         usage=session.query(AIUsage).one()
         assert usage.status=='completed' and usage.payload['token_count_estimated'] is True
+
+def test_transient_gemini_retry_is_bounded_and_each_attempt_is_metered(client,monkeypatch):
+    from contextlib import nullcontext
+    monkeypatch.setattr(safety,'isolated_demo',lambda:True);monkeypatch.setenv('AI_EXTERNAL_CALLS_ENABLED','true');monkeypatch.setenv('GEMINI_API_KEY','fictional-test-key')
+    calls=[]
+    class Transient(Exception):status_code=503
+    def create(**kwargs):
+        assert api.engine.pool.checkedout()==0
+        calls.append(kwargs)
+        if len(calls)==1:raise Transient()
+        return SimpleNamespace(model='mock',usage=SimpleNamespace(prompt_tokens=2,completion_tokens=3),choices=[SimpleNamespace(message=SimpleNamespace(content=IntentPlan(intent='create_purchase_request').model_dump_json()))])
+    monkeypatch.setattr(Provider,'_client',lambda _:nullcontext(SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))))
+    result=Provider(api.Session,'admin').structured([{'role':'user','content':'Entirely fictional demo request'}],IntentPlan,safety.ExternalContext(True,('fictional_demo',),True))
+    assert result.value.intent=='create_purchase_request' and len(calls)==2
+    with api.Session() as session:assert sorted(r.status for r in session.query(AIUsage))==['completed','provider_error']

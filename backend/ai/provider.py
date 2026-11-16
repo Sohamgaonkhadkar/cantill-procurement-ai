@@ -61,46 +61,49 @@ class Provider:
         if config.provider!='gemini':raise ProviderUnavailable('Unsupported configured provider')
         return OpenAI(api_key=key,base_url='https://generativelanguage.googleapis.com/v1beta/openai/',timeout=config.timeout,max_retries=0)
 
-    def structured(self,messages,schema,context):
+    def _chat_request(self,messages,context,**parameters):
+        from .config import bounded
         config=settings();encoded=json.dumps(messages,ensure_ascii=False)
         assert_external_allowed(context,encoded)
-        if len(encoded)>config.max_input_chars:raise ProviderUnavailable('AI context exceeds the configured input bound')
         if not config.enabled:raise ProviderUnavailable('AI conversation is disabled')
+        if len(encoded)>config.max_input_chars:raise ProviderUnavailable('AI context exceeds the configured input bound')
         if not credential():raise ProviderUnavailable('AI provider is not configured')
-        # Rates are per token; configurable when the owner changes models.
-        input_rate,output_rate=rates();throttle()
-        usage_id=reserve(self.factory,self.actor,len(encoded.encode()),config.max_output_tokens,input_rate,output_rate,config.model)
+        input_rate,output_rate=rates()
+        retries=bounded('CHAT_PROVIDER_RETRIES',1,0,1)
+        for attempt in range(retries+1):
+            # Each attempt rechecks privacy and authentication and reserves its
+            # own quota. No transaction or mutation lock spans the SDK call.
+            assert_external_allowed(context,encoded);throttle()
+            usage_id=reserve(self.factory,self.actor,len(encoded.encode()),config.max_output_tokens,input_rate,output_rate,config.model)
+            started=time.monotonic()
+            try:
+                with self._client() as client:
+                    response=client.chat.completions.create(model=config.model,messages=messages,max_tokens=config.max_output_tokens,**parameters)
+                usage=response.usage
+                settle(self.factory,usage_id,usage.prompt_tokens if usage else len(encoded.encode()),usage.completion_tokens if usage else config.max_output_tokens,input_rate,output_rate,metadata={'latency_ms':int((time.monotonic()-started)*1000),'provider':config.provider,'attempt':attempt+1,'token_count_estimated':usage is None})
+                return response
+            except Exception as error:
+                metadata=safe_provider_error(error);failed(self.factory,usage_id,metadata)
+                if metadata['status'] in {500,502,503} and attempt<retries:
+                    time.sleep(.25);continue
+                raise ProviderUnavailable('Gemini is unavailable; continue using local procurement') from None
+        raise ProviderUnavailable('Gemini is unavailable; continue using local procurement')
+
+    def structured(self,messages,schema,context):
         started=time.monotonic()
+        response=self._chat_request(messages,context,response_format={'type':'json_schema','json_schema':{'name':schema.__name__,'strict':True,'schema':_strict_schema(schema.model_json_schema())}})
         try:
-            with self._client() as client:
-                response=client.chat.completions.create(model=config.model,messages=messages,max_tokens=config.max_output_tokens,response_format={'type':'json_schema','json_schema':{'name':schema.__name__,'strict':True,'schema':_strict_schema(schema.model_json_schema())}})
-            usage=response.usage
-            input_tokens=usage.prompt_tokens if usage else len(encoded.encode());output_tokens=usage.completion_tokens if usage else config.max_output_tokens
-            settle(self.factory,usage_id,input_tokens,output_tokens,input_rate,output_rate,metadata={'latency_ms':int((time.monotonic()-started)*1000),'provider':config.provider})
             content=response.choices[0].message.content
-            if not content:raise ProviderUnavailable('Provider returned no structured content')
+            if not content:raise ValueError('No structured content')
             value=schema.model_validate_json(content)
-            return ProviderResult(value,response.model,input_tokens,output_tokens,int((time.monotonic()-started)*1000))
-        except Exception as error:
-            failed(self.factory,usage_id,safe_provider_error(error))
-            raise ProviderUnavailable('AI provider is unavailable; continue using local procurement') from None
+            usage=response.usage
+            return ProviderResult(value,response.model,usage.prompt_tokens if usage else 0,usage.completion_tokens if usage else 0,int((time.monotonic()-started)*1000))
+        except (ValueError,IndexError,AttributeError):raise ProviderUnavailable('Gemini returned invalid structured content; continue locally') from None
 
     def tool_calls(self,messages,tools,context):
-        config=settings();encoded=json.dumps(messages,ensure_ascii=False)
-        assert_external_allowed(context,encoded)
-        if not config.enabled or len(encoded)>config.max_input_chars:raise ProviderUnavailable('AI tool planning is unavailable')
-        if not credential():raise ProviderUnavailable('AI provider is not configured')
-        input_rate,output_rate=rates();throttle()
-        usage_id=reserve(self.factory,self.actor,len(encoded.encode()),config.max_output_tokens,input_rate,output_rate,config.model)
-        started=time.monotonic()
-        try:
-            with self._client() as client:
-                response=client.chat.completions.create(model=config.model,messages=messages,tools=tools,tool_choice='auto',parallel_tool_calls=False,max_tokens=config.max_output_tokens)
-            usage=response.usage
-            settle(self.factory,usage_id,usage.prompt_tokens if usage else len(encoded.encode()),usage.completion_tokens if usage else config.max_output_tokens,input_rate,output_rate,metadata={'latency_ms':int((time.monotonic()-started)*1000),'provider':config.provider})
-            return [{'id':call.id,'name':call.function.name,'arguments':call.function.arguments} for call in (response.choices[0].message.tool_calls or [])][:config.max_tools]
-        except Exception as error:
-            failed(self.factory,usage_id,safe_provider_error(error));raise ProviderUnavailable('AI read-only tool planning unavailable') from None
+        response=self._chat_request(messages,context,tools=tools,tool_choice='auto',parallel_tool_calls=False)
+        try:return [{'id':call.id,'name':call.function.name,'arguments':call.function.arguments} for call in (response.choices[0].message.tool_calls or [])][:settings().max_tools]
+        except (ValueError,IndexError,AttributeError):raise ProviderUnavailable('Gemini returned invalid read-only tool calls; continue locally') from None
 
     def _embedding_request(self,texts,task_type):
         import httpx

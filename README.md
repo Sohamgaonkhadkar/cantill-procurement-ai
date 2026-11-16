@@ -18,7 +18,7 @@
 ![Gemini](https://img.shields.io/badge/Gemini_API-Free_tier-4678E8?style=flat-square&logo=googlegemini&logoColor=white)
 ![Local RAG](https://img.shields.io/badge/RAG-PostgreSQL_search-287C79?style=flat-square)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-232_passed-28A745?style=flat-square)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-233_passed-28A745?style=flat-square)
 ![Browser verification](https://img.shields.io/badge/Browser_scenarios-17_passed-4678E8?style=flat-square)
 ![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-287C79?style=flat-square&labelColor=142128)
 

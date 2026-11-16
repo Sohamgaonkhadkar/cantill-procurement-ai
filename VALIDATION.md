@@ -6,8 +6,8 @@ Reviewed 17 November 2026. Results distinguish pure business checks, API tests, 
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **228 passed, 4 PostgreSQL-only tests skipped** |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **232 passed**, including independent approval and chat-confirmation transactions |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **229 passed, 4 PostgreSQL-only tests skipped** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **233 passed**, including independent approval and chat-confirmation transactions |
 | Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **17 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
 | CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
 | OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
