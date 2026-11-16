@@ -100,6 +100,8 @@ The public repository is [Sohamgaonkhadkar/cantill-procurement-ai](https://githu
 
 ## Blind-test runbook
 
+Follow [BLIND_TEST_RUNBOOK.md](BLIND_TEST_RUNBOOK.md) for the detailed freeze, two-run, amendment-review and three-file submission procedure, including operational risks and the executed rehearsal.
+
 Complete the repository, hosted application and assessment form before **19 November 2026, 10:00 AM IST**. Freeze application code at that time.
 
 1. Import the supplied blind CSV and process explicitly under v5.0. Save the returned run ID and download `yourname__run1.csv`.
