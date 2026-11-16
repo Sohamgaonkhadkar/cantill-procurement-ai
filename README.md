@@ -36,7 +36,7 @@ Built for the **Cantill.ai Full-stack Intern Challenge**. Verification badges re
 
 **[Open Corvo →](https://corvo-procurement.vercel.app)**
 
-Choose **Controlled role account → Admin** to review every workspace. The submission password fills and displays automatically. Buyer and Requester roles are also available; individual signup creates a Requester account.
+Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged password is published by the application.
 
 | Workspace | What to inspect |
 |---|---|
@@ -49,7 +49,7 @@ Choose **Controlled role account → Admin** to review every workspace. The subm
 | **Contract Vault** | Contract register, ceiling values and reviewed PDF proposals |
 | **Purchase Orders / Sourcing / Audit Trail** | Persisted purchasing records, overrides and actor/time evidence |
 
-Shared submission roles intentionally allow reviewers to change live data. Normal production operation can disable this configuration and use individual accounts. [Health endpoint](https://corvo-procurement.vercel.app/health).
+Public privileged demonstration credentials have been removed. Public registration is disabled by default. [Health endpoint](https://corvo-procurement.vercel.app/health).
 
 ### Isolated synthetic examples
 
@@ -145,7 +145,8 @@ Copy `.env.example` to `.env` for local overrides. Never commit credentials.
 | `SESSION_SECRET` | Stable, private token-signing key |
 | `REQUESTER_PASSWORD`, `BUYER_PASSWORD`, `ADMIN_PASSWORD` | Private operational role passwords |
 | `DEMO_MODE` | Enables local defaults; hosted production uses false |
-| `SUBMISSION_ACCESS` | Opt-in to published role credentials and requester signup; false by default |
+| `SUBMISSION_ACCESS` | Local-only Requester demonstration alias; never exposes Admin/Buyer credentials |
+| `PUBLIC_REGISTRATION` | Explicit opt-in to requester signup; false by default |
 | `CORS_ORIGINS` | Exact permitted cross-origin frontend origins |
 | `VITE_API_BASE_URL` | Empty for same-origin hosting; explicit backend origin for split development |
 

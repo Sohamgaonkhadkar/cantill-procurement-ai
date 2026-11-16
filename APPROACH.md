@@ -52,4 +52,4 @@ The running backend does not invoke an LLM. Procurement arithmetic and routing a
 
 ## Scope boundaries
 
-The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Public shared Admin/Buyer/Requester access is an owner-requested submission configuration, distinct from a private production deployment.
+The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Evaluator access uses private individual accounts; privileged public aliases are removed.

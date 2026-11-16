@@ -132,7 +132,7 @@ An override retains the original recommendation and requires a written reason. T
 
 Decision evidence includes matching candidates, source lines, fixed anchors, exact valuation, contract rejection reasons, evaluated policy rules, supplier score components and selected price references. The buyer can inspect why the route was chosen, not just see its label.
 
-Production uses Vercel/FastAPI with persistent Neon PostgreSQL. PDFs are processed in memory; original task files and credentials remain outside public source. Shared submission roles are intentionally public at the owner's request and are not a production identity model. Individual accounts retain requester isolation, password hashing, revocable sessions and throttling.
+Production uses Vercel/FastAPI with persistent Neon PostgreSQL. PDFs are processed in memory; original task files and credentials remain outside public source. Evaluator accounts are private and scoped; public privileged demonstration aliases are removed. Individual accounts retain requester isolation, password hashing, revocable sessions and throttling.
 
 Known limitations include bounded language parsing, manual handling of scanned amendments, no signature authenticity verification, no corporate SSO/MFA/recovery, no external supplier dispatch and no exhaustive load/penetration testing. See VALIDATION.md for executed evidence and the limits of the assessment.
 

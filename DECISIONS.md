@@ -57,7 +57,7 @@ Reference price uses the supplier's latest PO within 548 preceding days; ties br
 
 ## Current tradeoffs
 
-Public submission access is enabled at the owner's request: shared role passwords are displayed automatically, including Admin. This improves reviewer access but permits visitors to change live policy/purchasing data. It is distinct from private operational credentials, which are never exposed by the options endpoint. Before a private production deployment, disable SUBMISSION_ACCESS and use individual identities. Before the timed assessment, verify the shared workspace has not changed unexpectedly.
+Security audit update: public Admin/Buyer demonstration aliases are removed. Evaluator access uses private individual identities with an evaluation scope that permits procurement/policy workflows but blocks user administration and bulk master-data replacement. Public registration is independently configured and disabled by default. Session-signing keys are rotated when retiring public shared access; privileged credentials never appear in authentication options.
 
 Malformed CSV headers are rejected at intake. Allowing duplicate quantity columns would let a parser overwrite a financially material value before any policy logic sees it. Final output verification is separate: the read-only submission checker tests schema, line identity, decimal/action consistency and optional Active-supplier membership without recalculating financial decisions.
 

@@ -47,4 +47,4 @@ This matrix maps the supplied assessment requirements to implemented components 
 
 ## Acceptance boundary
 
-A passed test demonstrates the behavior asserted by that test. Fourteen known worked decisions are not a full answer key for the entire sample, and sample-derived rehearsals are not unseen accuracy measurements. Public shared Admin access is a deliberate submission setting, not a claim of private enterprise security. The blind-test amendment must be reviewed faithfully through the existing policy feature; unsupported wording must not be silently ignored.
+A passed test demonstrates the behavior asserted by that test. Fourteen known worked decisions are not a full answer key for the entire sample, and sample-derived rehearsals are not unseen accuracy measurements. Evaluator identities are privately provisioned and restricted from identity administration and bulk data replacement. The blind-test amendment must be reviewed faithfully through the existing policy feature; unsupported wording must not be silently ignored.
