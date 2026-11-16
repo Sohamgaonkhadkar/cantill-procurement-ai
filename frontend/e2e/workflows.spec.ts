@@ -142,6 +142,7 @@ test("real CSV, consolidated approval, policy amendment lifecycle, replay and au
   const simulation = page.waitForResponse((r) => r.url().endsWith("/simulate"));
   await page.getByRole("button", { name: "Simulate selected policy" }).click();
   const sim = await (await simulation).json();
+  expect(sim.policy_id).toBe(version);
   expect(sim.comparison.affected_lines).toBeGreaterThan(0);
   await page
     .getByLabel("Governance reason")

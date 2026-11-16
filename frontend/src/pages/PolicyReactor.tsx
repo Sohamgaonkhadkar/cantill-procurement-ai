@@ -71,6 +71,12 @@ export default function PolicyReactor() {
     : [];
   async function saveImported(promise: Promise<PolicyResponse>) {
     const p = await promise;
+    qc.setQueryData<{ items: PolicyResponse[] }>(["policies"], (previous) => ({
+      items: [
+        ...(previous?.items.filter((item) => item.version !== p.version) ?? []),
+        p,
+      ],
+    }));
     setSelectedId(p.version);
     setEditor(JSON.stringify(definition(p), null, 2));
     return p;
