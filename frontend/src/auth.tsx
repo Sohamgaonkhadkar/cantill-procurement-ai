@@ -102,7 +102,9 @@ export function Login() {
     retry: false,
   });
   const publicPassword =
-    kind === "role"
+    kind === "role" &&
+    options.data?.workspace_mode === "demo" &&
+    options.data.submission_access
       ? options.data?.roles.find((item) => item.role === role)?.password
       : undefined;
   useEffect(() => {
@@ -227,8 +229,15 @@ export function Login() {
               onChange={(e) => {
                 setKind(e.target.value);
                 setCreating(false);
-                setPassword("");
-                setShowPassword(false);
+                const demoPassword =
+                  e.target.value === "role" &&
+                  options.data?.workspace_mode === "demo" &&
+                  options.data.submission_access
+                    ? options.data.roles.find((item) => item.role === role)
+                        ?.password
+                    : undefined;
+                setPassword(demoPassword ?? "");
+                setShowPassword(Boolean(demoPassword));
                 setError(null);
               }}
             >
@@ -244,8 +253,15 @@ export function Login() {
                 value={role}
                 onChange={(e) => {
                   setRole(e.target.value);
-                  setPassword("");
-                  setShowPassword(false);
+                  const demoPassword =
+                    options.data?.workspace_mode === "demo" &&
+                    options.data.submission_access
+                      ? options.data.roles.find(
+                          (item) => item.role === e.target.value,
+                        )?.password
+                      : undefined;
+                  setPassword(demoPassword ?? "");
+                  setShowPassword(Boolean(demoPassword));
                   setError(null);
                 }}
               >

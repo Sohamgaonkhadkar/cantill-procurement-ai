@@ -16,6 +16,43 @@ test("startup survives blocked storage and fonts", async ({ page }) => {
     page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeVisible();
 });
+
+test("synthetic auth-discovery presentation autofills only isolated demo roles, including repeated selections", async ({
+  page,
+}) => {
+  let demo = true;
+  await page.route("**/api/auth/options", (route) =>
+    route.fulfill({
+      json: {
+        submission_access: true,
+        registration_enabled: true,
+        workspace_mode: demo ? "demo" : "live",
+        roles: ["requester", "buyer", "admin"].map((role) => ({
+          role,
+          password: "corvo-demo-" + role,
+        })),
+        demo_url: null,
+      },
+    }),
+  );
+  await page.goto("/");
+  for (const role of ["requester", "requester", "buyer", "admin"]) {
+    await page.getByLabel("Role", { exact: true }).selectOption(role);
+    await expect(page.getByLabel("Password", { exact: true })).toHaveValue(
+      "corvo-demo-" + role,
+    );
+  }
+  await page.getByLabel("Account type", { exact: true }).selectOption("role");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue(
+    "corvo-demo-admin",
+  );
+  demo = false;
+  await page.reload();
+  for (const role of ["requester", "buyer", "admin"]) {
+    await page.getByLabel("Role", { exact: true }).selectOption(role);
+    await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
+  }
+});
 test("blocked entry script shows reload recovery instead of a blank page", async ({
   page,
 }) => {
@@ -916,13 +953,11 @@ test("keyboard dialogs retain focus and seven-stage 3D remains optional", async 
     page.getByRole("button", { name: "Open command palette" }),
   ).toBeFocused();
   await go(page, "Batch Lab");
-  await page
-    .getByLabel("PR CSV file", { exact: true })
-    .setInputFiles({
-      name: "synthetic-keyboard.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.from(csv),
-    });
+  await page.getByLabel("PR CSV file", { exact: true }).setInputFiles({
+    name: "synthetic-keyboard.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(csv),
+  });
   const processed = page.waitForResponse(
     (r) =>
       r.url().endsWith("/api/process-batch") && r.request().method() === "POST",

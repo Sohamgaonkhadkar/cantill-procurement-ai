@@ -776,6 +776,9 @@
 .login-story-top .eyebrow {
   color: #d8dedd;
 }
+.login-story-top .text-porcelain {
+  color: #f5f3ee;
+}
 .login-story-copy {
   margin: 100px 0 70px;
   max-width: 620px;
