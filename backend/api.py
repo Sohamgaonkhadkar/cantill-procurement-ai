@@ -467,7 +467,7 @@ def chat_message(body:ChatBody,actor=Depends(user)):
     from zoneinfo import ZoneInfo
     with mutation_lock,Session.begin() as s:
         session_id=body.session_id or 'CHAT-'+uuid4().hex
-        record=s.get(Chat,session_id)
+        record=s.scalar(select(Chat).where(Chat.id==session_id).with_for_update())
         if body.session_id and not record: raise HTTPException(404,'Chat session not found')
         payload=deepcopy(record.payload) if record else {'actor':actor,'messages':[],'state':{}}
         if payload['actor']!=actor: raise HTTPException(403,'This session belongs to another actor')
@@ -476,10 +476,11 @@ def chat_message(body:ChatBody,actor=Depends(user)):
         if body.message.strip().lower() in {'confirm','yes','submit'} and payload['state'].get('ready'):
             state=payload['state']; item=current_data(s).items.get(state['item_code'],{})
             created=datetime.now(ZoneInfo('Asia/Kolkata')).replace(tzinfo=None).isoformat(timespec='seconds')
-            row={'pr_no':'PR-CHAT-'+session_id[-12:].upper(),'pr_line':'1','created_at':created,'requester':actor,'department':'Chat intake','plant':state['plant'],'item_code':'' if state['item_code']=='NEW' else state['item_code'],'description':item.get('description',state['description']),'quantity':state['quantity'],'uom':state['uom'],'estimated_unit_price':state.get('estimated_unit_price',''),'need_by_date':state['need_by_date'],'urgency':state['urgency']}
+            submission=int(payload.get('submission_count',0))+1
+            row={'pr_no':f'PR-CHAT-{session_id[-12:].upper()}-{submission:04d}','pr_line':'1','created_at':created,'requester':actor,'department':'Chat intake','plant':state['plant'],'item_code':'' if state['item_code']=='NEW' else state['item_code'],'description':item.get('description',state['description']),'quantity':state['quantity'],'uom':state['uom'],'estimated_unit_price':state.get('estimated_unit_price',''),'need_by_date':state['need_by_date'],'urgency':state['urgency']}
             result=execute_run(s,[row],None,actor)
             if result['issues']: reply='Request validation failed: '+str(result['issues'])
-            else: reply='PR created. '+result['rows'][0]['reason']; payload['state']={}
+            else: reply='PR created. '+result['rows'][0]['reason']; payload['state']={}; payload['submission_count']=submission
         else:
             state,reply=parse_message(payload['state'],body.message,current_data(s)); payload['state']=state
         payload['messages'].append({'role':'assistant','content':reply,'timestamp':db.now()})

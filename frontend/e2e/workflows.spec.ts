@@ -263,6 +263,21 @@ test("chat maintains server session and requires explicit confirmation", async (
   const confirmed = await (await created).json();
   expect(confirmed.session_id).toBe(draft.session_id);
   expect(confirmed.run.requirements).toHaveLength(1);
+  await page
+    .getByLabel("Describe the request", { exact: true })
+    .fill("Need 3 ITM-9002 at P-A by 2026-12-02 normal");
+  const secondDraft = page.waitForResponse((r) =>
+    r.url().endsWith("/api/chat/messages"),
+  );
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  expect((await (await secondDraft).json()).run).toBeNull();
+  const secondConfirmation = page.waitForResponse((r) =>
+    r.url().endsWith("/api/chat/messages"),
+  );
+  await page.getByRole("button", { name: "Confirm and create PR" }).click();
+  const second = await (await secondConfirmation).json();
+  expect(second.session_id).toBe(draft.session_id);
+  expect(second.run.input[0].pr_no).not.toBe(confirmed.run.input[0].pr_no);
   await expect(
     page.getByRole("heading", { name: "PR created", exact: true }),
   ).toBeVisible();
