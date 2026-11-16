@@ -159,6 +159,8 @@ type Policy = {
 
 `POST /api/policies/propose-amendment`: JSON `{text:string,version:string,effective_date:string,base_version?:string}` (base defaults 5.0), admin. Use for policy changes described conversationally in Policy Studio. Returns the same draft/interpretation structure as file upload, and follows exactly the same review/approval/activation path. This endpoint does not create a purchase requisition.
 
+Automatic threshold extraction accepts only a whole unambiguous global-limit statement, such as “Change spot limit to INR 100000”. Scoped, conditional, negated or more complex prose is retained for structured manual rule authoring and does not silently change a global threshold. An empty detected_changes list means no executable rule change was interpreted; a new version/effective date alone does not implement the document's instructions.
+
 `POST /api/policies/preview`: same JSON body as policy creation, buyer/admin. Returns `{valid:true,diff:{path,before,after}[],policy,snapshot_hash}`; does not persist.
 
 `POST /api/policies/{id}/simulate`: JSON `{run_id:string}`, buyer/admin. Returns `{simulation:true,policy_id,base_run_id,result:ProcessingResult,comparison:Comparison}` using the base run's data snapshot. Draft simulation does not activate a policy or persist a purchasing action. Lines earlier than the explicit version's effective date become NOT_PROCESSED; surface this, rather than pretending the policy applied retroactively.

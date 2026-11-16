@@ -33,11 +33,18 @@ def parse_message(state,message,data):
                 state['need_by_date']=(today+timedelta(days=delta)).isoformat()
     code=re.search(r'ITM-\d+',message,re.I)
     if code and code[0].upper() in data.items: state['item_code']=code[0].upper()
+    explicit_item_change=bool(re.search(r'\b(?:change|replace|correct)\b.*\b(?:item|product|material)\b',text))
+    if explicit_item_change and not (code and code[0].upper() in data.items):
+        state.pop('item_code',None); state['ready']=False
+        state['description']=message
+        state.pop('alternatives',None)
     # Accumulate specification-bearing messages, never quantity/date-only replies.
     if any(t in text for t in ['need','bearing','brg','glove','hose']) or (not quantity and not exact and not any(k in text for k in ['confirm','normal','emergency'])):
         state['description']=(state['description']+' '+message).strip()
-    if not state.get('item_code'):
-        query=normalize(state['description']+' '+message); qwords=set(query.split()); qspecs=specs(query)
+    # Reconsider a clearly described item in every turn. Looking only while the
+    # item field is empty silently ignores corrections after confirmation-ready.
+    for query_text in [message,state['description']+' '+message]:
+        query=normalize(query_text); qwords=set(query.split()); qspecs=specs(query)
         candidates=[]
         for key,item in data.items.items():
             target=normalize(item['description']); words=set(target.split()); numeric=specs(target)
@@ -45,8 +52,13 @@ def parse_message(state,message,data):
             if numeric and not all(n in qspecs for n in numeric): continue
             if coverage>=.5: candidates.append((coverage,key))
         candidates.sort(key=lambda x:(-x[0],x[1]))
-        if candidates and candidates[0][0]>=.65 and (len(candidates)<2 or candidates[0][0]-candidates[1][0]>=.15): state['item_code']=candidates[0][1]; state.pop('alternatives',None)
-        elif candidates: state['alternatives']=[{'item_code':k,'description':data.items[k]['description']} for _,k in candidates[:4]]
+        if candidates and candidates[0][0]>=.65 and (len(candidates)<2 or candidates[0][0]-candidates[1][0]>=.15):
+            if not code:
+                state['item_code']=candidates[0][1]
+            state.pop('alternatives',None)
+            break
+        if state.get('item_code'): break
+        if candidates: state['alternatives']=[{'item_code':k,'description':data.items[k]['description']} for _,k in candidates[:4]]
     missing=[k for k in ['item_code','quantity','plant','need_by_date','urgency'] if not state.get(k)]
     if missing:
         prompts={'item_code':'Which item specification? You can select a master item code, or say “new item” with its description and estimated unit price.','quantity':'How many units do you need?','plant':'Which plant? '+', '.join(data.plants),'need_by_date':'When do you need it? Use YYYY-MM-DD or a weekday.','urgency':'Is this Normal or Emergency?'}

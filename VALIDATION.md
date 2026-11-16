@@ -4,8 +4,8 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 
 | Check | Actual result |
 |---|---|
-| Synthetic Python unit/API/migration/serverless suite on Windows, Python 3.14, SQLite API fixtures | **69 passed** |
-| Synthetic suite on Linux/Python 3.12 with API fixtures using isolated PostgreSQL `corvo_test` | **69 passed**, including final persistence batching, stable historical run IDs, invariant/serverless and deployment adaptations |
+| Synthetic Python unit/API/migration/serverless suite on Windows, Python 3.14, SQLite API fixtures | **79 passed** |
+| Synthetic suite on Linux/Python 3.12 with API fixtures using isolated PostgreSQL `corvo_test` | **79 passed**, including persistence batching, stable historical run IDs, invariant/serverless, deployment adaptations and readiness-review regressions |
 | Full sample batch | 186 output rows, 149 requirements, 2 explicit invalid-line outcomes |
 | Worked procurement examples | All 14 privately checked against original source examples, using exact rates instead of presentation rounding |
 | Worked supplier rankings | All 3 privately checked and matched |
@@ -23,6 +23,8 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 | Managed-preview HTTP workflow | Passed through a local HTTP listener using Vercel-like startup, secure preview credentials and remote Neon persistence: sample CSV, amendment simulation/review/approval/activation, comparison (48 affected lines), historical replay, chat confirmation, actual synthetic PO approval, duplicate rejection, sourcing override, rankings, exports, contract upload and audit. The test amendment was deactivated afterward; production purchasing records were untouched |
 
 The suite reports one Starlette deprecation warning concerning its httpx TestClient compatibility adapter. It does not affect the passing assertions. Original worked-example fixtures and exported sample results remain private and are not included in the public tests.
+
+A subsequent readiness review found and fixed two defects missed by the initial suite: an already-selected chat item could survive a correction, and extracting a threshold from a scoped amendment could propose a broader global change. Ten regression cases now cover item correction and scope/negation/old-new-amount handling. Text amendment automation now requires an entire unambiguous global-limit statement; other prose stays unchanged for structured human authoring.
 
 ## Still unverified or incomplete
 
