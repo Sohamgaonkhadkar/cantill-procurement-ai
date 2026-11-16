@@ -1,49 +1,25 @@
-"""Conservative document interpretation; all proposals require human review."""
-from copy import deepcopy
-import re
-from .domain import number
-from .policy import validate_policy
+"""Amendment compatibility entrypoint and precise policy diffs."""
+from itertools import zip_longest
+from .language import interpret
 
 def propose(base,text,version,effective_date):
-    policy=deepcopy(base)
-    policy.pop('status',None)
-    policy['version']=version; policy['effective_date']=effective_date
-    detected=[]
-    # A scoped or conditional clause cannot safely be reduced to a global limit.
-    # Preserve its source for structured manual authoring instead of proposing a
-    # broader change that a reviewer might mistake for a faithful interpretation.
-    if re.search(r'\b(?:plants?|categor(?:y|ies)|only|except|unless|if|when|where|provided|not|never|unchanged)\b',text,re.I):
-        validate_policy(policy)
-        return policy,detected
-    # Only explicitly named numeric limits are interpreted. Other prose remains
-    # visible as unresolved source text in the review workflow.
-    patterns=[('spot', '5.4','lt'),('emergency','5.3','lte'),('rfq','5.5','lt'),('rfp','5.6','gte')]
-    def leaves(node):
-        if 'fact' in node: yield node
-        for key in ['all','any']:
-            for child in node.get(key,[]): yield from leaves(child)
-        if 'not' in node: yield from leaves(node['not'])
-    for label,rid,op in patterns:
-        # Match the whole statement, not a fragment that might omit scope,
-        # exceptions, negation, a previous amount, or an operator change.
-        match=re.fullmatch(r'\s*(?:(?:please|change|set|update|revise|increase|decrease|reduce|the|new)\s+)*'+label+r'\s+(?:PO\s+)?(?:limit|threshold)\s*(?:to|of|is|=|:)?\s*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d+)?)\s*(lakh|lac|crore)?\s*\.?\s*',text,re.I)
-        if match:
-            amount=number(match[1]); multiplier={'lakh':100000,'lac':100000,'crore':10000000}.get((match[2] or '').lower(),1); amount*=multiplier
-            for rule in policy['rules']:
-                if rule['id']==rid:
-                    for leaf in leaves(rule['when']):
-                        if leaf['fact']=='requirement.group_value_inr': leaf['value']=str(amount)
-            if label in {'rfq','rfp'}:
-                for rule in policy['rules']:
-                    if rule['id'] in {'5.5','5.6'}:
-                        for leaf in leaves(rule['when']):
-                            if leaf['fact']=='requirement.group_value_inr': leaf['value']=str(amount)
-            detected.append(f'{label} threshold proposed: INR {amount}')
-    validate_policy(policy)
-    return policy,detected
+    result=interpret(base,text,version,effective_date)
+    return result['policy'],result['detected_changes']
 
 def field_diff(before,after,path=''):
     if isinstance(before,dict) and isinstance(after,dict):
         return [d for k in sorted(set(before)|set(after)) for d in field_diff(before.get(k),after.get(k),f'{path}.{k}' if path else k)]
+    if isinstance(before,list) and isinstance(after,list):
+        combined=before+after
+        if combined and all(isinstance(x,dict) and isinstance(x.get('id'),str) for x in combined) and len({x['id'] for x in before})==len(before) and len({x['id'] for x in after})==len(after):
+            old={x['id']:x for x in before}; new={x['id']:x for x in after}
+            return [d for key in sorted(set(old)|set(new)) for d in field_diff(old.get(key),new.get(key),f'{path}[{key}]')]
+        return [d for i,(a,b) in enumerate(zip_longest(before,after)) for d in field_diff(a,b,f'{path}[{i}]')]
     if before!=after: return [{'path':path,'before':before,'after':after}]
     return []
+
+def policy_diff(before,after):
+    # Governance has its own audit trail. Embedding its prior diff recursively
+    # would duplicate historical source documents with each new policy version.
+    excluded={'id','status','governance'}
+    return field_diff({k:v for k,v in before.items() if k not in excluded},{k:v for k,v in after.items() if k not in excluded})

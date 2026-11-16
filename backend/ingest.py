@@ -6,14 +6,14 @@ from pypdf.errors import PyPdfError
 import re
 from .domain import Data,read_csv,number,digest
 
-def pdf_text(content):
+def pdf_text(content,allow_empty=False):
     if not content.startswith(b'%PDF-'): raise ValueError('Expected a PDF file')
     try:
         reader=PdfReader(BytesIO(content))
         if len(reader.pages)>100: raise ValueError('PDF exceeds 100 pages')
         text='\n'.join(p.extract_text() or '' for p in reader.pages)
     except PyPdfError as exc: raise ValueError('Unreadable or encrypted PDF; provide an unlocked document') from exc
-    if not text.strip(): raise ValueError('No extractable text; scanned PDFs require manual transcription')
+    if not text.strip() and not allow_empty: raise ValueError('No extractable text; scanned PDFs require manual transcription')
     return text
 
 def extract_contract(content):

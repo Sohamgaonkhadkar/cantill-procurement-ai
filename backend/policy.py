@@ -44,19 +44,22 @@ def coerce(fact, value):
     if typ is str and not isinstance(value,str): raise ValueError(f'{fact} expects text')
     return value
 
-def validate_condition(node, depth=0):
+def validate_condition(node, depth=0,budget=None):
+    if budget is None: budget=[0]
+    budget[0]+=1
+    if budget[0]>2000: raise ValueError('Policy condition budget exceeds 2,000 nodes')
     if depth>12 or not isinstance(node,dict): raise ValueError('Invalid/deep condition')
     logical = set(node) & {'all','any','not'}
     if logical:
         if len(node)!=1: raise ValueError('Boolean nodes must contain one operator')
         key = next(iter(logical)); children = [node[key]] if key=='not' else node[key]
         if not isinstance(children,list) or not children: raise ValueError('Boolean condition needs children')
-        for child in children: validate_condition(child,depth+1)
+        for child in children: validate_condition(child,depth+1,budget)
         return
     if set(node)-{'fact','op','value'} or node.get('fact') not in FACTS or node.get('op') not in OPS:
         raise ValueError('Unknown fact, operator or condition field')
     if node['op'] in {'in','not_in'}:
-        if not isinstance(node.get('value'),list): raise ValueError('Membership expects a list')
+        if not isinstance(node.get('value'),list) or len(node['value'])>1000: raise ValueError('Membership expects at most 1,000 values')
         for v in node['value']: coerce(node['fact'],v)
     elif node['op'] not in {'exists','is_null'}:
         if node.get('value') is None: raise ValueError('Comparison value required')
@@ -74,13 +77,13 @@ def _validate_policy(policy):
     if len(p['recency_days'])!=2 or not 0<=p['recency_days'][0]<=p['recency_days'][1]: raise ValueError('Invalid recency tiers')
     if set(p['weights'])!={'frequency','recency','contract','delivery','quality'} or any(number(x)<0 for x in p['weights'].values()): raise ValueError('Invalid ranking weights')
     if not policy.get('rules') or len(policy['rules'])>200: raise ValueError('Expected 1–200 rules')
-    ids=set(); priorities=set()
+    ids=set(); priorities=set(); budget=[0]
     for r in policy['rules']:
         if r['id'] in ids or r['priority'] in priorities: raise ValueError('Duplicate rule ID or priority')
         if type(r['priority']) is not int: raise ValueError('Priority must be integer')
         ids.add(r['id']); priorities.add(r['priority'])
         if r['route'] not in ROUTES: raise ValueError('Unsupported route')
-        validate_condition(r['when'])
+        validate_condition(r['when'],budget=budget)
     return deepcopy(policy)
 
 def validate_policy(policy):

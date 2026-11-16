@@ -37,7 +37,7 @@ The supplied brief and policy were read before implementation. Original files, e
 | Buyer override | 8.1 requires written reason and original | Permit conservative sourcing overrides; retain original immutable decision and create separate sourced action | Arbitrary direct PO override would bypass ceilings and supplier eligibility | No unsafe supplier/rate input path | `test_override_preserves_recommendation` |
 | Consolidated approval | Policy recommends a combined PO | One approval commits all pending requirements on that planned PO; an overridden member is excluded | One PO must have a transaction boundary | UI must state approval scope | Approval integration tests |
 | Relative chat dates | Brief gives “next Friday” without definition | Use Asia/Kolkata; next weekday means following calendar week; bare weekday means next occurrence | Explicit, reproducible calendar interpretation | Confirmation shows resolved date before submission | Chat integration and documented behavior |
-| Authentication scope | Assessment requests simple roles or controlled demo | Three password-protected shared role principals, signed expiring bearer tokens | Fast demonstration without implying corporate IAM integration | Shared demo users do not have per-employee run privacy | Auth/CORS integration test; known limitation |
+| Authentication scope | Simple roles plus private requester data | Individual salted-password accounts; revocable persisted eight-hour sessions; per-identity failure throttling; requester ownership checks | Server authorization must hold across workers and employee identities | Controlled role logins remain available; SSO/MFA/recovery require future integration | Account lifecycle, ownership, logout and throttle tests |
 
 ## Ranking formula
 
@@ -49,6 +49,8 @@ Reference price uses the supplier's latest PO within 548 preceding days; ties br
 
 ## Current tradeoffs
 
-The fallback amendment parser deliberately recognizes only explicit named numeric thresholds. Arbitrary new rules can be entered in the validated condition editor/JSON without application code changes. Approval requires source review. There is no configured LLM, OCR service or signature verifier. Chat provides a basic deterministic parser, not general language understanding. The Arena frontend is external work in progress; this repository currently provides a backend integration entry page and interactive API docs.
+The conservative amendment compiler recognizes complete supported limit, window, supplier-count and scoped rule statements. Master-data scope resolution rejects ambiguous values. Unsupported language remains visible and blocks ordinary review until explicit manual verification after structured authoring. Arbitrary registered-fact rules can be entered in the validated condition editor/JSON without application code changes. Approval requires source review. There is no configured LLM, OCR service or signature verifier. Chat provides a basic deterministic parser, not general language understanding. The Arena frontend is external work in progress; this repository currently provides a backend integration entry page and interactive API docs.
 
 The source brief is an individual assignment. No subagents or other candidates' implementations were used. Deadline and publication obligations require human submission of the assessment form; the application cannot submit the blind test before receiving its data.
+
+Numeric resource bounds: financial arithmetic uses Decimal precision 64. Inputs are finite, at most 10^18 in magnitude, 24 coefficient digits and 12 decimal places; malformed comma grouping and excessive exponents fail validation rather than reaching arithmetic or JSON serialization. These are operational bounds, not policy thresholds.

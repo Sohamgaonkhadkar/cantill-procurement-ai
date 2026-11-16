@@ -5,30 +5,32 @@ from pathlib import Path
 from threading import RLock
 from uuid import uuid4
 from typing import Annotated,Literal
-import json,os,logging
+import json,os,logging,hashlib
 from fastapi import FastAPI,Depends,HTTPException,UploadFile,File,Form,Query,Request
 from fastapi.responses import Response,FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel,Field,ConfigDict
-from sqlalchemy import select,text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select,text,func,or_
+from sqlalchemy.exc import IntegrityError,SQLAlchemyError
 from . import db
 from .db import Policy,Run,Dataset,Contract,ContractLine,ContractProposal,RequirementRecord,PurchaseOrder,SourcingRequest,ContractLedger,Commitment,Override,Audit,Chat
-from .db import User,PolicyApproval,PurchaseOrderLine,ChatMessage
+from .db import User,PolicyApproval,PurchaseOrderLine,ChatMessage,AuthSession
 from .domain import Data,read_csv,csv_bytes,INPUT_COLUMNS,digest,number,money,rate_text
 from .engine import process,select_policy
 from .policy import initial_policy,validate_policy,FACTS,OPS,ROUTES
 from .ingest import pdf_text,extract_contract,validate_contract
 from .service import current_data,execute_run,policies,audit,comparison,save_data
-from .security import login,user,require,DEMO
+from .security import authenticate,user,require,DEMO,configure_sessions,role_of,hash_password
 from .suppliers import preferred
-from .amendments import propose,field_diff
+from .amendments import policy_diff as field_diff
+from .language import interpret
 from .chat import parse_message
 from .schemas import RunResponse,Page,LoginResponse,RequirementResponse,PolicyResponse,PolicyDefinition,ComparisonResponse,SimulationResponse,ActionResponse,ChatResponse
 
 engine,Session=db.connect(); mutation_lock=RLock()
+configure_sessions(lambda:Session)
 def business_today():
     from zoneinfo import ZoneInfo
     return datetime.now(ZoneInfo('Asia/Kolkata')).date()
@@ -51,23 +53,34 @@ app.add_middleware(CORSMiddleware,allow_origins=[origin.strip() for origin in os
 @app.exception_handler(ValueError)
 async def value_error(_,exc): return JSONResponse(status_code=422,content={'error':{'code':'VALIDATION_ERROR','message':str(exc),'details':[]}})
 @app.exception_handler(HTTPException)
-async def http_error(_,exc): return JSONResponse(status_code=exc.status_code,content={'error':{'code':f'HTTP_{exc.status_code}','message':str(exc.detail),'details':[]}})
+async def http_error(_,exc): return JSONResponse(status_code=exc.status_code,headers=exc.headers,content={'error':{'code':f'HTTP_{exc.status_code}','message':str(exc.detail),'details':[]}})
 @app.exception_handler(RequestValidationError)
-async def validation_error(_,exc): return JSONResponse(status_code=422,content={'error':{'code':'VALIDATION_ERROR','message':'Invalid request','details':json.loads(json.dumps(exc.errors(),default=str))}})
+async def validation_error(_,exc): return JSONResponse(status_code=422,content={'error':{'code':'VALIDATION_ERROR','message':'Invalid request','details':[{k:error[k] for k in ['loc','msg','type']} for error in exc.errors()]}})
 @app.exception_handler(IntegrityError)
 async def integrity_error(_,exc):
     logging.getLogger('corvo').warning('Concurrent/duplicate write rejected')
     return JSONResponse(status_code=409,content={'error':{'code':'CONFLICT','message':'Record already exists or a referenced record is invalid','details':[]}})
+@app.exception_handler(SQLAlchemyError)
+async def database_error(_,exc):
+    logging.getLogger('corvo').warning('Database operation unavailable: %s',type(exc).__name__)
+    return JSONResponse(status_code=503,headers={'Retry-After':'5'},content={'error':{'code':'SERVICE_UNAVAILABLE','message':'Database temporarily unavailable; retry the operation','details':[]}})
 
 class Body(BaseModel): model_config=ConfigDict(extra='forbid')
 class LoginBody(Body):
+    role:Literal['requester','buyer','admin']|None=None
+    username:str|None=Field(None,min_length=3,max_length=64)
+    password:str=Field(min_length=1,max_length=128)
+class CreateUserBody(Body):
+    username:str=Field(pattern=r'^[a-z][a-z0-9._-]{2,63}$')
+    display_name:str=Field(min_length=1,max_length=100)
     role:Literal['requester','buyer','admin']
-    password:str
+    password:str=Field(min_length=15,max_length=128)
 class PolicyBody(Body):
     policy:PolicyDefinition
     source_text:str=''
     base_version:str='5.0'
 class Note(Body): reason:str=Field(min_length=5,max_length=2000)
+class PolicyReviewBody(Note): manual_verification:bool=False
 class Simulation(Body): run_id:str
 class OverrideBody(Note):
     route:Literal['RFQ','RFP','CAPEX_SOURCING','NEW_ITEM_SOURCING']
@@ -88,27 +101,73 @@ def get(s,model,key):
     if not obj: raise HTTPException(404,'Record not found')
     return obj
 def page(items,offset,limit): return {'items':items[offset:offset+limit],'total':len(items),'offset':offset,'limit':limit}
+def database_page(s,statement,offset,limit,mapper=lambda row:row.payload):
+    total=s.scalar(select(func.count()).select_from(statement.order_by(None).subquery()))
+    return {'items':[mapper(row) for row in s.scalars(statement.offset(offset).limit(limit))],'total':total,'offset':offset,'limit':limit}
 async def content(file,extensions):
     if Path(file.filename or '').suffix.lower() not in extensions: raise ValueError('Unsupported file extension')
     value=await file.read(10*1024*1024+1)
     if len(value)>10*1024*1024: raise HTTPException(413,'Maximum upload size is 10 MiB')
     return value
 def compact_run(r): return {k:r[k] for k in ['id','created_at','input_hash','data_hash','policy_hash','output_hash','status','counts','explicit_policy']}|{'line_count':len(r['rows']),'requirement_count':len(r['requirements']),'issue_count':len(r['issues'])}
+def accessible_run(s,run_id,actor):
+    run=get(s,Run,run_id)
+    if role_of(actor)=='requester' and run.payload['actor']!=str(actor): raise HTTPException(404,'Record not found')
+    return run
+def run_query(actor):
+    statement=select(Run)
+    if role_of(actor)=='requester': statement=statement.where(Run.payload['actor'].as_string()==str(actor))
+    return statement
 
 @app.get('/health',tags=['System'])
 def health():
     with Session() as s: s.execute(text('SELECT 1'))
     return {'status':'ok','database':'connected','demo_mode':DEMO}
 @app.post('/api/auth/login',tags=['Authentication'],response_model=LoginResponse)
-def sign_in(body:LoginBody): return {'access_token':login(body.role,body.password),'token_type':'bearer','role':body.role,'expires_in':28800}
+def sign_in(body:LoginBody):
+    if bool(body.username)==bool(body.role): raise ValueError('Supply exactly one of username or role')
+    return authenticate(body.username or body.role,body.password)
 @app.get('/api/auth/me',tags=['Authentication'])
-def me(actor=Depends(user)): return {'id':actor,'role':actor,'demo_mode':DEMO}
+def me(actor=Depends(user)): return {'id':str(actor),'role':role_of(actor),'demo_mode':DEMO}
+@app.post('/api/auth/logout',tags=['Authentication'])
+def logout(actor=Depends(user)):
+    with Session.begin() as s:
+        get(s,AuthSession,actor.session_id).revoked=True
+        audit(s,actor,'auth.logout',{'session_revoked':True})
+    return {'revoked':True}
+@app.post('/api/users',tags=['Private Administration'])
+def create_user(body:CreateUserBody,actor=Depends(user)):
+    require(actor,'admin')
+    with Session.begin() as s:
+        if s.get(User,body.username): raise HTTPException(409,'Username already exists')
+        s.add(User(id=body.username,role=body.role,payload={'display_name':body.display_name,'password_hash':hash_password(body.password),'enabled':True,'type':'individual'}))
+        audit(s,actor,'user.created',{'user_id':body.username,'role':body.role})
+    return {'id':body.username,'role':body.role,'display_name':body.display_name,'enabled':True}
+@app.get('/api/users',tags=['Private Administration'],response_model=Page)
+def list_users(offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor=Depends(user)):
+    require(actor,'admin')
+    with Session() as s: return database_page(s,select(User).order_by(User.id),offset,limit,lambda r:{'id':r.id,'role':r.role,'display_name':r.payload.get('display_name',r.id),'enabled':r.payload.get('enabled',True)})
+@app.post('/api/users/{user_id}/disable',tags=['Private Administration'])
+def disable_user(user_id:str,body:Note,actor=Depends(user)):
+    require(actor,'admin')
+    if user_id==str(actor): raise HTTPException(409,'Cannot disable your own account')
+    with Session.begin() as s:
+        account=get(s,User,user_id); account.payload={**account.payload,'enabled':False}
+        for session in s.scalars(select(AuthSession).where(AuthSession.user_id==user_id)): session.revoked=True
+        audit(s,actor,'user.disabled',{'user_id':user_id,'reason':body.reason})
+    return {'id':user_id,'enabled':False}
 @app.get('/api/overview',tags=['Overview'])
 def overview(actor=Depends(user)):
     with Session() as s:
-        runs=s.scalars(select(Run).order_by(Run.created_at.desc())).all(); reqs=s.scalars(select(RequirementRecord)).all()
-        d=current_data(s)
-        return {'items':len(d.items),'suppliers':len(d.suppliers),'contracts':len(d.contracts),'runs':len(runs),'pending_requirements':sum(r.payload['approval_status']=='pending' for r in reqs),'purchase_orders':len(s.scalars(select(PurchaseOrder)).all()),'sourcing_requests':len(s.scalars(select(SourcingRequest)).all()),'latest_run':compact_run(runs[0].payload) if runs else None}
+        from .db import Item,Supplier
+        def count(statement): return select(func.count()).select_from(statement.subquery()).scalar_subquery()
+        pending=select(RequirementRecord.id).where(RequirementRecord.payload['approval_status'].as_string()=='pending')
+        if role_of(actor)=='requester': pending=pending.where(RequirementRecord.run_id.in_(run_query(actor).with_only_columns(Run.id)))
+        counters=s.execute(select(count(select(Item.id)).label('items'),count(select(Supplier.id)).label('suppliers'),count(select(Contract.id)).label('contracts'),count(run_query(actor).with_only_columns(Run.id)).label('runs'),count(pending).label('pending_requirements'),count(select(PurchaseOrder.id)).label('purchase_orders'),count(select(SourcingRequest.id)).label('sourcing_requests'))).one()._mapping
+        latest=s.scalar(run_query(actor).order_by(Run.created_at.desc(),Run.id).limit(1))
+        result=dict(counters)
+        if role_of(actor)=='requester': result.update(purchase_orders=0,sourcing_requests=0)
+        return {**result,'latest_run':compact_run(latest.payload) if latest else None}
 @app.get('/api/master-data',tags=['Reference data'])
 def masters(actor=Depends(user)):
     with Session() as s:
@@ -118,37 +177,43 @@ def masters(actor=Depends(user)):
 @app.post('/api/process-batch',tags=['Batch Lab'],response_model=RunResponse)
 async def batch(file:UploadFile=File(...),policy_version:str|None=Form(None),actor=Depends(user)):
     rows=read_csv(await content(file,{'.csv'}),INPUT_COLUMNS)
+    if role_of(actor)=='requester':
+        for row in rows: row['requester']=str(actor)
     with Session.begin() as s: return execute_run(s,rows,policy_version or None,actor)
 @app.get('/api/runs',tags=['Batch Lab'],response_model=Page)
 def runs(offset:int=Query(0,ge=0),limit:int=Query(25,ge=1,le=100),actor=Depends(user)):
-    with Session() as s: return page([compact_run(r.payload) for r in s.scalars(select(Run).order_by(Run.created_at.desc()))],offset,limit)
+    with Session() as s: return database_page(s,run_query(actor).order_by(Run.created_at.desc(),Run.id),offset,limit,lambda r:compact_run(r.payload))
 @app.get('/api/runs/{run_id}',tags=['Batch Lab'],response_model=RunResponse)
 def run_detail(run_id:str,actor=Depends(user)):
-    with Session() as s: return get(s,Run,run_id).payload
+    with Session() as s: return accessible_run(s,run_id,actor).payload
 @app.get('/api/runs/{run_id}/export.csv',tags=['Batch Lab'],response_class=Response,responses={200:{'content':{'text/csv':{'schema':{'type':'string'}}}}})
 def run_export(run_id:str,actor=Depends(user)):
-    with Session() as s: return Response(csv_bytes(get(s,Run,run_id).payload['rows']),media_type='text/csv',headers={'Content-Disposition':f'attachment; filename="{run_id}.csv"'})
+    with Session() as s: return Response(csv_bytes(accessible_run(s,run_id,actor).payload['rows']),media_type='text/csv',headers={'Content-Disposition':f'attachment; filename="{run_id}.csv"'})
 @app.post('/api/runs/{run_id}/replay',tags=['Batch Lab'])
 def replay(run_id:str,actor=Depends(user)):
     with Session() as s:
-        old=get(s,Run,run_id).payload; snapshot=get(s,Dataset,old['data_hash']).payload
+        old=accessible_run(s,run_id,actor).payload; snapshot=get(s,Dataset,old['data_hash']).payload
         result=process(old['input'],Data(**snapshot),old['policy_snapshots'],old['explicit_policy'])
         return {'run_id':run_id,'matches':result['output_hash']==old['output_hash'],'output_hash':result['output_hash'],'result':result}
 @app.get('/api/runs/{run_id}/compare/{other_id}',tags=['Batch Lab'],response_model=ComparisonResponse)
 def compare(run_id:str,other_id:str,actor=Depends(user)):
-    with Session() as s: return comparison(get(s,Run,run_id).payload,get(s,Run,other_id).payload)
+    with Session() as s: return comparison(accessible_run(s,run_id,actor).payload,accessible_run(s,other_id,actor).payload)
 
 @app.get('/api/requirements',tags=['Buyer Inbox'],response_model=Page)
-def requirements(run_id:str|None=None,route:str|None=None,status:str|None=None,search:str='',offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor=Depends(user)):
+def requirements(run_id:str|None=None,route:str|None=None,status:str|None=None,search:str=Query('',max_length=200),offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor=Depends(user)):
     with Session() as s:
         stmt=select(RequirementRecord)
+        if role_of(actor)=='requester': stmt=stmt.where(RequirementRecord.run_id.in_(run_query(actor).with_only_columns(Run.id)))
         if run_id: stmt=stmt.where(RequirementRecord.run_id==run_id)
-        rows=[dict(r.payload,record_id=r.id,run_id=r.run_id) for r in s.scalars(stmt)]
-        rows=[r for r in rows if (not route or r['route']==route) and (not status or r['approval_status']==status) and search.lower() in (r['description']+' '+r['item_code']+' '+r['plant']).lower()]
-        return page(sorted(rows,key=lambda r:(r['created_at'],r['record_id'])),offset,limit)
+        if route: stmt=stmt.where(RequirementRecord.payload['route'].as_string()==route)
+        if status: stmt=stmt.where(RequirementRecord.payload['approval_status'].as_string()==status)
+        if search: stmt=stmt.where(or_(*[func.lower(RequirementRecord.payload[key].as_string()).contains(search.lower(),autoescape=True) for key in ['description','item_code','plant']]))
+        stmt=stmt.order_by(RequirementRecord.payload['created_at'].as_string(),RequirementRecord.id)
+        return database_page(s,stmt,offset,limit,lambda r:dict(r.payload,record_id=r.id,run_id=r.run_id))
 @app.get('/api/requirements/{requirement_id}',tags=['Decision Trace'],response_model=RequirementResponse)
 def requirement_detail(requirement_id:str,run_id:str,actor=Depends(user)):
     with Session() as s:
+        accessible_run(s,run_id,actor)
         r=get(s,RequirementRecord,run_id+':'+requirement_id)
         return dict(r.payload,record_id=r.id,run_id=run_id)
 
@@ -158,11 +223,12 @@ def policy_schema(actor=Depends(user)):
 @app.get('/api/policies',tags=['Policy Studio'])
 def list_policies(actor=Depends(user)):
     with Session() as s: return {'items':[{**r.payload,'status':r.status,'id':r.id} for r in s.scalars(select(Policy))]}
-def new_policy(s,body,actor):
+def new_policy(s,body,actor,interpretation=None):
     policy=validate_policy(body.policy.model_dump(by_alias=True))
     if s.get(Policy,policy['version']): raise HTTPException(409,'Policy version already exists')
     base=get(s,Policy,body.base_version)
     payload={**policy,'governance':{'base_version':body.base_version,'source_text':body.source_text,'proposed_by':actor,'proposed_at':db.now(),'reviewed':False,'diff':field_diff(base.payload,policy)}}
+    if interpretation: payload['governance']['interpretation']={k:v for k,v in interpretation.items() if k!='policy'}
     s.add(Policy(id=policy['version'],status='draft',payload=payload)); audit(s,actor,'policy.proposed',{'version':policy['version']})
     return {**payload,'status':'draft','id':policy['version']}
 @app.post('/api/policies',tags=['Policy Studio'],response_model=PolicyResponse)
@@ -174,9 +240,9 @@ def text_amendment(body:AmendmentTextBody,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
         base=deepcopy(get(s,Policy,body.base_version).payload); base.pop('governance',None)
-        p,detected=propose(base,body.text,body.version,body.effective_date.isoformat())
-        result=new_policy(s,PolicyBody(policy=p,source_text=body.text,base_version=body.base_version),actor)
-        return {**result,'interpretation':{'detected_changes':detected,'requires_manual_review':True,'warning':'Review structured rules against the entire source; unsupported clauses require manual editing.'}}
+        interpreted=interpret(base,body.text,body.version,body.effective_date.isoformat(),current_data(s))
+        result=new_policy(s,PolicyBody(policy=interpreted['policy'],source_text=body.text,base_version=body.base_version),actor,interpreted)
+        return {**result,'interpretation':{k:v for k,v in interpreted.items() if k!='policy'}|{'requires_manual_review':True,'warning':'Review every proposed condition and priority. Unresolved clauses require manual authoring and explicit verification.'}}
 @app.put('/api/policies/{policy_id}',tags=['Policy Studio'],response_model=PolicyResponse)
 def edit_policy(policy_id:str,body:PolicyBody,actor=Depends(user)):
     require(actor,'admin')
@@ -196,17 +262,19 @@ async def upload_amendment(file:UploadFile=File(...),version:str=Form(...),effec
     with Session.begin() as s:
         base=deepcopy(get(s,Policy,base_version).payload); base.pop('governance',None)
         if file.filename.lower().endswith('.json'):
-            p=json.loads(text_source); p['version']=version; p['effective_date']=effective_date; detected=['Structured policy document loaded']
-        else: p,detected=propose(base,text_source,version,effective_date)
-        result=new_policy(s,PolicyBody(policy=p,source_text=text_source,base_version=base_version),actor)
-        return {**result,'interpretation':{'detected_changes':detected,'requires_manual_review':True,'warning':'Conservative extraction: compare every clause to the source; use the rule editor for unsupported language. PDF signatures are not cryptographically verified.'}}
+            p=json.loads(text_source); p['version']=version; p['effective_date']=effective_date
+            interpreted={'policy':p,'detected_changes':['Structured policy document loaded'],'unresolved_clauses':[],'complete':True}
+        else: interpreted=interpret(base,text_source,version,effective_date,current_data(s)); p=interpreted['policy']
+        result=new_policy(s,PolicyBody(policy=p,source_text=text_source,base_version=base_version),actor,interpreted)
+        return {**result,'interpretation':{k:v for k,v in interpreted.items() if k!='policy'}|{'requires_manual_review':True,'warning':'Review scope, operators and priority. Unresolved clauses require explicit manual verification; PDF signatures are not cryptographically verified.'}}
 @app.post('/api/policies/{policy_id}/review',tags=['Policy Studio'],response_model=PolicyResponse)
-def review_policy(policy_id:str,body:Note,actor=Depends(user)):
+def review_policy(policy_id:str,body:PolicyReviewBody,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
         p=get(s,Policy,policy_id)
         if p.status!='draft': raise HTTPException(409,'Only drafts can be reviewed')
-        p.payload={**p.payload,'governance':{**p.payload.get('governance',{}),'reviewed':True,'review_note':body.reason,'reviewed_by':actor,'reviewed_at':db.now()}}
+        if p.payload.get('governance',{}).get('interpretation',{}).get('unresolved_clauses') and not body.manual_verification: raise HTTPException(409,'Unresolved source clauses require structured manual authoring and manual_verification=true')
+        p.payload={**p.payload,'governance':{**p.payload.get('governance',{}),'reviewed':True,'review_note':body.reason,'reviewed_by':actor,'reviewed_at':db.now(),'manual_verification':body.manual_verification}}
         audit(s,actor,'policy.reviewed',{'version':policy_id,'reason':body.reason})
         return {**p.payload,'id':p.id,'status':p.status}
 @app.post('/api/policies/{policy_id}/approve',tags=['Policy Studio'],response_model=PolicyResponse)
@@ -274,12 +342,12 @@ def contracts(as_of:date|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,g
     with Session() as s:
         d=current_data(s); rows=[]; day=(as_of or business_today()).isoformat()
         for c in sorted(d.contracts,key=lambda x:x['contract_id']):
-            committed=sum((number(l.payload['amount']) for l in s.scalars(select(ContractLedger).where(ContractLedger.contract_id==c['contract_id']))),number(0))
+            committed=number(c['consumed_value'])-number(c['baseline_consumed_value'])
             rows.append({**c,'committed_value':str(committed),'remaining_value':str(number(c['value_cap'])-number(c['consumed_value'])),'supplier_status':d.suppliers[c['supplier_id']]['status'],'valid_as_of':c['start_date']<=day<=c['end_date']})
         return {**page(rows,offset,limit),'as_of':day}
 @app.post('/api/contracts/upload',tags=['Contract Vault'])
 async def upload_contract(file:UploadFile=File(...),actor=Depends(user)):
-    require(actor,'admin','buyer'); raw=await content(file,{'.pdf'}); source=pdf_text(raw)
+    require(actor,'admin','buyer'); raw=await content(file,{'.pdf'}); source=pdf_text(raw,allow_empty=True)
     try: proposed=extract_contract(raw); error=None
     except ValueError as exc: proposed=None; error=str(exc)
     proposal_id='CP-'+uuid4().hex
@@ -287,8 +355,9 @@ async def upload_contract(file:UploadFile=File(...),actor=Depends(user)):
         if proposed:
             try: validate_contract(proposed,current_data(s))
             except ValueError as exc: error=str(exc)
-        payload={'id':proposal_id,'status':'pending_review','contract':proposed,'source_text':source,'source_hash':digest(source),'validation_error':error,'signature_verified':False,'actor':actor}
-        s.add(ContractProposal(id=proposal_id,payload=payload)); audit(s,actor,'contract.uploaded',{'proposal_id':proposal_id,'source_hash':digest(source)})
+        source_hash=hashlib.sha256(raw).hexdigest()
+        payload={'id':proposal_id,'status':'pending_review','contract':proposed,'source_text':source,'source_hash':source_hash,'source_hash_type':'sha256-pdf-bytes','manual_entry_required':proposed is None or bool(error),'validation_error':error,'signature_verified':False,'actor':actor}
+        s.add(ContractProposal(id=proposal_id,payload=payload)); audit(s,actor,'contract.uploaded',{'proposal_id':proposal_id,'source_hash':source_hash})
         return payload
 @app.get('/api/contracts/proposals',tags=['Contract Vault'])
 def contract_proposals(actor=Depends(user)):
@@ -371,22 +440,27 @@ def override_requirement(requirement_id:str,body:OverrideBody,run_id:str,actor=D
 
 @app.get('/api/purchase-orders',tags=['Purchase Orders'],response_model=Page)
 def purchase_orders(offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor=Depends(user)):
-    with Session() as s: return page([r.payload for r in s.scalars(select(PurchaseOrder).order_by(PurchaseOrder.id))],offset,limit)
+    require(actor,'buyer','admin')
+    with Session() as s: return database_page(s,select(PurchaseOrder).order_by(PurchaseOrder.id),offset,limit)
 @app.get('/api/purchase-orders/{order_id}',tags=['Purchase Orders'])
 def purchase_order(order_id:str,actor=Depends(user)):
+    require(actor,'buyer','admin')
     with Session() as s: return get(s,PurchaseOrder,order_id).payload
 @app.get('/api/sourcing',tags=['Sourcing'],response_model=Page)
 def sourcing(offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor=Depends(user)):
-    with Session() as s: return page([r.payload for r in s.scalars(select(SourcingRequest).order_by(SourcingRequest.id))],offset,limit)
+    require(actor,'buyer','admin')
+    with Session() as s: return database_page(s,select(SourcingRequest).order_by(SourcingRequest.id),offset,limit)
 @app.get('/api/sourcing/{sourcing_id}',tags=['Sourcing'])
 def sourcing_detail(sourcing_id:str,actor=Depends(user)):
+    require(actor,'buyer','admin')
     with Session() as s: return get(s,SourcingRequest,sourcing_id).payload
 @app.get('/api/audit',tags=['Audit Trail'],response_model=Page)
 def audit_events(action:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor=Depends(user)):
     require(actor,'buyer','admin')
     with Session() as s:
-        rows=[{'id':r.id,'created_at':r.created_at,**r.payload} for r in s.scalars(select(Audit).order_by(Audit.created_at.desc(),Audit.id))]
-        return page([r for r in rows if not action or r['action']==action],offset,limit)
+        statement=select(Audit).order_by(Audit.created_at.desc(),Audit.id)
+        if action: statement=statement.where(Audit.payload['action'].as_string()==action)
+        return database_page(s,statement,offset,limit,lambda r:{'id':r.id,'created_at':r.created_at,**r.payload})
 
 @app.post('/api/chat/messages',tags=['Request Desk'],response_model=ChatResponse)
 def chat_message(body:ChatBody,actor=Depends(user)):
@@ -463,11 +537,11 @@ def custom_openapi():
     for path,methods in schema['paths'].items():
         for method,operation in methods.items():
             if method not in {'get','post','put','delete','patch'}: continue
-            statuses=[422,409,413] if method in {'post','put'} else [422]
+            statuses=[422,409,413,503] if method in {'post','put'} else [422,503]
             if path.startswith('/api/') and path!='/api/auth/login': statuses += [401,403,404]
-            if path=='/api/auth/login': statuses += [401]
+            if path=='/api/auth/login': statuses += [401,429]
             for status in statuses:
-                operation.setdefault('responses',{})[str(status)]={'description':{401:'Sign-in required or invalid credentials',403:'Role not permitted',404:'Record not found',409:'Conflicting action or record',413:'Upload too large',422:'Validation failed'}[status],'content':{'application/json':{'schema':{'$ref':'#/components/schemas/ErrorResponse'}}}}
+                operation.setdefault('responses',{})[str(status)]={'description':{401:'Sign-in required or invalid credentials',403:'Role not permitted',404:'Record not found',409:'Conflicting action or record',413:'Upload too large',422:'Validation failed',429:'Login temporarily throttled; see Retry-After',503:'Storage temporarily unavailable; retry later'}[status],'content':{'application/json':{'schema':{'$ref':'#/components/schemas/ErrorResponse'}}}}
     app.openapi_schema=schema
     return schema
 app.openapi=custom_openapi

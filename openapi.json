@@ -31,6 +31,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -93,8 +103,28 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Login temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -124,6 +154,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -170,6 +210,418 @@
         ]
       }
     },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting action or record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role not permitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/users": {
+      "post": {
+        "tags": [
+          "Private Administration"
+        ],
+        "summary": "Create User",
+        "operationId": "create_user_api_users_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting action or record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role not permitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Private Administration"
+        ],
+        "summary": "List Users",
+        "operationId": "list_users_api_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role not permitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{user_id}/disable": {
+      "post": {
+        "tags": [
+          "Private Administration"
+        ],
+        "summary": "Disable User",
+        "operationId": "disable_user_api_users__user_id__disable_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Note"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting action or record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role not permitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/overview": {
       "get": {
         "tags": [
@@ -188,6 +640,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -252,6 +714,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -356,6 +828,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -452,6 +934,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -529,6 +1021,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -598,6 +1100,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -701,6 +1213,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -779,6 +1301,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -887,6 +1419,7 @@
             "required": false,
             "schema": {
               "type": "string",
+              "maxLength": 200,
               "default": "",
               "title": "Search"
             }
@@ -928,6 +1461,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -1022,6 +1565,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -1073,6 +1626,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -1137,6 +1700,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -1239,6 +1812,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -1327,6 +1910,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -1447,6 +2040,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -1538,6 +2141,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -1604,7 +2217,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Note"
+                "$ref": "#/components/schemas/PolicyReviewBody"
               }
             }
           }
@@ -1642,6 +2255,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -1757,6 +2380,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -1854,6 +2487,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -1969,6 +2612,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -2074,6 +2727,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -2155,6 +2818,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -2301,6 +2974,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -2387,6 +3070,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -2503,6 +3196,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -2592,6 +3295,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -2648,6 +3361,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -2758,6 +3481,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -2882,6 +3615,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -2998,6 +3741,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -3089,6 +3842,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -3156,6 +3919,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -3255,6 +4028,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -3322,6 +4105,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -3437,6 +4230,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -3528,6 +4331,16 @@
               }
             }
           },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Sign-in required or invalid credentials",
             "content": {
@@ -3600,6 +4413,16 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -3689,6 +4512,16 @@
           },
           "413": {
             "description": "Upload too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
             "content": {
               "application/json": {
                 "schema": {
@@ -4214,6 +5047,45 @@
         ],
         "title": "ContractEvidence"
       },
+      "CreateUserBody": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9._-]{2,63}$",
+            "title": "Username"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Display Name"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "requester",
+              "buyer",
+              "admin"
+            ],
+            "title": "Role"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 15,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "username",
+          "display_name",
+          "role",
+          "password"
+        ],
+        "title": "CreateUserBody"
+      },
       "Evidence": {
         "properties": {
           "facts": {
@@ -4324,23 +5196,44 @@
       "LoginBody": {
         "properties": {
           "role": {
-            "type": "string",
-            "enum": [
-              "requester",
-              "buyer",
-              "admin"
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "requester",
+                  "buyer",
+                  "admin"
+                ]
+              },
+              {
+                "type": "null"
+              }
             ],
             "title": "Role"
           },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
           "password": {
             "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
             "title": "Password"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "role",
           "password"
         ],
         "title": "LoginBody"
@@ -4360,6 +5253,10 @@
             "type": "string",
             "title": "Role"
           },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
           "expires_in": {
             "type": "integer",
             "title": "Expires In"
@@ -4371,6 +5268,7 @@
           "access_token",
           "token_type",
           "role",
+          "user_id",
           "expires_in"
         ],
         "title": "LoginResponse"
@@ -4748,6 +5646,27 @@
           "status"
         ],
         "title": "PolicyResponse"
+      },
+      "PolicyReviewBody": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 5,
+            "title": "Reason"
+          },
+          "manual_verification": {
+            "type": "boolean",
+            "title": "Manual Verification",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "PolicyReviewBody"
       },
       "PolicyRule-Input": {
         "properties": {

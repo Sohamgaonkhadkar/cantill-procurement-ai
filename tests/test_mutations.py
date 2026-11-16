@@ -39,7 +39,7 @@ def test_chat_multiturn_and_correction(data):
     assert state=={}
 
 def test_new_item_price_followup(data):
-    state,reply=parse_message({},'new item specialised purifier need 1 at P-A by 2026-12-01 normal',data)
+    state,reply=parse_message({},'new item specialised purifier need 1 NOS at P-A by 2026-12-01 normal',data)
     assert state['item_code']=='NEW' and not state.get('ready')
     state,reply=parse_message(state,'price 9000',data)
     assert state['estimated_unit_price']=='9000' and state['ready']

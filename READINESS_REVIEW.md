@@ -1,22 +1,25 @@
 # Backend readiness review
 
-Reviewed 16 November 2026. This is an implementation self-review, not an independent security audit or the evaluator's score.
+Reviewed 16 November 2026. This is an implementation self-review, not an independent security audit or an evaluator score. No weakness-free or 10/10 guarantee is made.
 
-The backend is suitable for Arena integration and continued validation. It is not claimed to be weakness-free or fully verified in production.
+The backend is ready for Arena integration. The hardening suite passes 125 tests on Linux/PostgreSQL and 124 on Windows/SQLite, with the PostgreSQL-only concurrency test skipped on SQLite. Private checks match all 14 supplied procurement examples and three supplier-ranking examples. The 186-row sample retains its original business-output hash after hardening. Known-case success does not establish unseen blind-test accuracy.
 
-Verified evidence: 79 synthetic tests pass on Windows/SQLite and Linux/PostgreSQL; the 14 supplied worked decisions and three ranking examples were privately checked; the full sample retains 186 output rows; managed database persistence and replay are verified. Known-case test success does not establish unseen blind-test accuracy.
+Closed gaps:
 
-The review reproduced and fixed two concrete defects:
+- Individual accounts, salted password hashes, eight-hour database-backed revocable sessions, identity-based login throttling and requester ownership checks replace the prior shared-role-only limitation. Controlled role accounts remain available.
+- Scoped amendment statements compile into explicit predicates rather than broader global changes. Limits, windows, supplier counts, AND/OR/NOT and supported master-data scopes have tests. Unsupported clauses stay visible and block ordinary review until explicit human reconciliation.
+- Item corrections clear stale chat state. Model codes and dimensions are protected during matching; incomplete specifications require clarification. New-item UoM is requested rather than invented.
+- Numeric resource limits reject non-finite values, malformed comma grouping and extreme exponents. Decimal arithmetic and exact routing boundaries remain deterministic.
+- Real PostgreSQL transactions competing for the same contract ceiling permit one approval and reject the other. Purchasing safeguards do not depend solely on an in-process lock.
+- Operational lists use SQL pagination. Database errors and validation responses avoid leaking SQL credentials or submitted passwords.
+- Valid scanned contracts create manual-entry review proposals with original PDF-byte hashes; no signature authenticity is implied.
 
-1. A chat correction could retain an earlier selected item. Clear corrections now replace that item; unresolved explicit item changes clear confirmation readiness.
-2. A plant/category-specific amendment could be reduced incorrectly to a global amount threshold. Automatic extraction now requires a complete unambiguous global-limit statement. Other language is preserved for structured manual authoring. Scope, negation and old/new-amount regressions protect this boundary.
+Remaining release requirements and limitations:
 
-Remaining material limitations:
+- Arena's exported frontend has not arrived. Browser flows, live-mode mock removal, final public Vercel deployment and persistence after redeployment must still be verified together.
+- Controlled prose and chat grammars are bounded. Arbitrary policy language needs structured manual authoring and review. Scanned policy PDFs need transcription; OCR and cryptographic signature verification are not implemented.
+- Corporate SSO, MFA, password recovery, production monitoring and outbound supplier/PO integrations are outside the implemented application boundary.
+- The suite includes real concurrent PostgreSQL approvals, but it is not an exhaustive production load or penetration test. Vercel platform payload limits still apply.
+- The blind-test batch and amendment have not been received. No assessment accuracy score can honestly be assigned in advance.
 
-- Policy prose interpretation is narrow. Arbitrary new conditions work through the existing validated DSL, but require human structured authoring when text cannot be interpreted safely. Arena must make that review/edit path usable.
-- Chat is a basic deterministic parser. Broader wording, partial specifications and corrections need more adversarial testing.
-- Authentication uses three shared role principals, not separate employee identities. Per-employee ownership, login throttling and token revocation are not implemented.
-- PDF OCR and cryptographic signature verification are not implemented; extracted fields require buyer verification.
-- Public Vercel runtime behavior, the Arena UI, deployment/redeployment flows and full multi-process load/concurrency remain unverified. Local/managed-database HTTP checks do not replace those tests.
-
-A reliable overall assessment score cannot be calculated before the unseen batch/amendment and final UI are evaluated. Any readiness rating is subjective; no 90–100% result is guaranteed or claimed.
+See VALIDATION.md for executed checks and FRONTEND_API_CONTRACT.md for the integration contract.

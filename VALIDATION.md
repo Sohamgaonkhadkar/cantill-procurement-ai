@@ -4,8 +4,8 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 
 | Check | Actual result |
 |---|---|
-| Synthetic Python unit/API/migration/serverless suite on Windows, Python 3.14, SQLite API fixtures | **79 passed** |
-| Synthetic suite on Linux/Python 3.12 with API fixtures using isolated PostgreSQL `corvo_test` | **79 passed**, including persistence batching, stable historical run IDs, invariant/serverless, deployment adaptations and readiness-review regressions |
+| Synthetic Python unit/API/migration/serverless suite on Windows, Python 3.14, SQLite API fixtures | **124 passed, 1 PostgreSQL-only test skipped** |
+| Synthetic suite on Linux/Python 3.12 with API fixtures using isolated PostgreSQL `corvo_test` | **125 passed**, including independent concurrent approvals contending for a contract ceiling, account isolation, session revocation, login throttling, amendment governance, matching/numeric adversarial cases and randomized determinism invariants |
 | Full sample batch | 186 output rows, 149 requirements, 2 explicit invalid-line outcomes |
 | Worked procurement examples | All 14 privately checked against original source examples, using exact rates instead of presentation rounding |
 | Worked supplier rankings | All 3 privately checked and matched |
@@ -13,7 +13,7 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 | Real local Docker/PostgreSQL HTTP flow | Passed health, authentication, sample CSV, exports, replay, amendment proposal/simulation/review/approval/activation/reprocess/comparison, ranking, contract PDF upload, CORS and API docs |
 | No-code amendment demonstration | A labeled test spot-threshold amendment changed 48 sample PR-line outcomes; original run replay remained unchanged |
 | API restart persistence | Existing PostgreSQL run and output hash survived API container restart; deterministic replay passed |
-| Migration lifecycle | Clean SQLite upgrade, repeated upgrade, table comparison and downgrade passed; PostgreSQL initialized by Docker migrations |
+| Migration lifecycle | Clean SQLite upgrade, repeated upgrade, table comparison and downgrade passed; PostgreSQL initialized by Docker migrations. Migration 003 for sessions/throttles verified on both managed databases |
 | Repository privacy | Staged-tree hygiene passed before initial push: 52 source/config/test files; no original kit files or obvious credentials. Original kit, extracted text, private regressions/results, databases, environment files and CLI tooling remain ignored |
 | OpenAPI synchronization | Checked-in schema matches live application's generated schema in automated test |
 | Compilation | `python -m compileall -q backend scripts` passed |
@@ -24,14 +24,16 @@ Verification date: 16 November 2026 (Asia/Kolkata client context). Results below
 
 The suite reports one Starlette deprecation warning concerning its httpx TestClient compatibility adapter. It does not affect the passing assertions. Original worked-example fixtures and exported sample results remain private and are not included in the public tests.
 
-A subsequent readiness review found and fixed two defects missed by the initial suite: an already-selected chat item could survive a correction, and extracting a threshold from a scoped amendment could propose a broader global change. Ten regression cases now cover item correction and scope/negation/old-new-amount handling. Text amendment automation now requires an entire unambiguous global-limit statement; other prose stays unchanged for structured human authoring.
+The hardening pass increased the synthetic suite from 79 to 125 tests. It covers individual identities and requester ownership, persisted logout/disable/throttling, redacted validation errors, scoped policy upload through activation, unresolved-source review gating, incomplete item specifications, inch/model-suffix matching, numeric resource bounds, manual scanned-contract proposals, randomized input-order invariants and two independent PostgreSQL approval transactions. Private procurement/ranking checks still match the original sample business hash.
+
+The managed-preview HTTP hardening check passed (9 affected sample lines, 269.75 seconds), separately exercising individual requester accounts, cross-user run/export/requirement isolation, persistent logout, login throttling, a scoped plant/category amendment, simulation, review/approval/activation, reprocessing/comparison and historical replay. Synthetic identities are disabled and the test amendment withdrawn afterward. This uses a local listener with a remote preview database; it is not a public deployment test.
 
 ## Still unverified or incomplete
 
 - Arena's exported React frontend has not yet been received or integrated. No frontend build, type check, browser workflow or final UI quality claim is made.
 - Vercel project creation is verified; final application deployment is intentionally blocked until the reviewed Arena frontend is integrated.
 - Public hosted HTTP smoke checks are pending. Managed database access from this workstation does not establish Vercel-runtime connectivity.
-- Full multi-process serverless concurrency, enterprise identity/employee isolation, OCR and cryptographic PDF verification are not claimed.
+- Exhaustive serverless load testing, corporate SSO/MFA, OCR and cryptographic PDF verification are not claimed. Individual employee account isolation and PostgreSQL transaction contention are tested.
 - No blind-test batch or amendment has been received. `submission/` contains no fabricated CSV outputs.
 
 See `DEPLOYMENT.md` for the authorized repository/project and the exact remaining release sequence.

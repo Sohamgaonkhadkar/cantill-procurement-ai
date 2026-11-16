@@ -139,6 +139,7 @@ class LoginResponse(Schema):
     access_token:str
     token_type:Literal['bearer']
     role:str
+    user_id:str
     expires_in:int
 class PolicyResponse(PolicyDefinition):
     id:str

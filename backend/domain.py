@@ -2,8 +2,13 @@
 from dataclasses import dataclass, field
 from copy import deepcopy
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-import csv, hashlib, io, json
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP, DefaultContext, getcontext
+import csv, hashlib, io, json, re
+
+# Set before FastAPI worker threads are created. Bounded numeric inputs and a
+# 64-digit context keep multiplication/aggregation exact at the supported scale.
+DefaultContext.prec=64
+getcontext().prec=64
 
 D = Decimal
 OUTPUT_COLUMNS = ['pr_no','pr_line','resolved_item_code','group_id','po_id','decision','route','supplier_id','unit_price','group_value_inr','suggested_supplier_ids','policy_version','reason']
@@ -23,9 +28,14 @@ def rate_text(value):
     return text+'0'*max(0,2-len(text.split('.')[1]))
 
 def number(value):
-    result = D(str(value).replace(',', ''))
-    if not result.is_finite():
-        raise ValueError('Number must be finite')
+    raw=str(value).strip()
+    if len(raw)>128: raise ValueError('Numeric input is too long')
+    if ',' in raw and not re.fullmatch(r'[+-]?(?:\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})*,\d{3})(?:\.\d+)?',raw): raise ValueError('Malformed number grouping')
+    try: result=D(raw.replace(',',''))
+    except InvalidOperation as exc: raise ValueError('Invalid decimal number') from exc
+    if not result.is_finite(): raise ValueError('Number must be finite')
+    if abs(result)>D('1e18') or len(result.as_tuple().digits)>24 or result.as_tuple().exponent < -12:
+        raise ValueError('Number exceeds supported precision or magnitude')
     return result
 
 def read_csv(content: bytes, required=None):

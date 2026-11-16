@@ -55,7 +55,7 @@ Without DATABASE_URL this uses `.private/corvo.db` (SQLite). Set DATABASE_URL to
 
 ## Demo accounts and API use
 
-Local demo roles are `requester`, `buyer`, `admin`, each with password `corvo-demo`. Login issues an eight-hour signed bearer token. Shared roles are a deliberate assessment convenience, not individual employee identity. Startup refuses non-demo mode without a session secret and all role passwords.
+Local demo roles are `requester`, `buyer`, `admin`, each with password `corvo-demo`. Login issues an eight-hour signed bearer token backed by a revocable database session. Admins can create individual accounts through `/api/users`; requester runs and chat are isolated by identity. Five failed attempts throttle an identity for the remaining 15-minute window. Shared role accounts remain a controlled demonstration convenience. Startup refuses non-demo mode without a session secret and all role passwords.
 
 ```sh
 curl -X POST http://localhost:8000/api/auth/login \
@@ -73,7 +73,7 @@ Use the returned run ID with `GET /api/runs/{id}/export.csv`, passing the bearer
 
 Upload PDF, text or full policy JSON with a unique version, base version and effective date. Inspect extracted source and the proposed structured conditions. Edit the draft if parsing did not represent every clause. Preview validation, simulate against a stored run, review, approve, then activate. No draft or approved-but-unactivated version affects ordinary processing. Scheduled versions apply only from their effective date. Historical explicit version runs remain available. New plant/category predicates use the existing policy editor/DSL without changing Python.
 
-The text parser handles explicitly named thresholds; it does not claim unrestricted amendment understanding. A structured human-reviewed editor is the reliable fallback. See `GET /api/policy-schema` and `DECISIONS.md` for supported facts and interpretations.
+The controlled text compiler handles named limits, windows, supplier counts and explicit scoped conditions. Unknown clauses remain visible and block ordinary review until a human reconciles the structured rules and explicitly acknowledges manual verification. It does not claim unrestricted amendment understanding. A structured human-reviewed editor is the reliable fallback. See `GET /api/policy-schema` and `DECISIONS.md` for supported facts and interpretations.
 
 ## Verification
 
@@ -108,6 +108,6 @@ Complete the repository, hosted application and assessment form before **19 Nove
 
 ## Current boundaries
 
-The final Arena frontend and hosted end-to-end verification are pending. Shared role identity is not enterprise authentication. Chat uses a basic local parser. Scanned PDFs need transcription and signatures require human verification. Buyer overrides support safer sourcing routes, not arbitrary direct orders. There are no live supplier integrations or outbound PO dispatches. Approval creates persisted internal purchasing records only.
+The final Arena frontend and hosted end-to-end verification are pending. Individual application accounts are available; corporate SSO, MFA and account recovery are not integrated. Chat uses a bounded deterministic parser and asks for incomplete specifications. Scanned contracts create manual-entry proposals; scanned policies need transcription. Signatures require human verification. Buyer overrides support safer sourcing routes, not arbitrary direct orders. There are no live supplier integrations or outbound PO dispatches. Approval creates persisted internal purchasing records only.
 
 AI usage and actual architecture are documented in [APPROACH.md](APPROACH.md); detailed business judgments are in [DECISIONS.md](DECISIONS.md).

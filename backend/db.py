@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import os
 from pathlib import Path
-from sqlalchemy import create_engine, String, JSON, ForeignKey, UniqueConstraint, event
+from sqlalchemy import create_engine, String, JSON, ForeignKey, UniqueConstraint, event, Integer, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 class Base(DeclarativeBase): pass
@@ -11,6 +11,18 @@ class User(Base):
     id:Mapped[str]=mapped_column(String,primary_key=True)
     role:Mapped[str]=mapped_column(String,index=True)
     payload:Mapped[dict]=mapped_column(JSON)
+
+class AuthSession(Base):
+    __tablename__='auth_sessions'
+    id:Mapped[str]=mapped_column(String,primary_key=True)
+    user_id:Mapped[str]=mapped_column(ForeignKey('users.id'),index=True)
+    expires_at:Mapped[int]=mapped_column(Integer,index=True)
+    revoked:Mapped[bool]=mapped_column(Boolean,default=False)
+class AuthThrottle(Base):
+    __tablename__='auth_throttles'
+    id:Mapped[str]=mapped_column(String,primary_key=True)
+    failures:Mapped[int]=mapped_column(Integer)
+    window_started:Mapped[int]=mapped_column(Integer)
 
 class Plant(Base):
     __tablename__='plants'
