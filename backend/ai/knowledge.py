@@ -7,8 +7,15 @@ from ..db import KnowledgeDocument,KnowledgeChunk,Policy,Contract,Item,now
 from ..domain import digest
 from ..workspace import isolated_demo
 from ..policy import initial_policy
+from ..db import transaction_lock
+
+def lock_source(session,source_key):
+    # Serialize revisions across serverless workers, independently of the
+    # process-local API lock. Source keys are immutable and server generated.
+    transaction_lock(session,1000000000+int(digest(source_key)[:14],16),exclusive=True)
 
 def store_document(session,source_key,title,sections,*,owner_id=None,classification='private',status='approved',metadata=None,source_hash=None):
+    lock_source(session,source_key)
     metadata=metadata or {}
     if len(sections)>500:raise ValueError('At most 500 source sections per document')
     if classification not in {'private','fictional_demo','public_approved'}:raise ValueError('Unknown source classification')
@@ -49,17 +56,17 @@ def index_policy(session,policy,status):
 
 def sync_core_sources(session):
     count=0
-    for policy in session.scalars(select(Policy)):
+    for policy in session.scalars(select(Policy).order_by(Policy.id)):
         if index_policy(session,policy.payload,policy.status):count+=1
     if isolated_demo():
         from ..demo import dataset
         trusted=dataset()
     else:trusted=None
-    for item in session.scalars(select(Item)):
+    for item in session.scalars(select(Item).order_by(Item.id)):
         payload=deepcopy(item.payload)
         demo=bool(trusted and trusted.items.get(item.id)==payload)
         store_document(session,'catalog:'+item.id,'Catalog item '+item.id,[{'section':'specification','content':json.dumps(payload,sort_keys=True)}],classification='fictional_demo' if demo else 'private',metadata={'source_type':'catalog','item_code':item.id,'external_approved':demo,'visibility':'workspace'},source_hash=digest(payload));count+=1
-    for contract in session.scalars(select(Contract)):
+    for contract in session.scalars(select(Contract).order_by(Contract.id)):
         # Live headroom, ledger consumption and raw private PDF text are never
         # embedded. They are fetched from the authoritative read-only tools.
         payload={k:deepcopy(contract.payload[k]) for k in ['contract_id','supplier_id','start_date','end_date','value_cap','lines']}

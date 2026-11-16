@@ -10,7 +10,7 @@ from ..security import user,require_owner,require
 from ..service import audit
 from .schemas import SourceInput,SourceReview
 from .schemas import AIStatus,KnowledgeSource,KnowledgePage,KnowledgeSearch,KnowledgeChunkResponse,SourceSnapshot,ReindexResult,EmbeddingResult,UsagePage
-from .knowledge import store_document,text_sections,pdf_sections,sync_core_sources
+from .knowledge import store_document,text_sections,pdf_sections,sync_core_sources,lock_source
 from .retrieval import search,can_read,citation
 from .safety import authorize_actor,ExternalContext
 from .tools import today
@@ -75,6 +75,9 @@ def install(app,factory,lock):
         require_owner(actor)
         with lock,factory().begin() as session:
             authorize_actor(session,actor)
+            reference=session.get(KnowledgeDocument,document_id)
+            if not reference:raise HTTPException(404,'Document not found')
+            lock_source(session,reference.source_key)
             doc=session.scalar(select(KnowledgeDocument).where(KnowledgeDocument.id==document_id).with_for_update())
             if not doc:raise HTTPException(404,'Document not found')
             if doc.status!='draft':raise HTTPException(409,'Only draft sources can be reviewed')
