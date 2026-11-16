@@ -134,7 +134,11 @@ export default function RequestStudio() {
                 ? "Local response · no external model call"
                 : chat.ai_status === "disabled"
                   ? "Deterministic intake"
-                  : `Local evidence · ${String(chat.ai_status).replace(/_/g, " ")}`}
+                  : chat.ai_status === "invalid_answer_local_fallback"
+                    ? "Gemini's answer could not be verified. Answering from workspace records instead."
+                    : chat.ai_status === "local_evidence"
+                      ? "Answered from workspace records. These sources are kept local."
+                      : "Gemini is unavailable right now. Using the local procurement assistant instead."}
           </p>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-2">

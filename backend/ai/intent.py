@@ -16,15 +16,22 @@ def conversational_reply(message,state):
     Whole-turn matches leave substantive follow-up questions and purchases on
     the ordinary, validated knowledge/intake paths.
     """
-    text=re.sub(r'\s+',' ',message.casefold()).strip().rstrip('.!?')
+    text=re.sub(r'\s+',' ',message.casefold()).strip().strip('"\'“”‘’').strip().rstrip('.!?').strip()
+    # People paste example questions with opening/closing quotation marks.
+    # Strip only presentation punctuation, not words or field evidence.
+    text=text.strip('"\'“”‘’').strip()
+    salutation=re.match(r'^(?:hi|hello|hey|good morning|good afternoon|good evening)(?: corvo)?[,.!\s]+',text)
+    help_text=text[salutation.end():].strip() if salutation else text
     if re.fullmatch(r'(?:thanks(?: a lot| so much)?|thank you(?: very much)?|thx|ty|cheers|ok(?:ay)?|got it|understood)(?:[, ]+(?:thanks|thank you))?',text):
         if state.get('ready'):
             return "You're welcome. Your draft is unchanged. Review it and select Confirm and create PR when you are ready; this message has not created a request."
         return "You're welcome. You can continue your purchase draft or ask about a policy, supplier or contract."
     greeting=bool(re.fullmatch(r'(?:hi|hello|hey|good morning|good afternoon|good evening)(?: corvo)?',text))
-    help_request=bool(re.fullmatch(r'(?:help|help me|what can you do|how (?:do i|can i) (?:start|use (?:this|the chatbot)|create (?:a |my )?(?:pr|purchase request))|(?:what|which) (?:details|information|fields) (?:do you need|should i provide))',text))
+    help_request=bool(re.fullmatch(r'(?:help|help me|what can you do|how (?:do i|can i) (?:start|use (?:this|the chatbot)|create (?:a |my )?(?:pr|purchase request))|(?:what|which) (?:details|information|fields) (?:do you need|should i provide))',help_text))
     echoed_prompt=bool(re.fullmatch(r'tell me the item or specification, quantity, plant, need-by date and whether this is normal or emergency',text))
     if not (greeting or help_request or echoed_prompt):return None
+    if help_text=='what can you do':
+        return "Hello! I'm Corvo, your procurement assistant. I can help you draft a purchase request, correct its details, explain the current policy, look up contracts and suppliers, and explain a saved decision. Tell me what you need or ask a specific question. I only create a purchase request after you review and confirm it; approvals stay with authorized buyers."
     if state.get('ready'):
         return 'Your purchase draft is complete. Review the specification panel, send any corrections, or select Confirm and create PR. No request is created until you confirm.'
     guidance='Describe what you want to buy: item code or specification, quantity, plant, need-by date and Normal or Emergency urgency. These details must come from you; I will not invent them.'
@@ -43,7 +50,9 @@ def local_intent(message,state):
         return 'correct_purchase_request' if state else 'create_purchase_request'
     question=bool(re.search(r'\b(?:what|which|when|why|how|explain|show|list|can|tell me)\b',text) or '?' in text)
     if question:
-        if any(word in text for word in ['decision','this pr','this request','grouped','benchmark','rejected']):return 'decision_explanation'
+        if re.search(r'\bhow\b.*\b(?:suppliers?|vendors?)\b.*\brank|\b(?:supplier|vendor) ranking (?:method|formula|weights)\b',text):return 'policy_question'
+        if re.search(r'\b(?:what happens|how)\b.*\bcontract\b.*\b(?:insufficient|exhausted|runs out)\b',text):return 'policy_question'
+        if any(word in text for word in ['decision','this pr','this request','rejected']) or re.search(r'\b(?:RUN|REQ)-[A-Za-z0-9-]+',message):return 'decision_explanation'
         if any(word in text for word in ['supplier','vendor','preferred']):return 'supplier_question'
         if 'contract' in text:return 'contract_question'
         if any(word in text for word in ['policy','limit','threshold','rfq','rfp','emergency','capital','group','blocked']):return 'policy_question'

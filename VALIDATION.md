@@ -6,7 +6,7 @@ Reviewed 17 November 2026. Results distinguish pure business checks, API tests, 
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **236 passed, 4 PostgreSQL-only tests skipped**, after the conversational-routing fix |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **243 passed, 4 PostgreSQL-only tests skipped**, including conversational routing and readable policy answers |
 | Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **233 passed**, including independent approval and chat-confirmation transactions |
 | Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **17 passed before Arena visual restoration**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
 | Restored Arena regression checks | Chromium / real isolated FastAPI and SQLite / Vite | **4 targeted checks passed**: isolated-demo autofill, private live credentials and hero layout, chat confirmation, keyboard/focus and 3D-to-2D navigation; build and lint passed |
@@ -116,3 +116,5 @@ Greetings, acknowledgments and intake-help prompts are handled locally without m
 Seven additional regressions cover the reported messages, provider bypass, draft preservation and confirmation safety. The focused chat suite passed 46 tests with one PostgreSQL-only skip; the complete Windows backend suite passed 236 tests with four PostgreSQL-only skips. The previous PostgreSQL result of 233 is retained as a prior executed baseline; these seven additions have not been rerun against PostgreSQL.
 
 The deployed public demo browser passed greeting, copied intake prompt and thanks checks with no irrelevant citations. A subsequent current-policy question returned a real Gemini response with `ai_status=available`, grounded citations and the `get_active_policy` tool. Thanking that answer preserved knowledge mode, and a following yes created no PR. No browser exceptions were observed. The application release is `0995f1c`; both existing Vercel projects were rebuilt from that release without visual changes.
+
+Follow-up coverage includes quoted combined greetings, the exact phrase "current procurement policy", dynamically rendered policy conditions, altered thresholds and one-generation current-policy retrieval. Local fallback explains actual source values and conditions instead of reporting only that passages were found. Model prose omits internal citation hashes while preserving validated source cards. Seven additional tests passed, bringing the full Windows suite to 243 passed plus four PostgreSQL-only skips; frontend lint and type checking passed.

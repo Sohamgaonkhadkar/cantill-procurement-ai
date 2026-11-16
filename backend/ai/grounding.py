@@ -6,6 +6,11 @@ from ..domain import digest
 from ..workspace import isolated_demo
 from .schemas import Citation
 from .safety import ExternalContext
+from .presentation import policy_text,passage_text
+
+def display_answer(text):
+    # Source cards retain validated IDs; conversational prose uses their titles.
+    return re.sub(r'\s*\[(?:KCH|TOOL)-[A-Za-z0-9-]+(?:\s*,\s*(?:KCH|TOOL)-[A-Za-z0-9-]+)*\]','',text)
 
 def _numbers(text):
     values=set()
@@ -97,9 +102,10 @@ def local_answer(intent,outputs):
     result=outputs[0]['result'];name=outputs[0]['tool']
     if name=='get_active_policy':
         p=result['policy']
-        return f"Policy {p['version']} applies as of {result['as_of_date']} and is effective from {p['effective_date']}. The rule cards show its exact conditions and routes. Drafts and future versions are not being treated as current policy."
+        return policy_text(p,result['as_of_date'])
     if result.get('matches'):
-        return 'I found these authorized source passages. Each reference identifies the applicable version and clause; the quoted thresholds and exceptions are shown together below.'
+        passages=[passage_text(entry['content']) for entry in result['matches']]
+        return 'From the applicable sources:\n\n'+'\n\n'.join('- '+text for text in dict.fromkeys(passages) if text)
     if name in {'search_policy_clauses','search_contracts'}:return 'I could not find an applicable approved source for that question. Specify the policy version or exact contract ID; I will not infer a missing rule.'
     if name=='get_contract_details':
         c=result['contract']

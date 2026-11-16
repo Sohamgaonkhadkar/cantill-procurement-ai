@@ -82,6 +82,56 @@ def test_social_prefix_does_not_hide_question_or_purchase():
     message='Can you help me order 10 I-A at P-A tomorrow Normal?'
     assert conversational_reply(message,{}) is None
     assert local_intent(message,{})=='create_purchase_request'
+    assert local_intent('How are similar requests grouped?',{})=='policy_question'
+    assert local_intent('How are preferred suppliers ranked?',{})=='policy_question'
+    assert local_intent('What happens when a contract has insufficient ceiling?',{})=='policy_question'
+
+
+@pytest.mark.parametrize('message',['“Hello, what can you do?','"Hello, what can you do?"','Hello, what can you do?','“What can you do?”'])
+def test_quoted_combined_greetings_answer_capabilities_without_sources(client,message):
+    result=chat(client,message).json()
+    assert "I'm Corvo" in result['message'] and 'draft a purchase request' in result['message']
+    assert not result['citations'] and not result['tools_used'] and result['run'] is None
+
+
+def test_current_procurement_policy_is_readable_without_gemini(client):
+    result=chat(client,'“What is the current procurement policy?').json()
+    assert result['tools_used']==['get_active_policy']
+    assert 'version 5.0' in result['message'] and '200000' in result['message']
+    assert '500000' in result['message'] and '1000000' in result['message']
+    assert 'first matching rule' in result['message'] and 'Active-supplier' in result['message']
+    assert 'group_value_inr' not in result['message'] and '{' not in result['message']
+    assert result['citations'] and result['ai_status']=='local_only'
+
+
+def test_current_policy_uses_one_generation_and_no_planner(client,monkeypatch):
+    monkeypatch.setenv('AI_EXTERNAL_CALLS_ENABLED','true');monkeypatch.setattr(safety,'isolated_demo',lambda:True)
+    from backend.ai import grounding
+    monkeypatch.setattr(grounding,'isolated_demo',lambda:True)
+    # Only the known fictional baseline policy has approved provenance here.
+    calls=[]
+    def answer(self,messages,schema,context):
+        calls.append(schema)
+        assert schema is GroundedAnswer
+        body=json.loads(messages[-1]['content'])
+        source=body['citations'][0]['id']
+        return ProviderResult(GroundedAnswer(answer='The current policy is version 5.0 ['+source+'].',citation_ids=[source],insufficient_evidence=False,suggested_followups=[]),'mock',1,1,1)
+    monkeypatch.setattr(Provider,'structured',answer)
+    monkeypatch.setattr(Provider,'tool_calls',lambda *args:pytest.fail('Unnecessary tool planner'))
+    result=chat(client,'What is the current procurement policy?',demo_data_acknowledged=True).json()
+    assert calls==[GroundedAnswer] and result['ai_status']=='available'
+    assert result['message']=='The current policy is version 5.0.' and result['citations']
+
+
+def test_policy_fallback_uses_changed_values_and_nested_conditions():
+    from backend.ai.presentation import policy_text,passage_text
+    from backend.policy import initial_policy
+    policy=initial_policy();policy['version']='6.0'
+    policy['rules'][4]['when']['all'][0]['value']='123456.78'
+    text=policy_text(policy,'2099-01-01')
+    assert '123456.78' in text and '200000' not in text and ' AND ' in text
+    rendered=passage_text('Policy clause. Complete condition and resulting route: '+json.dumps(policy['rules'][4]))
+    assert '123456.78' in rendered and '{' not in rendered and 'history exists' in rendered
 
 
 def test_model_cannot_redirect_policy_question_to_unrelated_tools(client,monkeypatch):
