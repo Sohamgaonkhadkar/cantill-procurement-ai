@@ -1,0 +1,13 @@
+.private/**
+.venv/**
+.git/**
+.env
+.env.*
+!.env.example
+**/__pycache__/**
+.pytest_cache/**
+tests/**
+submission/**
+*.zip
+*.db
+*.sqlite*

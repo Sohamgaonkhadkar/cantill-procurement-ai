@@ -1,0 +1,19 @@
+# Architecture and approach
+
+Corvo uses a transport-independent Python procurement engine, a safe first-match JSON policy interpreter, a FastAPI transport layer, and SQLAlchemy persistence. PostgreSQL is the production target; SQLite supports a quick local run and isolated tests. No decision depends on a UI component, HTTP request or ORM session.
+
+The processing sequence is validation, numeric-safe matching, fixed-anchor requirement grouping, historical preparation, contract eligibility and sequential ceiling allocation, exact valuation, declarative routing, supplier ranking, separate PO consolidation and output serialization. Intermediate evidence is persisted with each recommendation. Approved actions occupy separate purchase-order, sourcing and commitment tables. Simulations never reserve live ceiling.
+
+Runs preserve input rows, data snapshots, policy snapshots, hashes, all requirements and evidence. Replay uses those original snapshots, not mutable current master data. Importing a new policy or recording approvals cannot overwrite earlier run decisions. Source PR membership and approved PO lines have relational links; JSON evidence preserves source-specific fields and full historical explanations without schema changes.
+
+The policy interpreter recognizes only registered facts and typed comparison/boolean operators. It never executes uploaded code. Rules, priorities, thresholds, grouping windows, history windows, ranking weights, suggestion counts and PO windows are stored as versioned data. Plant/category-specific rules are additions to the existing DSL. Amendment uploads are extracted to reviewable source text; threshold interpretation is conservative and a human can correct or author arbitrary structured rules before review, approval and activation.
+
+AI use: OpenAI Codex wrote and reviewed implementation, synthetic tests and documentation in this workspace. No other candidate repository was copied. No coding subagents were used. Arena AI is independently generating the React/TypeScript/Vite frontend under the user's updated architecture. Its exported code has not yet been received or integrated. No LLM is currently invoked by the running backend. No supplied dataset was sent to an LLM or external extraction provider by the application.
+
+Document processing uses pypdf locally. Shared contract terms are compared against the register and mismatches block bootstrap; PDF-only contracts are imported with zero baseline consumption. Runtime PDF uploads are proposals, with manual correction and explicit buyer approval. Digital signature authenticity is not established by text extraction, and the API labels that limitation.
+
+Testing combines public synthetic fixtures with a private worked-example audit, preventing the source kit from leaking into public test fixtures. Tests cover thresholds, dates, anchoring, contract headroom, supplier eligibility, dynamic policy rules, mutation, CSV output, immutable replay, API workflows, approvals and authentication. Real HTTP and PostgreSQL checks are reported separately from in-process SQLite API tests. `VALIDATION.md` records actual results and unverified work.
+
+The frontend contract and generated OpenAPI are the integration boundary. The Arena UI should use one typed API client, actual loading/empty/error states and no mock-data fallback in live mode. On arrival, its ZIP will be inspected, connected screen by screen, and tested end to end while preserving backend code, migrations and automated tests.
+
+Limitations are explicit: controlled shared demo accounts instead of per-employee IAM, application-memory pagination at assessment scale, limited fallback natural-language parsing, no production monitoring/export fulfillment integration, and no verified public deployment until a hosting target and persistent database are configured. No application change is claimed to pass an unseen blind test in advance.

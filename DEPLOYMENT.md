@@ -1,0 +1,36 @@
+# Deployment target and current state
+
+Authorized repository: https://github.com/Sohamgaonkhadkar/cantill-procurement-ai (public, main).
+
+Authorized Vercel project: `corvo-procurement`, project ID `prj_7RIb7YlCS7VbCwYxK2hkUqhyxKHf`, team ID `team_oZevuRFeSWvyGYcMBdfiQAp5` (team slug `gaonkhadkarsoham2006-5043`). The project exists; a final application deployment has **not** been published.
+
+The final Arena frontend has not been supplied. `scripts/build_vercel.py` deliberately refuses to build a final release without its package.json, reviewed package-lock.json and Vite output. This prevents an outdated frontend or the temporary integration page from being published as the final application.
+
+## Vercel compatibility
+
+Vercel supports a FastAPI ASGI application at the root `app.py` entrypoint. `vercel.json` sets the Python function duration and includes the existing modular backend. Procurement algorithms are unchanged. See [official FastAPI support](https://vercel.com/docs/frameworks/backend/fastapi).
+
+The reviewed Arena frontend builds into `frontend/dist`; its static assets are copied to `public/` for Vercel's CDN. FastAPI serves the built SPA index and supplies safe deep-link fallback routes. `/api/*`, `/health`, `/docs`, `/redoc` and `/openapi.json` remain API routes. API and frontend can share one origin; Arena can then use an empty `VITE_API_BASE_URL`. The deployed routing still needs an actual Vercel build and browser verification after integration.
+
+Serverless differences are handled at the infrastructure boundary:
+
+- PostgreSQL is mandatory on Vercel; ephemeral SQLite fallback is disabled.
+- PostgreSQL connection creation performs no local directory writes; PDF processing is in memory and private kit import uses disposable temporary storage.
+- Schema migrations and default-policy/role seeds run during the build. Cold starts do not run DDL or insert seeds. PostgreSQL advisory locks serialize migrations and seeding.
+- Database connection pools are bounded (2 pooled + 1 overflow per instance), recycled and checked; psycopg automatic prepared statements are disabled for transaction-pool compatibility.
+- All purchasing commitments rely on PostgreSQL transactions, row locks and unique source-PR commitments. No in-memory lock is the sole safeguard across instances.
+- All durable runs, proposals, chat state, approvals and source evidence live in PostgreSQL. No private task files are bundled in source or deployment artifacts.
+- Vercel's request/response platform cap is 4.5 MB even though the portable API permits 10 MiB uploads. The supplied sample batch fits; larger PDFs/batches need splitting or a separately configured direct upload path. See [Functions limits](https://vercel.com/docs/functions/limitations).
+
+## Provisioning order
+
+1. Verify the selected Vercel owner/project. Do not create a second repository or project.
+2. Authenticate the local pinned Vercel CLI if needed. Install Neon through the Marketplace for **this project only**, choosing a free plan if available. User completes any account/legal/billing authorization. Do not start a paid subscription without a spending authorization.
+3. Ensure production and preview get separate persistent PostgreSQL resources/branches where supported. Configure DATABASE_URL and SSL. Do not log or commit connection strings.
+4. Configure SESSION_SECRET, DEMO_MODE=false, REQUESTER_PASSWORD, BUYER_PASSWORD, ADMIN_PASSWORD and exact CORS_ORIGINS in Vercel. Keep private values server-only. Secrets should be marked Secret; never prefix them with VITE_.
+5. Inspect and integrate Arena's exported ZIP into `frontend/`; remove live-mode mocks and test all API paths. Preserve backend source, migrations and tests.
+6. Run unit/API tests, frontend type/build checks and full UI flows. Regenerate OpenAPI if a transport schema changes.
+7. Build a staged Vercel release, run migrations/seed, import source kit privately using admin upload, and smoke-test the actual hosted API. Vercel deployment protection must be addressed through the platform's normal authenticated access or an approved public production configuration.
+8. Promote only the tested final integrated application. Check public access and persistence after redeployment. Record the actual URLs and verification evidence here.
+
+Current local API: http://localhost:8000. Public app and health URLs are pending verified deployment; no guessed production URL is advertised.

@@ -1,0 +1,14 @@
+.private/
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite*
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+frontend/dist/
+.vercel/
+public/
+*.zip

@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: corvo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-corvo-local}
+      POSTGRES_DB: corvo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corvo"]
+      interval: 3s
+      retries: 20
+  api:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://corvo:${POSTGRES_PASSWORD:-corvo-local}@db:5432/corvo
+      SESSION_SECRET: ${SESSION_SECRET:-local-demo-only-replace-before-hosting}
+      DEMO_MODE: ${DEMO_MODE:-true}
+      REQUESTER_PASSWORD: ${REQUESTER_PASSWORD:-corvo-demo}
+      BUYER_PASSWORD: ${BUYER_PASSWORD:-corvo-demo}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-corvo-demo}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./.private:/app/.private:ro
+volumes:
+  postgres_data:

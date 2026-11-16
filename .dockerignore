@@ -1,0 +1,11 @@
+.git
+.private
+.venv
+__pycache__
+.pytest_cache
+node_modules
+*.zip
+.env
+.env.*
+tests
+submission
