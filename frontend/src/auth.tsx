@@ -11,7 +11,11 @@ import { setToken } from "@/api/http";
 import { Button, ErrorBlock } from "@/components/ui";
 import { Wordmark } from "@/components/Monogram";
 import { HERO_POSTER } from "@/components/media/assets";
-type Identity = { id: string; role: "admin" | "buyer" | "requester" };
+type Identity = {
+  id: string;
+  role: "admin" | "buyer" | "requester";
+  workspace_mode?: "live" | "demo";
+};
 type Auth = {
   identity: Identity | null;
   login: (body: {
@@ -190,8 +194,31 @@ export function Login() {
             {creating ? "Create your account." : "Enter your workspace."}
           </h1>
           <p className="mt-3 text-lavender">
-            Sign in to work with live procurement data.
+            {options.data?.workspace_mode === "demo"
+              ? "Explore the isolated demo with fictional procurement data."
+              : "Sign in to work with live procurement data."}
           </p>
+          {options.data?.workspace_mode === "demo" ? (
+            <div className="demo-workspace-invite" role="note">
+              <strong>Demo workspace · fictional data</strong>
+              <p>
+                Select a controlled role below. Its public demo password fills
+                automatically. Changes stay in this separate workspace.
+              </p>
+              <a href="https://corvo-procurement.vercel.app">
+                Return to the private live workspace ↗
+              </a>
+            </div>
+          ) : options.data?.demo_url ? (
+            <div className="demo-workspace-invite">
+              <strong>Want automatic role passwords?</strong>
+              <p>
+                Try Admin, Buyer and Requester in a separate workspace with
+                fictional data.
+              </p>
+              <a href={options.data.demo_url}>Open isolated demo workspace ↗</a>
+            </div>
+          ) : null}
           <label className="field mt-6">
             Account type
             <select
@@ -281,8 +308,9 @@ export function Login() {
           ) : null}
           {publicPassword ? (
             <p className="text-sm text-lavender mt-3 mb-3">
-              Submission password is filled automatically for the selected
-              shared role.
+              {options.data?.workspace_mode === "demo"
+                ? "Public demo password filled automatically for the selected role."
+                : "Submission password is filled automatically for the selected shared role."}
             </p>
           ) : null}
           {!options.isPending && !options.data?.submission_access ? (

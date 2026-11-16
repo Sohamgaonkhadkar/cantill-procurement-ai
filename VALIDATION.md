@@ -6,8 +6,8 @@ Reviewed 16 November 2026. Results distinguish pure business checks, API tests, 
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **200 passed, 4 PostgreSQL-only tests skipped** |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **204 passed**, including independent approval and chat-confirmation transactions |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **207 passed, 4 PostgreSQL-only tests skipped** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **211 passed**, including independent approval and chat-confirmation transactions |
 | Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **15 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
 | CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
 | OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
@@ -87,3 +87,6 @@ The final full browser rerun passed all 15 scenarios. A stale effective-date fix
 
 
 Hosted sign-in configuration update: both Controlled role account and Individual account are available. The owner explicitly enabled requester self-registration. New users choose their own password, which is hashed and verified by the backend. Admin/Buyer roles cannot be self-registered and no privileged password is returned in authentication options. Controlled role access uses private credentials; retired public aliases remain rejected.
+
+
+Public demo extension: seven additional backend checks reject non-isolated database configurations, keep public passwords disabled on the live deployment and verify all demo roles remain unable to administer identities. The full backend suite passed 211 cases on PostgreSQL and 207 plus four PostgreSQL-only skips on SQLite. The demo uses a separate restricted PostgreSQL role/schema and session key, not request-based switching of the live connection. Existing migrations initialize that schema; only fictional inputs are seeded through the real engine.

@@ -136,6 +136,7 @@ export const api = {
         id: z.string(),
         role: z.enum(["admin", "buyer", "requester"]),
         demo_mode: z.boolean(),
+        workspace_mode: z.enum(["live", "demo"]).optional(),
       }),
     ),
   logout: () =>

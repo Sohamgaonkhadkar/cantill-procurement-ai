@@ -27,6 +27,8 @@ from .suppliers import preferred
 from .amendments import policy_diff as field_diff
 from .language import interpret
 from .chat import parse_message
+from .workspace import workspace_mode
+from .security import public_passwords
 from .security import consume_rate_limit
 from .schemas import RunResponse,Page,LoginResponse,RequirementResponse,PolicyResponse,PolicyDefinition,ComparisonResponse,SimulationResponse,ActionResponse,ChatResponse,ProcessingResult
 
@@ -88,6 +90,8 @@ class AuthOptions(Body):
     submission_access:bool
     registration_enabled:bool
     roles:list[PublicRole]
+    workspace_mode:Literal['live','demo']='live'
+    demo_url:str|None=None
 class DemoPreviewResponse(Body):
     mode:Literal['synthetic_preview']='synthetic_preview'
     persistent:Literal[False]=False
@@ -149,7 +153,7 @@ def sign_in(body:LoginBody):
 @app.get('/api/auth/options',tags=['Authentication'],response_model=AuthOptions)
 def auth_options():
     enabled=submission_access()
-    return {'submission_access':enabled,'registration_enabled':registration_enabled(),'roles':[{'role':role,'password':password} for role,password in SUBMISSION_PASSWORDS.items()] if enabled else []}
+    return {'submission_access':enabled,'registration_enabled':registration_enabled(),'roles':[{'role':role,'password':password} for role,password in public_passwords().items()] if enabled else [],'workspace_mode':workspace_mode(),'demo_url':os.getenv('PUBLIC_DEMO_URL') or None}
 
 @app.post('/api/auth/register',tags=['Authentication'],response_model=LoginResponse,status_code=201)
 def register(body:RegisterBody,request:Request):
@@ -179,7 +183,7 @@ def register(body:RegisterBody,request:Request):
         audit(s,body.username,'user.self_registered',{'user_id':body.username,'role':'requester'})
     return authenticate(body.username,body.password)
 @app.get('/api/auth/me',tags=['Authentication'])
-def me(actor=Depends(user)): return {'id':str(actor),'role':role_of(actor),'demo_mode':DEMO,'access_scope':getattr(actor,'access_scope','standard')}
+def me(actor=Depends(user)): return {'id':str(actor),'role':role_of(actor),'demo_mode':DEMO,'access_scope':getattr(actor,'access_scope','standard'),'workspace_mode':workspace_mode()}
 @app.post('/api/auth/logout',tags=['Authentication'])
 def logout(actor=Depends(user)):
     with Session.begin() as s:

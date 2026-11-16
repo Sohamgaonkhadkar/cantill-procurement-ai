@@ -7,6 +7,7 @@ from fastapi.security import HTTPBearer,HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from .db import User,AuthSession,AuthThrottle,Audit,now as timestamp
+from .workspace import isolated_demo,DEMO_PASSWORDS
 
 SECRET=os.getenv('SESSION_SECRET') or secrets.token_hex(32)
 DEMO=os.getenv('DEMO_MODE','true').lower()=='true' and not bool(os.getenv('VERCEL'))
@@ -14,7 +15,10 @@ ROLES={'requester','buyer','admin'}
 SUBMISSION_PASSWORDS={'requester':'corvo-requester-demo'}
 
 def submission_access():
-    return DEMO and not os.getenv('VERCEL') and os.getenv('SUBMISSION_ACCESS','false').lower()=='true'
+    return isolated_demo() or (DEMO and not os.getenv('VERCEL') and os.getenv('SUBMISSION_ACCESS','false').lower()=='true')
+
+def public_passwords():
+    return DEMO_PASSWORDS if isolated_demo() else SUBMISSION_PASSWORDS
 
 def registration_enabled():
     return os.getenv('PUBLIC_REGISTRATION','false').lower()=='true'
@@ -75,8 +79,8 @@ def authenticate(name,password):
             valid=verify_password(password,stored) and usable_credential
             # Explicit public submission access uses published demo credentials,
             # never exposes or substitutes the private operational passwords.
-            if submission_access() and name in SUBMISSION_PASSWORDS and account and account.payload.get('type')=='controlled_demo_account':
-                valid=valid or hmac.compare_digest(password.encode(),SUBMISSION_PASSWORDS[name].encode())
+            if submission_access() and name in public_passwords() and account and account.payload.get('type') in {'controlled_demo_account','public_demo_role'}:
+                valid=valid or hmac.compare_digest(password.encode(),public_passwords()[name].encode())
             if not account or account.payload.get('enabled',True) is False or not valid:
                 throttle.failures+=1
                 failure=HTTPException(401,'Invalid credentials')

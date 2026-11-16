@@ -1,5 +1,5 @@
 // Generated from root openapi.json; do not edit.
-// sha256: 05f3ad653b9b54f2f72b3ed9750a0199858f95511dbed58fb1eb2e4329743dfa
+// sha256: 35856c699a70f525b935d3a8c34fecc54905e15000ed533861b2fdc69f641e8d
 import { z } from "zod";
 export type ActionResponse = { "id": string; "run_id": string; "requirements": Array<string>; "recommendations": Array<RequirementResponse>; "actor": string; "approved_at": string; "reason": string; "status": string; [key: string]: unknown };
 export type AllCondition_Input = { "all": Array<(Predicate | AllCondition_Input | AnyCondition_Input | NotCondition_Input)> };
@@ -7,7 +7,7 @@ export type AllCondition_Output = { "all": Array<(Predicate | AllCondition_Outpu
 export type AmendmentTextBody = { "text": string; "version": string; "effective_date": string; "base_version"?: string };
 export type AnyCondition_Input = { "any": Array<(Predicate | AllCondition_Input | AnyCondition_Input | NotCondition_Input)> };
 export type AnyCondition_Output = { "any": Array<(Predicate | AllCondition_Output | AnyCondition_Output | NotCondition_Output)> };
-export type AuthOptions = { "submission_access": boolean; "registration_enabled": boolean; "roles": Array<PublicRole> };
+export type AuthOptions = { "submission_access": boolean; "registration_enabled": boolean; "roles": Array<PublicRole>; "workspace_mode"?: "live" | "demo"; "demo_url"?: (string | null) };
 export type Body_batch_api_process_batch_post = { "file": string; "policy_version"?: (string | null) };
 export type Body_demo_export_api_demo_export_csv_post = { "file"?: (string | null) };
 export type Body_demo_preview_api_demo_preview_post = { "file"?: (string | null) };
@@ -56,7 +56,7 @@ export const AllCondition_OutputSchema: z.ZodType<AllCondition_Output> = z.objec
 export const AmendmentTextBodySchema: z.ZodType<AmendmentTextBody> = z.object({"text": z.string().min(5).max(50000), "version": z.string(), "effective_date": z.string(), "base_version": z.string().optional()}).strict();
 export const AnyCondition_InputSchema: z.ZodType<AnyCondition_Input> = z.object({"any": z.array(z.union([z.lazy(() => PredicateSchema), z.lazy(() => AllCondition_InputSchema), z.lazy(() => AnyCondition_InputSchema), z.lazy(() => NotCondition_InputSchema)]))}).strict();
 export const AnyCondition_OutputSchema: z.ZodType<AnyCondition_Output> = z.object({"any": z.array(z.union([z.lazy(() => PredicateSchema), z.lazy(() => AllCondition_OutputSchema), z.lazy(() => AnyCondition_OutputSchema), z.lazy(() => NotCondition_OutputSchema)]))}).strict();
-export const AuthOptionsSchema: z.ZodType<AuthOptions> = z.object({"submission_access": z.boolean(), "registration_enabled": z.boolean(), "roles": z.array(z.lazy(() => PublicRoleSchema))}).strict();
+export const AuthOptionsSchema: z.ZodType<AuthOptions> = z.object({"submission_access": z.boolean(), "registration_enabled": z.boolean(), "roles": z.array(z.lazy(() => PublicRoleSchema)), "workspace_mode": z.enum(["live", "demo"]).optional(), "demo_url": z.union([z.string(), z.null()]).optional()}).strict();
 export const Body_batch_api_process_batch_postSchema: z.ZodType<Body_batch_api_process_batch_post> = z.object({"file": z.string(), "policy_version": z.union([z.string(), z.null()]).optional()});
 export const Body_demo_export_api_demo_export_csv_postSchema: z.ZodType<Body_demo_export_api_demo_export_csv_post> = z.object({"file": z.union([z.string(), z.null()]).optional()});
 export const Body_demo_preview_api_demo_preview_postSchema: z.ZodType<Body_demo_preview_api_demo_preview_post> = z.object({"file": z.union([z.string(), z.null()]).optional()});

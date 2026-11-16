@@ -5544,6 +5544,26 @@
             },
             "type": "array",
             "title": "Roles"
+          },
+          "workspace_mode": {
+            "type": "string",
+            "enum": [
+              "live",
+              "demo"
+            ],
+            "title": "Workspace Mode",
+            "default": "live"
+          },
+          "demo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demo Url"
           }
         },
         "additionalProperties": false,

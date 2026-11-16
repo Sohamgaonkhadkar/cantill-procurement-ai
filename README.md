@@ -16,7 +16,7 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-204_passed-28A745?style=flat-square)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-211_passed-28A745?style=flat-square)
 ![Browser verification](https://img.shields.io/badge/Browser_scenarios-15_passed-6246FF?style=flat-square)
 ![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-D7FF3F?style=flat-square&labelColor=171335)
 
@@ -50,6 +50,12 @@ Choose **Individual account** and use the private evaluator credentials supplied
 | **Purchase Orders / Sourcing / Audit Trail** | Persisted purchasing records, overrides and actor/time evidence |
 
 Controlled role sign-in is also available: select Admin, Buyer or Requester and enter its privately assigned password. New users can select Individual account → New here? Create account; self-registration creates Requester accounts only. Public privileged demonstration passwords remain removed. Registration is an explicit environment setting, enabled on this hosted instance. [Health endpoint](https://corvo-procurement.vercel.app/health).
+
+### Full demo workspace with automatic passwords
+
+[Open the isolated demo](https://corvo-procurement-demo.vercel.app). Choose Controlled role account, then Admin, Buyer or Requester; the public demonstration password fills automatically. This deployment uses fictional DEMO-prefixed data, a restricted database role/schema and a separate session-signing key. It cannot access the live workspace's records. Its Admin can exercise procurement/policy workflows but cannot administer identities or replace data. The demo is shared; demonstration changes persist there.
+
+Live individual/controlled-role passwords remain private. The main sign-in screen links to the demo for password-free exploration. Selecting a demo role does not grant live access.
 
 ### Isolated synthetic examples
 
@@ -198,8 +204,8 @@ Replace version, paths and filenames with the supplied values. This read-only to
 
 | Evidence | Result |
 |---|---|
-| Linux / PostgreSQL suite | **204 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **200 passed**, with four PostgreSQL-only skips |
+| Linux / PostgreSQL suite | **211 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **207 passed**, with four PostgreSQL-only skips |
 | Real-backend browser suite | **15 scenarios passed** |
 | Disclosed worked examples | **14 procurement decisions + 3 supplier rankings match** |
 | Original sample | **186 outputs · 149 requirements · 2 explicit invalid lines** |

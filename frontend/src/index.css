@@ -923,6 +923,47 @@ nav[aria-label="Primary"][data-expanded] {
 }
 
 /* Sign-in: a photographic brand panel and a focused, private account form. */
+.demo-workspace-invite {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #8f7bff55;
+  background: #6246ff13;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.demo-workspace-invite strong {
+  color: #d7ff3f;
+  font-size: 12px;
+}
+.demo-workspace-invite p {
+  color: #b7b3d7;
+  margin-block: 6px 10px;
+}
+.demo-workspace-invite a {
+  color: #f5f3ec;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.demo-workspace-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 24px;
+  background: #302560;
+  border-bottom: 1px solid #8f7bff55;
+  color: #ded9ff;
+  font-size: 12px;
+}
+.demo-workspace-banner strong {
+  color: #d7ff3f;
+}
+.demo-workspace-banner a {
+  margin-left: auto;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .login-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(390px, 46%);

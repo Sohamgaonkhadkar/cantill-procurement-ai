@@ -298,7 +298,11 @@ function Header({
             className="live-dot h-1.5 w-1.5 rounded-full bg-current"
             aria-hidden
           />
-          {IS_MOCK ? "MOCK · SYNTHETIC DATA" : "LIVE · API"}
+          {identity?.workspace_mode === "demo"
+            ? "DEMO · FICTIONAL DATA"
+            : IS_MOCK
+              ? "MOCK · SYNTHETIC DATA"
+              : "LIVE · API"}
         </span>
       </div>
 
@@ -363,7 +367,12 @@ function Header({
                 {logoutError ? <ErrorBlock error={logoutError} /> : null}
                 <div className="my-3 h-px bg-lavender/15" />
                 <div className="num text-[11px] text-lavender">
-                  DATA MODE · {IS_MOCK ? "MOCK (synthetic)" : "LIVE (FastAPI)"}
+                  DATA MODE ·{" "}
+                  {identity?.workspace_mode === "demo"
+                    ? "DEMO (fictional)"
+                    : IS_MOCK
+                      ? "MOCK (synthetic)"
+                      : "LIVE (FastAPI)"}
                 </div>
                 <button
                   onClick={() => {
@@ -606,6 +615,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
 /* ---------- Layout ---------- */
 
 export function Shell() {
+  const { identity } = useAuth();
   const location = useLocation();
   const themeKey =
     NAV.find((n) =>
@@ -696,6 +706,17 @@ export function Shell() {
             id="main"
             className="scroll-thin absolute inset-0 z-10 overflow-y-auto pt-[68px] md:pl-[96px]"
           >
+            {identity?.workspace_mode === "demo" ? (
+              <div className="demo-workspace-banner" role="status">
+                <strong>Isolated demo</strong>
+                <span>
+                  Fictional data · Changes do not affect the live workspace.
+                </span>
+                <a href="https://corvo-procurement.vercel.app">
+                  Open live workspace ↗
+                </a>
+              </div>
+            ) : null}
             <motion.div
               key={themeKey}
               className="min-h-full"

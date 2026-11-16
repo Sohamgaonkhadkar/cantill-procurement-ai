@@ -157,6 +157,8 @@ def connect(url=None):
     if os.getenv('VERCEL') and not (url or os.getenv('DATABASE_URL')):
         raise RuntimeError('Persistent DATABASE_URL is required on Vercel; SQLite fallback is disabled')
     url=url or os.getenv('DATABASE_URL','sqlite:///.private/corvo.db')
+    from .workspace import check_workspace_database
+    check_workspace_database(url)
     if url.startswith('postgres://'): url=url.replace('postgres://','postgresql+psycopg://',1)
     if url.startswith('postgresql://'): url=url.replace('postgresql://','postgresql+psycopg://',1)
     if url.startswith('sqlite:///.private/'): Path('.private').mkdir(exist_ok=True)

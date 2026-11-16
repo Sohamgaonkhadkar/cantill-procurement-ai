@@ -7,7 +7,7 @@ PASSWORD='Synthetic-registration-12345'
 def test_submission_access_explicit_opt_in_and_no_private_passwords(client,monkeypatch):
     monkeypatch.setenv('SUBMISSION_ACCESS','false')
     monkeypatch.setenv('PUBLIC_REGISTRATION','false')
-    assert client.get('/api/auth/options').json()=={'submission_access':False,'registration_enabled':False,'roles':[]}
+    assert client.get('/api/auth/options').json()=={'submission_access':False,'registration_enabled':False,'roles':[],'workspace_mode':'live','demo_url':None}
     assert client.post('/api/auth/login',json={'role':'buyer','password':'corvo-buyer-demo'}).status_code==401
     body={'username':'new-user','display_name':'New User','password':PASSWORD}
     assert client.post('/api/auth/register',json=body).status_code==403
