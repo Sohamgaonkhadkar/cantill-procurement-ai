@@ -18,6 +18,7 @@ services:
       DATABASE_URL: postgresql+psycopg://corvo:${POSTGRES_PASSWORD:-corvo-local}@db:5432/corvo
       SESSION_SECRET: ${SESSION_SECRET:-local-demo-only-replace-before-hosting}
       DEMO_MODE: ${DEMO_MODE:-true}
+      SUBMISSION_ACCESS: ${SUBMISSION_ACCESS:-false}
       REQUESTER_PASSWORD: ${REQUESTER_PASSWORD:-corvo-demo}
       BUYER_PASSWORD: ${BUYER_PASSWORD:-corvo-demo}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-corvo-demo}

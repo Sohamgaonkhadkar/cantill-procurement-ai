@@ -124,7 +124,7 @@
             }
           },
           "429": {
-            "description": "Login temporarily throttled; see Retry-After",
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {
@@ -166,36 +166,6 @@
           },
           "503": {
             "description": "Storage temporarily unavailable; retry later",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Sign-in required or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Role not permitted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Record not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -275,16 +245,6 @@
               }
             }
           },
-          "401": {
-            "description": "Sign-in required or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "403": {
             "description": "Role not permitted",
             "content": {
@@ -295,8 +255,8 @@
               }
             }
           },
-          "404": {
-            "description": "Record not found",
+          "429": {
+            "description": "Request temporarily throttled; see Retry-After",
             "content": {
               "application/json": {
                 "schema": {

@@ -11,3 +11,11 @@ The exact API contract is [FRONTEND_API_CONTRACT.md](../FRONTEND_API_CONTRACT.md
 Authentication uses in-memory bearer tokens, server logout/revocation and role-aware routes/navigation. Refreshing requires sign-in. Monetary values stay decimal strings, including display formatting; procurement outcomes are never computed in JavaScript. Downloads use authenticated fetch and Blob URLs. Lists use backend pagination and immutable run IDs.
 
 The supplied ZIP omitted all referenced media binaries. The credited Pexels photographs and the same SD hero footage were restored from their original sources. Vite emits cached assets separately rather than embedding the whole application in one HTML file. See ASSET_CREDITS.md for the original credits.
+
+## Maintenance boundaries
+
+Run API generation from the repository root, not this directory. Generated files should be regenerated rather than edited by hand. Backend algorithms, migrations and tests are independent of UI replacement. The live client accepts an empty API base URL and never defaults production traffic to localhost.
+
+With server SUBMISSION_ACCESS=true, auth options expose separate published role credentials and requester-only signup. Private operational passwords are not returned. Individual signup validates the server schema and handles duplicate usernames/throttling. The application uses inline startup recovery plus an error boundary; missing deployment assets must return 404 rather than SPA HTML.
+
+For the algorithms and acceptance evidence, read ../SOLUTION_DESIGN.md, ../REQUIREMENTS_TRACEABILITY.md and ../VALIDATION.md. Original assessment data and browser artifacts belong in ignored ../.private/, never in frontend fixtures or assets.

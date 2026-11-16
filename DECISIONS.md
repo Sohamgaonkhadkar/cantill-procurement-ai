@@ -2,6 +2,14 @@
 
 The supplied brief and policy were read before implementation. Original files, extracted text, detailed private checks and sample results remain in `.private/`, outside Git and Docker build context. This document explains implemented rules; it is not a copy of the source PDFs.
 
+## Decision framework
+
+Three principles guide ambiguous cases: preserve exact financial evidence, prevent an uncertain input from creating an unsafe commitment, and make every material interpretation reproducible. A price benchmark is not supplier eligibility; a recommendation is not an approval; a grouping relationship is not a PO-consolidation relationship. Keeping these concepts separate prevents superficially plausible shortcuts from changing policy outcomes.
+
+The choices below are implemented behavior. Where the policy is silent, the table explains the selected interpretation, business consequence and supporting test. Different evaluator preferences remain possible; these decisions are not presented as a hidden answer key.
+
+## Policy and data interpretation register
+
 | Issue | Evidence from policy | Decision | Reason | Effect | Test |
 |---|---|---|---|---|---|
 | Group window | 2.2 says 14 calendar days from first line | Date difference 0–14 inclusive; need-by difference -7 through +7 inclusive | Calendar days avoid time-of-day changing anti-splitting treatment | Late-night requests on day 14 still group | `test_group_boundaries` |
@@ -48,6 +56,10 @@ Recency is 1 for a last PO within 90 days, 0.5 within 365, otherwise 0, includin
 Reference price uses the supplier's latest PO within 548 preceding days; ties break by PO number then supplier ID descending. Without such a PO, use the latest started contract by start date then contract ID descending. Preferred suppliers are ranked independently of whether their contracts currently have ceiling. This permits a contract supplier to remain a good sourcing candidate after ceiling exhaustion.
 
 ## Current tradeoffs
+
+Public submission access is enabled at the owner's request: shared role passwords are displayed automatically, including Admin. This improves reviewer access but permits visitors to change live policy/purchasing data. It is distinct from private operational credentials, which are never exposed by the options endpoint. Before a private production deployment, disable SUBMISSION_ACCESS and use individual identities. Before the timed assessment, verify the shared workspace has not changed unexpectedly.
+
+Malformed CSV headers are rejected at intake. Allowing duplicate quantity columns would let a parser overwrite a financially material value before any policy logic sees it. Final output verification is separate: the read-only submission checker tests schema, line identity, decimal/action consistency and optional Active-supplier membership without recalculating financial decisions.
 
 The conservative amendment compiler recognizes complete supported limit, window, supplier-count and scoped rule statements. Master-data scope resolution rejects ambiguous values. Unsupported language remains visible and blocks ordinary review until explicit manual verification after structured authoring. Arbitrary registered-fact rules can be entered in the validated condition editor/JSON without application code changes. Approval requires source review. There is no configured LLM, OCR service or signature verifier. Chat provides a basic deterministic parser, not general language understanding. Arena's frontend is integrated and deployed against the real API; its workflows, rich evidence, authenticated downloads and desktop/mobile layouts have browser verification.
 

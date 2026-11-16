@@ -26,7 +26,7 @@ Serverless differences are handled at the infrastructure boundary:
 - Database connection pools are bounded (2 pooled + 1 overflow per instance), recycled and checked; psycopg automatic prepared statements are disabled for transaction-pool compatibility.
 - All purchasing commitments rely on PostgreSQL transactions, row locks and unique source-PR commitments. No in-memory lock is the sole safeguard across instances.
 - All durable runs, proposals, chat state, approvals and source evidence live in PostgreSQL. No private task files are bundled in source or deployment artifacts.
-- Vercel's request/response platform cap is 4.5 MB even though the portable API permits 10 MiB uploads. The supplied sample batch fits; larger PDFs/batches need splitting or a separately configured direct upload path. See [Functions limits](https://vercel.com/docs/functions/limitations).
+- Vercel's request/response platform cap is 4.5 MB even though the portable API permits 10 MiB uploads. The supplied sample batch fits; larger batches must use a full-batch deployment path with suitable limits; do not split a batch because that changes grouping and allocation semantics. See [Functions limits](https://vercel.com/docs/functions/limitations).
 
 ## Provisioning order
 

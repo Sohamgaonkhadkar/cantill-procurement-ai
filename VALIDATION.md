@@ -1,56 +1,65 @@
-# Executed verification
+# Verification evidence
 
-Verification date: 16 November 2026 (Asia/Kolkata client context). Results below distinguish executed checks from pending deployment/integration work.
+Reviewed 16 November 2026. Results distinguish pure business checks, API tests, real PostgreSQL transactions, browser workflows and actual hosted behavior. Test counts are evidence of asserted behaviors, not an independent assessment score.
 
-| Check | Actual result |
+## Current automated baseline
+
+| Check | Environment | Executed result |
+|---|---|---|
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **143 passed, 2 PostgreSQL-only tests skipped** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **145 passed**, including independent approval and chat-confirmation transactions |
+| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **13 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
+| CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
+| OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
+| Generated frontend models | OpenAPI-derived TypeScript and Zod | Drift check passes; release build enforces TypeScript compilation |
+| Repository hygiene | Tracked source/configuration/tests; private original hashes and actual secrets | No original kit artifacts or deployment credentials in the audited staged tree/history |
+
+The Python suite emits one Starlette TestClient/httpx deprecation warning. It does not invalidate passing assertions. PostgreSQL tests operate only against the explicitly named isolated corvo_test database, never the hosted application database.
+
+## Business correctness evidence
+
+| Check | Result | What it establishes |
+|---|---|---|
+| Supplied worked procurement decisions | All 14 match | Agreement on the disclosed worked cases, including PDF-only contracts and consolidation |
+| Supplied supplier-ranking examples | All 3 match | Agreement on disclosed ranking/reference behavior |
+| Complete original sample | 186 output rows, 149 requirements, 2 explicit invalid-line outcomes | Full ingestion, stable output cardinality and explainable rejection |
+| Contract import | 12 PDFs reconciled with shared register terms; 2 PDF-only contracts loaded | The register is not incorrectly treated as complete |
+| Original sample output hash | 9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f | A stable business-output baseline across hardening and deployment checks |
+| Boundary/invariant tests | Inclusive grouping/contract dates, nontransitive anchors, exact thresholds, eligible suppliers, deterministic ordering | Targeted behavior under synthetic adversarial cases |
+
+The sample does not provide a complete answer key. Passing all disclosed examples does not prove that every sample decision or future unseen decision matches the evaluator's interpretation. Original assertions and source artifacts stay private.
+
+## Browser and deployment evidence
+
+The browser suite exercises a real isolated FastAPI server and synthetic database. It contains thirteen scenarios: blocked startup resources, visible script-failure recovery, role-password autofill, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling and pagination.
+
+All eleven screens have desktop/mobile captures at 1440px and 390px, horizontal-overflow checks and visual inspection. The custom Arena 3D scenes remain; the hero's opaque shader, oversized composition and overlapping inset/caption issues were corrected. Startup recovery was additionally checked with denied localStorage, blocked external fonts and a deliberately blocked entry script.
+
+Actual hosted checks are separate from these local browser tests:
+
+| Hosted environment | Verified behavior |
 |---|---|
-| Synthetic Python unit/API/migration/serverless suite on Windows, Python 3.14, SQLite API fixtures | **128 passed, 2 PostgreSQL-only tests skipped** |
-| Synthetic suite on Linux/Python 3.12 with API fixtures using isolated PostgreSQL `corvo_test` | **130 passed**, including independent concurrent approvals contending for a contract ceiling, account isolation, session revocation, login throttling, amendment governance, matching/numeric adversarial cases and randomized determinism invariants |
-| Full sample batch | 186 output rows, 149 requirements, 2 explicit invalid-line outcomes |
-| Worked procurement examples | All 14 privately checked against original source examples, using exact rates instead of presentation rounding |
-| Worked supplier rankings | All 3 privately checked and matched |
-| Contract audit/import | All 12 signed PDFs extracted; shared register terms verified; 2 PDF-only contracts loaded |
-| Real local Docker/PostgreSQL HTTP flow | Passed health, authentication, sample CSV, exports, replay, amendment proposal/simulation/review/approval/activation/reprocess/comparison, ranking, contract PDF upload, CORS and API docs |
-| No-code amendment demonstration | A labeled test spot-threshold amendment changed 48 sample PR-line outcomes; original run replay remained unchanged |
-| API restart persistence | Existing PostgreSQL run and output hash survived API container restart; deterministic replay passed |
-| Migration lifecycle | Clean SQLite upgrade, repeated upgrade, table comparison and downgrade passed; PostgreSQL initialized by Docker migrations. Migration 003 for sessions/throttles verified on both managed databases |
-| Repository privacy | Staged-tree hygiene passed before initial push: 52 source/config/test files; no original kit files or obvious credentials. Original kit, extracted text, private regressions/results, databases, environment files and CLI tooling remain ignored |
-| OpenAPI synchronization | Checked-in schema matches live application's generated schema in automated test |
-| Compilation | `python -m compileall -q backend scripts` passed |
-| Docker configuration and startup | `docker compose config --quiet` and actual `docker compose up --build -d` passed |
-| Managed Neon PostgreSQL | Separate production and preview free-plan databases in Singapore provisioned. Both migrated and privately initialized with 73 items / 12 contracts; each persisted 186 sample outputs and replayed with the same business hash. Actual Vercel HTTP/browser checks also pass, as recorded below |
-| Vercel environment configuration | Distinct production/preview session and role Secrets configured; DEMO_MODE=false and same-origin CORS configuration set. Credentials were not printed or committed |
-| Managed-preview HTTP workflow | Passed through a local HTTP listener using Vercel-like startup, secure preview credentials and remote Neon persistence: sample CSV, amendment simulation/review/approval/activation, comparison (48 affected lines), historical replay, chat confirmation, actual synthetic PO approval, duplicate rejection, sourcing override, rankings, exports, contract upload and audit. The test amendment was deactivated afterward; production purchasing records were untouched |
+| Isolated Vercel preview + Neon | Original CSV, authenticated export/replay, amendment lifecycle/comparison (48 affected lines), chat confirmation, PO approval, sourcing override, supplier export, contract upload and audit. Test policy withdrawn afterward |
+| Public Vercel production + Neon | Eleven screens; original sample/hash; authenticated 13-column export; ranking; logout revocation; exclusively same-origin API calls; no normal browser exceptions |
+| Public production redeployment | A preexisting run retained its hash and replayed after a new release; database persistence is independent of the function filesystem |
+| Public submission-access release | All role passwords visibly autofill; Admin login and mobile requester signup/re-login work; temporary test account disabled afterward |
+| Public startup-recovery release | Missing previous-release asset returns 404 JSON; HTML uses no-store; blocked fonts/storage permit sign-in; failed entry download exposes recovery; reload restores sign-in |
 
-The suite reports one Starlette deprecation warning concerning its httpx TestClient compatibility adapter. It does not affect the passing assertions. Original worked-example fixtures and exported sample results remain private and are not included in the public tests.
+Production synthetic purchase commitments were avoided. Mutable purchasing verification used the separate preview database. Deployment IDs and the current application commit are recorded in DEPLOYMENT.md.
 
-The hardening pass increased the synthetic suite from 79 to 130 tests. It covers individual identities and requester ownership, persisted logout/disable/throttling, redacted validation errors, scoped policy upload through activation, unresolved-source review gating, incomplete item specifications, inch/model-suffix matching, numeric resource bounds, manual scanned-contract proposals, randomized input-order invariants and two independent PostgreSQL approval transactions. Private procurement/ranking checks still match the original sample business hash.
+## Blind-test rehearsal and export preflight
 
-The managed-preview HTTP hardening check passed (9 affected sample lines, 269.75 seconds), separately exercising individual requester accounts, cross-user run/export/requirement isolation, persistent logout, login throttling, a scoped plant/category amendment, simulation, review/approval/activation, reprocessing/comparison and historical replay. Synthetic identities are disabled and the test amendment withdrawn afterward. This uses a local listener with a remote preview database; it is not a public deployment test.
+A private API rehearsal used all 186 sample-derived lines with altered PR identities and quantities. A five-part text amendment changed spot/RFQ limits, the grouping window, a scoped plant/category rule and the RFP supplier count. Upload, simulation, review, approval, activation, reprocessing and three exports completed through unchanged application APIs.
 
-## Scope and remaining limits
+The amendment changed 55 line outcomes. Both runs had the same input hash, both replays matched, repeating v5.0 remained unchanged, and all chosen/suggested suppliers were Active. The preferred export contained 155 rows across 68 items with eligible relationships; catalog items with no qualifying preferred supplier legitimately had no ranking row.
 
-- Arena integration, TypeScript/production builds and real-backend browser workflows pass locally; see INTEGRATION_REPORT.md.
-- Hosted preview and public production browser verification pass; see DEPLOYMENT.md.
-- Public health confirms Vercel-to-Neon connectivity; persisted run retrieval and replay survive redeployment.
-- Exhaustive serverless load testing, corporate SSO/MFA, OCR and cryptographic PDF verification are not claimed. Individual employee account isolation and PostgreSQL transaction contention are tested.
-- No blind-test batch or amendment has been received. `submission/` contains no fabricated CSV outputs.
+The standalone read-only checker accepted all three rehearsal files with supplier-status validation. Its corruption tests cover lost/duplicate PR lines, policy mismatch, invalid decimals, blocked suppliers, inconsistent repeated requirements, wrong headers and malformed preferred ranks. It checks output integrity rather than recalculating routing, quantities, effective dates or as-of-date correctness.
 
-See `DEPLOYMENT.md` for the authorized repository/project and the release sequence and executed hosted checks.
+## Limits of the evidence
 
-## Arena integration verification
-
-All eleven Playwright scenarios pass against isolated real FastAPI/SQLite: CSV/export/replay, approvals, duplicate commitment rejection, sourcing override, policy proposal/upload/simulation/review/approval/activation, chat confirmation and session continuity, manual scanned-contract review, session revocation, throttling, outage states and pagination. All eleven pages were captured and visually inspected at 1440px and 390px with automated horizontal-overflow checks.
-
-The production Vite build served directly by Docker/FastAPI/PostgreSQL separately passed an actual Chromium run over the original private sample: 186 outputs, 149 requirements, two invalid lines, authenticated export, replay and supplier view, with zero browser exceptions. Its output hash remains 9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f. The final image passes 130 PostgreSQL tests; Windows passes 128 with two PostgreSQL-only skips. TypeScript, production build and generated-client drift checks pass.
-
-Hosted checks exposed and fixed a frontend draft-selection race and reuse of a PR identity across submissions in one chat. New regressions assert the simulation policy ID, distinct chat commitments and cross-instance confirmation serialization. Procurement routing algorithms and schema migrations are unchanged.
-
-
-## Hosted browser verification
-
-Public production Chromium passed all eleven screens, the original 186-row sample, authenticated 13-column CSV export, deterministic replay, supplier ranking and persisted logout, with zero browser exceptions and no foreign API origins. A preexisting run and its immutable output hash survived redeployment and replayed successfully. Hosted preview additionally passed the full mutable policy/chat/PO/override/contract workflows against its separate Neon database; the amendment comparison changed 48 sample lines and the test policy was withdrawn afterward. Production purchasing commitments were not used for synthetic verification.
-
-Submission access update: 130 PostgreSQL tests and 128 Windows/SQLite tests (two PostgreSQL-only skips) pass. All eleven browser scenarios pass, including role password autofill, requester-only signup, automatic sign-in and later individual login. A targeted rerun captures the final transparent hero at desktop/mobile widths.
-
-Blank-page regression: missing release assets previously returned SPA HTML (reproduced against production). They now return 404, HTML uses no-store, external font CSS is nonblocking, and an inline loading/recovery screen works before React downloads. Browser tests passed with localStorage denied, Google Fonts blocked and the entry module deliberately blocked. A React error boundary supplies reload recovery for later rendering/chunk failures.
+- The actual blind batch and amendment have not been received; submission/ contains no fabricated evaluator outputs.
+- Controlled-language parsing is bounded. Unsupported clauses require faithful structured authoring and explicit review.
+- No unrestricted LLM, OCR, cryptographic signature verifier, corporate SSO/MFA/recovery or external PO fulfillment is claimed.
+- Shared submission Admin access is deliberately public and requires an operational preflight before the timed assessment.
+- Exhaustive load, fault-injection and penetration testing have not been performed. The 20,000-row API bound is not a hosted throughput guarantee; Vercel's payload limit is 4.5 MB.
+- The assessment form, code freeze and timely output-only Git push remain human obligations. See BLIND_TEST_RUNBOOK.md.

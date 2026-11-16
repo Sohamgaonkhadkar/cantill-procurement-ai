@@ -1,19 +1,55 @@
-# Architecture and approach
+# Engineering approach and AI disclosure
 
-Corvo uses a transport-independent Python procurement engine, a safe first-match JSON policy interpreter, a FastAPI transport layer, and SQLAlchemy persistence. PostgreSQL is the production target; SQLite supports a quick local run and isolated tests. No decision depends on a UI component, HTTP request or ORM session.
+Corvo was built around the assessment's highest-risk requirement: the same frozen application must process an unfamiliar batch under v5.0, accept an amendment as reviewed policy data, and produce a second explainable result without source changes. The interface is an operational client of that engine, not the place where procurement rules live.
 
-The processing sequence is validation, numeric-safe matching, fixed-anchor requirement grouping, historical preparation, contract eligibility and sequential ceiling allocation, exact valuation, declarative routing, supplier ranking, separate PO consolidation and output serialization. Intermediate evidence is persisted with each recommendation. Approved actions occupy separate purchase-order, sourcing and commitment tables. Simulations never reserve live ceiling.
+## Implementation strategy
 
-Runs preserve input rows, data snapshots, policy snapshots, hashes, all requirements and evidence. Replay uses those original snapshots, not mutable current master data. Importing a new policy or recording approvals cannot overwrite earlier run decisions. Source PR membership and approved PO lines have relational links; JSON evidence preserves source-specific fields and full historical explanations without schema changes.
+1. Inspect the brief, policy, worked examples, CSV schemas and contract PDFs privately. Record ambiguities before choosing behavior.
+2. Implement a transport-independent deterministic engine with exact arithmetic and explicit tie rules. Use synthetic tests for public regressions and private checks for supplied examples.
+3. Represent conditions, priorities, thresholds and time windows as validated, versioned policy data. Separate amendment interpretation from approval and activation.
+4. Persist recommendations and snapshots before building approval workflows. Treat actual commitments as transactional writes with independent safeguards.
+5. Integrate Arena's exported React/TypeScript/Vite interface against the actual OpenAPI contract. Preserve its visual components while replacing incorrect adapters, models and mock assumptions.
+6. Verify browser-to-API-to-database behavior locally and on hosted infrastructure. Treat a passed build as a compilation result, not proof of a complete workflow.
 
-The policy interpreter recognizes only registered facts and typed comparison/boolean operators. It never executes uploaded code. Rules, priorities, thresholds, grouping windows, history windows, ranking weights, suggestion counts and PO windows are stored as versioned data. Plant/category-specific rules are additions to the existing DSL. Amendment uploads are extracted to reviewable source text; a conservative controlled compiler handles explicit scoped conditions, limits, windows and supplier counts; unresolved clauses gate review, and a human can correct or author arbitrary structured rules before review, approval and activation.
+## Why these architectural choices
 
-AI use: OpenAI Codex wrote and reviewed implementation, synthetic tests and documentation in this workspace. No other candidate repository was copied. No coding subagents were used. Arena AI is independently generating the React/TypeScript/Vite frontend under the user's updated architecture. Its export was received and integrated on 16 November 2026. Incorrect endpoint assumptions were replaced with a live client and OpenAPI-generated TypeScript/Zod schemas. No LLM is currently invoked by the running backend. No supplied dataset was sent to an LLM or external extraction provider by the application.
+| Choice | Reason | Tradeoff |
+|---|---|---|
+| Python/FastAPI and Decimal | Typed transport, document tooling and precise financial calculations | Python hosting must respect serverless limits |
+| Explicit first-match DSL | Safe, inspectable conditions and controllable precedence | New rules are limited to registered facts and supported operations |
+| Conservative text compiler | Never silently pretend to understand an unsupported clause | Complex wording requires structured human review |
+| PostgreSQL plus SQLAlchemy/Alembic | Durable transactions, row locks, source relationships and repeatable schema evolution | More setup than an in-memory prototype |
+| Relational identities plus JSON snapshots | Enforce commitments while preserving detailed historical evidence | Some evidence is intentionally denormalized |
+| React/Vite with a generated API client | Keep Arena's visual design and make transport drift detectable | Generic responses need supplemental runtime validators |
+| Same-origin Vercel deployment | One public application URL with no production localhost fallback | The platform's 4.5 MB payload limit is below the portable API limit |
+| Separate production/preview databases | Exercise mutable approval and policy flows without contaminating the evaluation workspace | Both environments require migrations and configuration |
 
-Document processing uses pypdf locally. Shared contract terms are compared against the register and mismatches block bootstrap; PDF-only contracts are imported with zero baseline consumption. Runtime PDF uploads are proposals, with manual correction and explicit buyer approval. Digital signature authenticity is not established by text extraction, and the API labels that limitation.
+Detailed algorithms, business invariants and an illustrative policy rule are in SOLUTION_DESIGN.md. DECISIONS.md records policy interpretations and why alternatives were rejected.
 
-Testing combines public synthetic fixtures with a private worked-example audit, preventing the source kit from leaking into public test fixtures. Tests cover thresholds, dates, anchoring, contract headroom, supplier eligibility, dynamic policy rules, mutation, CSV output, immutable replay, API workflows, approvals and authentication. Real HTTP and PostgreSQL checks are reported separately from in-process SQLite API tests. `VALIDATION.md` records actual results and unverified work.
+## Deterministic execution and data lineage
 
-The frontend contract and generated OpenAPI are the integration boundary. The Arena UI should use one typed API client, actual loading/empty/error states and no mock-data fallback in live mode. The export was inspected, its missing credited media restored, and all eleven screens connected to real data. Browser tests cover the workflows while preserving backend algorithms, migrations and existing tests.
+A recommendation is a function of input rows, a master-data snapshot, selected effective policies and explicit version selection. Stable IDs and hashes make repeated input distinguishable from changed data. Replay uses saved snapshots, not the latest supplier register or current policy. Policy governance and purchase commitments remain separate from the original recommendation.
 
-Authentication now supports individual accounts, salted password hashes, persistent revocable sessions, identity throttling and requester ownership. Database-backed pagination bounds operational lists. Two independent PostgreSQL approval transactions test contract-ceiling contention. Limitations are explicit: no corporate SSO/MFA, bounded natural-language interpretation, no production monitoring/export fulfillment integration, and public deployment verification as tracked in DEPLOYMENT.md. The Vercel project and separate managed PostgreSQL databases are now configured and initialized. No application change is claimed to pass an unseen blind test in advance.
+The application records intermediate matching, grouping, valuation, contract, rule and ranking evidence. Approval rechecks current headroom transactionally because an accurate historical recommendation can still become stale before execution. Simulation and export never consume live ceiling.
+
+## Frontend integration discipline
+
+The exported Arena frontend was a visual foundation. Its API assumptions were replaced with actual endpoints and OpenAPI-generated TypeScript/Zod schemas. All eleven workspaces use real data, authenticated downloads, backend pagination and explicit run IDs. Financial values remain decimal strings. There is no production mock fallback or browser-side procurement evaluator.
+
+Visual verification covered desktop/mobile layouts, navigation, captions and the custom 3D scenes. A reproduced stale-asset failure led to correct missing-asset responses, nonblocking external fonts, inline startup recovery and a React error boundary. Browser verification now includes blocked storage/fonts and failed entry-script recovery.
+
+## Validation method
+
+Public tests use synthetic fixtures. The original kit, extracted source text, worked-example assertions, sample exports, screenshots and deployment credentials remain private and ignored. Tests cover exact boundaries, fixed-anchor grouping, non-Active supplier exclusion, contract allocation, policy governance, replay, ownership, revocation, throttling and independent PostgreSQL contention.
+
+The blind-test rehearsal used sample-derived altered PR identities/quantities and a new five-part amendment through unchanged API endpoints. It produced all three exports, changed 55 line outcomes and replayed both runs exactly. This validates a procedure; it does not measure unseen evaluator accuracy. VALIDATION.md distinguishes each test environment and its evidence.
+
+## AI tools and authorship
+
+OpenAI Codex assisted with implementation, review, synthetic tests, debugging, documentation and deployment in this workspace. Arena AI generated the frontend visual foundation, which was exported and integrated on 16 November 2026. No other candidate's implementation was copied. No coding subagents were used.
+
+The running backend does not invoke an LLM. Procurement arithmetic and routing are deterministic. Document text extraction uses pypdf within the application; no supplied dataset is sent by the application to an external LLM or document-extraction service. AI assistance does not replace the candidate's responsibility to understand and explain every design choice in the interview.
+
+## Scope boundaries
+
+The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Public shared Admin/Buyer/Requester access is an owner-requested submission configuration, distinct from a private production deployment.

@@ -41,6 +41,11 @@ def number(value):
 def read_csv(content: bytes, required=None):
     text = content.decode('utf-8-sig')
     reader = csv.DictReader(io.StringIO(text, newline=''))
+    headers = reader.fieldnames or []
+    if len(headers) != len(set(headers)):
+        raise ValueError('Duplicate CSV columns are not permitted')
+    if any(not header.strip() for header in headers):
+        raise ValueError('Blank CSV column names are not permitted')
     if required and (set(required) - set(reader.fieldnames or [])):
         raise ValueError('Missing CSV columns: ' + ', '.join(sorted(set(required)-set(reader.fieldnames or []))))
     rows = list(reader)

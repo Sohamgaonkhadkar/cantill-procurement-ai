@@ -1,5 +1,5 @@
 // Generated from root openapi.json; do not edit.
-// sha256: 826e106c9df782809ec97d90831e6eaaa5e700048bfc2de9598f545306ec8342
+// sha256: dfc47992daf60e4f4831023d560e95bafaa66a8f7ec9913106e26134cccebc43
 import { z } from "zod";
 export type ActionResponse = { "id": string; "run_id": string; "requirements": Array<string>; "recommendations": Array<RequirementResponse>; "actor": string; "approved_at": string; "reason": string; "status": string; [key: string]: unknown };
 export type AllCondition_Input = { "all": Array<(Predicate | AllCondition_Input | AnyCondition_Input | NotCondition_Input)> };

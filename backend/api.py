@@ -582,10 +582,11 @@ def custom_openapi():
         for method,operation in methods.items():
             if method not in {'get','post','put','delete','patch'}: continue
             statuses=[422,409,413,503] if method in {'post','put'} else [422,503]
-            if path.startswith('/api/') and path!='/api/auth/login': statuses += [401,403,404]
+            if path.startswith('/api/') and path not in {'/api/auth/login','/api/auth/register','/api/auth/options'}: statuses += [401,403,404]
             if path=='/api/auth/login': statuses += [401,429]
+            if path=='/api/auth/register': statuses += [403,429]
             for status in statuses:
-                operation.setdefault('responses',{})[str(status)]={'description':{401:'Sign-in required or invalid credentials',403:'Role not permitted',404:'Record not found',409:'Conflicting action or record',413:'Upload too large',422:'Validation failed',429:'Login temporarily throttled; see Retry-After',503:'Storage temporarily unavailable; retry later'}[status],'content':{'application/json':{'schema':{'$ref':'#/components/schemas/ErrorResponse'}}}}
+                operation.setdefault('responses',{})[str(status)]={'description':{401:'Sign-in required or invalid credentials',403:'Role not permitted',404:'Record not found',409:'Conflicting action or record',413:'Upload too large',422:'Validation failed',429:'Request temporarily throttled; see Retry-After',503:'Storage temporarily unavailable; retry later'}[status],'content':{'application/json':{'schema':{'$ref':'#/components/schemas/ErrorResponse'}}}}
     app.openapi_schema=schema
     return schema
 app.openapi=custom_openapi

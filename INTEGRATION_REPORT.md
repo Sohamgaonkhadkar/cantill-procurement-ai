@@ -21,6 +21,6 @@ TypeScript/Zod models are generated from root openapi.json with scripts/generate
 
 Arena's CoreScene, XRayScene, bearing schematic, branding and media components remain. Missing credited images/video were restored from original Pexels sources. Layout fixes cover headline/core separation, expanded navigation, mobile layouts, heading leading, mobile media-caption clipping and the technical-view toggle. All eleven pages were visually inspected at desktop/mobile widths.
 
-Executed: eleven real-backend browser scenarios; 130 PostgreSQL tests; TypeScript/production build; generated-client drift check; production Docker browser test on the private original sample. Screenshots, traces, input artifacts and exports stay in ignored .private/. Hosted preview workflows and public production checks also pass, including persistence after redeployment; see DEPLOYMENT.md.
+Executed: thirteen real-backend browser scenarios; 145 PostgreSQL tests; TypeScript/production build; generated-client drift check; production Docker browser test on the private original sample. Screenshots, traces, input artifacts and exports stay in ignored .private/. Hosted preview workflows and public production checks also pass, including persistence after redeployment; see DEPLOYMENT.md.
 
 Remaining boundaries: bounded deterministic language parsing, human reconciliation of unsupported clauses, no OCR/signature cryptographic verification, no corporate SSO/MFA/recovery and no external PO dispatch or supplier invitation service.

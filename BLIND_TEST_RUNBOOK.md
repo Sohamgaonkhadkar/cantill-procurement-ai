@@ -34,6 +34,15 @@ Freeze application code by **10:00 AM on 19 November**. Keep a record of that co
 1. In Supplier Constellation use the evaluator's **exact as-of date** and requested policy version, not today's date. Export the all-item preferred-supplier CSV. Its columns are `item_code,rank,supplier_id,reference_price`; the baseline exports the top three where available.
 2. Save it as `submission/sohamgaonkhadkar__preferred.csv`. Check all supplier IDs against Active status and inspect reference-price provenance where needed.
 3. Decision exports must have the exact 13 headers documented in FRONTEND_API_CONTRACT.md. Confirm row counts, unchanged PR identifiers, decimal values, clear policy reasons, and consistent shared group/PO IDs. Do not commit private input files, PDFs, passwords, local databases or screenshots.
+
+   Run the structural preflight from the repository root before staging:
+
+   ```sh
+   python -m scripts.validate_submission --input .private/blind_batch.csv --run1 submission/sohamgaonkhadkar__run1.csv --run2 submission/sohamgaonkhadkar__run2.csv --preferred submission/sohamgaonkhadkar__preferred.csv --amended-version 6.0 --suppliers .private/Cantill_FullStack_Task_Kit/master_data/supplier_master.csv
+   ```
+
+   Replace version and paths with the actual supplied values. Exit code 0 confirms structural integrity only. The tool does not certify policy interpretation, routing accuracy or the chosen effective/as-of dates, and it never edits the exports.
+
 4. Stage the three actual output files explicitly. Use `git diff --cached --name-only` to verify that only those CSVs are staged, then commit and push to the same public repository **before 12:00 noon IST**. Confirm the three files are visible on GitHub. Late files are not scored.
 
 ## Verified preparation and limits
