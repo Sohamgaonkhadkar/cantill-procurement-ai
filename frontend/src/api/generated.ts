@@ -1,5 +1,5 @@
 // Generated from root openapi.json; do not edit.
-// sha256: dfc47992daf60e4f4831023d560e95bafaa66a8f7ec9913106e26134cccebc43
+// sha256: 743a47c2ca5d91198bbbc18613af88d0de51a3e93af459cdf8f45234ac733c2d
 import { z } from "zod";
 export type ActionResponse = { "id": string; "run_id": string; "requirements": Array<string>; "recommendations": Array<RequirementResponse>; "actor": string; "approved_at": string; "reason": string; "status": string; [key: string]: unknown };
 export type AllCondition_Input = { "all": Array<(Predicate | AllCondition_Input | AnyCondition_Input | NotCondition_Input)> };
@@ -9,6 +9,8 @@ export type AnyCondition_Input = { "any": Array<(Predicate | AllCondition_Input 
 export type AnyCondition_Output = { "any": Array<(Predicate | AllCondition_Output | AnyCondition_Output | NotCondition_Output)> };
 export type AuthOptions = { "submission_access": boolean; "registration_enabled": boolean; "roles": Array<PublicRole> };
 export type Body_batch_api_process_batch_post = { "file": string; "policy_version"?: (string | null) };
+export type Body_demo_export_api_demo_export_csv_post = { "file"?: (string | null) };
+export type Body_demo_preview_api_demo_preview_post = { "file"?: (string | null) };
 export type Body_import_data_api_admin_import_data_post = { "file": string };
 export type Body_upload_amendment_api_policies_upload_amendment_post = { "file": string; "version": string; "effective_date": string; "base_version"?: string };
 export type Body_upload_contract_api_contracts_upload_post = { "file": string };
@@ -18,6 +20,7 @@ export type ComparisonResponse = { "affected_lines": number; "explanation_change
 export type ContractBody = { "contract": { [key: string]: unknown }; "reason": string };
 export type ContractEvidence = { "contract_id": string; "supplier_id": string; "rate": string; "remaining": string; "required": string; "applicable": boolean; "usable": boolean; "rejection": (string | null); [key: string]: unknown };
 export type CreateUserBody = { "username": string; "display_name": string; "role": "requester" | "buyer" | "admin"; "password": string };
+export type DemoPreviewResponse = { "mode"?: "synthetic_preview"; "persistent"?: false; "policy_version"?: "5.0"; "source_note": string; "result": ProcessingResult };
 export type Evidence = { "facts": { [key: string]: unknown }; "rule_trace": Array<{ [key: string]: unknown }>; "valuation": ValuationEvidence; "contracts": Array<ContractEvidence>; "ranking": Array<Ranking>; "order_reference": string; "selected_contract": (string | null); "group_anchor": { [key: string]: string }; "grouping": string; "matching": Array<{ [key: string]: unknown }>; "po_anchor"?: (string | null); [key: string]: unknown };
 export type HTTPValidationError = { "detail"?: Array<ValidationError> };
 export type LoginBody = { "role"?: ("requester" | "buyer" | "admin" | null); "username"?: (string | null); "password": string };
@@ -55,6 +58,8 @@ export const AnyCondition_InputSchema: z.ZodType<AnyCondition_Input> = z.object(
 export const AnyCondition_OutputSchema: z.ZodType<AnyCondition_Output> = z.object({"any": z.array(z.union([z.lazy(() => PredicateSchema), z.lazy(() => AllCondition_OutputSchema), z.lazy(() => AnyCondition_OutputSchema), z.lazy(() => NotCondition_OutputSchema)]))}).strict();
 export const AuthOptionsSchema: z.ZodType<AuthOptions> = z.object({"submission_access": z.boolean(), "registration_enabled": z.boolean(), "roles": z.array(z.lazy(() => PublicRoleSchema))}).strict();
 export const Body_batch_api_process_batch_postSchema: z.ZodType<Body_batch_api_process_batch_post> = z.object({"file": z.string(), "policy_version": z.union([z.string(), z.null()]).optional()});
+export const Body_demo_export_api_demo_export_csv_postSchema: z.ZodType<Body_demo_export_api_demo_export_csv_post> = z.object({"file": z.union([z.string(), z.null()]).optional()});
+export const Body_demo_preview_api_demo_preview_postSchema: z.ZodType<Body_demo_preview_api_demo_preview_post> = z.object({"file": z.union([z.string(), z.null()]).optional()});
 export const Body_import_data_api_admin_import_data_postSchema: z.ZodType<Body_import_data_api_admin_import_data_post> = z.object({"file": z.string()});
 export const Body_upload_amendment_api_policies_upload_amendment_postSchema: z.ZodType<Body_upload_amendment_api_policies_upload_amendment_post> = z.object({"file": z.string(), "version": z.string(), "effective_date": z.string(), "base_version": z.string().optional()});
 export const Body_upload_contract_api_contracts_upload_postSchema: z.ZodType<Body_upload_contract_api_contracts_upload_post> = z.object({"file": z.string()});
@@ -64,6 +69,7 @@ export const ComparisonResponseSchema: z.ZodType<ComparisonResponse> = z.object(
 export const ContractBodySchema: z.ZodType<ContractBody> = z.object({"contract": z.record(z.string(),z.unknown()), "reason": z.string().min(5).max(2000)}).strict();
 export const ContractEvidenceSchema: z.ZodType<ContractEvidence> = z.object({"contract_id": z.string(), "supplier_id": z.string(), "rate": z.string(), "remaining": z.string(), "required": z.string(), "applicable": z.boolean(), "usable": z.boolean(), "rejection": z.union([z.string(), z.null()])}).passthrough();
 export const CreateUserBodySchema: z.ZodType<CreateUserBody> = z.object({"username": z.string().regex(new RegExp("^[a-z][a-z0-9._-]{2,63}$")), "display_name": z.string().min(1).max(100), "role": z.enum(["requester", "buyer", "admin"]), "password": z.string().min(15).max(128)}).strict();
+export const DemoPreviewResponseSchema: z.ZodType<DemoPreviewResponse> = z.object({"mode": z.literal("synthetic_preview").optional(), "persistent": z.literal(false).optional(), "policy_version": z.literal("5.0").optional(), "source_note": z.string(), "result": z.lazy(() => ProcessingResultSchema)}).strict();
 export const EvidenceSchema: z.ZodType<Evidence> = z.object({"facts": z.record(z.string(),z.unknown()), "rule_trace": z.array(z.record(z.string(),z.unknown())), "valuation": z.lazy(() => ValuationEvidenceSchema), "contracts": z.array(z.lazy(() => ContractEvidenceSchema)), "ranking": z.array(z.lazy(() => RankingSchema)), "order_reference": z.string(), "selected_contract": z.union([z.string(), z.null()]), "group_anchor": z.record(z.string(),z.string()), "grouping": z.string(), "matching": z.array(z.record(z.string(),z.unknown())), "po_anchor": z.union([z.string(), z.null()]).optional()}).passthrough();
 export const HTTPValidationErrorSchema: z.ZodType<HTTPValidationError> = z.object({"detail": z.array(z.lazy(() => ValidationErrorSchema)).optional()});
 export const LoginBodySchema: z.ZodType<LoginBody> = z.object({"role": z.union([z.enum(["requester", "buyer", "admin"]), z.null()]).optional(), "username": z.union([z.string().min(3).max(64), z.null()]).optional(), "password": z.string().min(1).max(128)}).strict();

@@ -3,6 +3,7 @@ import { API_BASE_URL } from "@/lib/config";
 import {
   LoginResponseSchema,
   AuthOptionsSchema,
+  DemoPreviewResponseSchema,
   RunResponseSchema,
   RequirementResponseSchema,
   PolicyResponseSchema,
@@ -106,6 +107,20 @@ export const qs = (values: Record<string, string | number | undefined>) => {
 };
 const id = encodeURIComponent;
 export const api = {
+  demoPreview: (file?: File) =>
+    call(
+      "/api/demo/preview",
+      DemoPreviewResponseSchema,
+      file ? form(file) : { method: "POST", body: new FormData() },
+    ),
+  demoInput: async () => (await response("/api/demo/input.csv")).blob(),
+  demoExport: async (file?: File) =>
+    (
+      await response(
+        "/api/demo/export.csv",
+        file ? form(file) : { method: "POST", body: new FormData() },
+      )
+    ).blob(),
   authOptions: () => call("/api/auth/options", AuthOptionsSchema),
   register: (body: {
     username: string;

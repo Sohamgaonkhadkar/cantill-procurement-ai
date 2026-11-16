@@ -6,9 +6,9 @@ Reviewed 16 November 2026. Results distinguish pure business checks, API tests, 
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **143 passed, 2 PostgreSQL-only tests skipped** |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **145 passed**, including independent approval and chat-confirmation transactions |
-| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **13 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **148 passed, 2 PostgreSQL-only tests skipped** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **150 passed**, including independent approval and chat-confirmation transactions |
+| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **14 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
 | CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
 | OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
 | Generated frontend models | OpenAPI-derived TypeScript and Zod | Drift check passes; release build enforces TypeScript compilation |
@@ -31,7 +31,7 @@ The sample does not provide a complete answer key. Passing all disclosed example
 
 ## Browser and deployment evidence
 
-The browser suite exercises a real isolated FastAPI server and synthetic database. It contains thirteen scenarios: blocked startup resources, visible script-failure recovery, role-password autofill, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling and pagination.
+The browser suite exercises a real isolated FastAPI server and synthetic database. It contains fourteen scenarios: blocked startup resources, visible script-failure recovery, role-password autofill, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling and pagination.
 
 All eleven screens have desktop/mobile captures at 1440px and 390px, horizontal-overflow checks and visual inspection. The custom Arena 3D scenes remain; the hero's opaque shader, oversized composition and overlapping inset/caption issues were corrected. Startup recovery was additionally checked with denied localStorage, blocked external fonts and a deliberately blocked entry script.
 
@@ -63,3 +63,7 @@ The standalone read-only checker accepted all three rehearsal files with supplie
 - Shared submission Admin access is deliberately public and requires an operational preflight before the timed assessment.
 - Exhaustive load, fault-injection and penetration testing have not been performed. The 20,000-row API bound is not a hosted throughput guarantee; Vercel's payload limit is 4.5 MB.
 - The assessment form, code freeze and timely output-only Git push remain human obligations. The submission procedure is summarized in README.md.
+
+## Synthetic demo isolation
+
+Five backend regressions check calculated demo responses against the real engine, quantity-sensitive outcomes, CSV fidelity, authentication, assessment-record isolation and the 200-row demo limit. The real-browser demo scenario calculates nine rows, downloads a synthetic export, uploads an edited demo CSV, verifies the changed route and confirms unchanged live overview data. The demo uses fictional input data rather than precomputed output fixtures.

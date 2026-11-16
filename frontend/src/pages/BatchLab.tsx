@@ -13,6 +13,7 @@ import { Button, ErrorBlock, LoadingBlock, RouteTag } from "@/components/ui";
 import { IndustrialImage } from "@/components/media/IndustrialImage";
 import { VISUALS } from "@/components/media/assets";
 import { parseCsv, downloadBlob } from "@/lib/csv";
+import { DemoSandbox } from "@/components/DemoSandbox";
 export const INPUT_HEADERS = [
   "pr_no",
   "pr_line",
@@ -120,6 +121,7 @@ export default function BatchLab() {
       title="Raw lines. Controlled outcomes."
       lede="Process real CSV data, inspect every issue, replay immutable snapshots and export the authoritative 13-column result."
     >
+      <DemoSandbox />
       <div className="batch-upload-layout">
         <section className="surface-dark p-6">
           <label className="field">

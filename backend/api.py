@@ -27,7 +27,7 @@ from .suppliers import preferred
 from .amendments import policy_diff as field_diff
 from .language import interpret
 from .chat import parse_message
-from .schemas import RunResponse,Page,LoginResponse,RequirementResponse,PolicyResponse,PolicyDefinition,ComparisonResponse,SimulationResponse,ActionResponse,ChatResponse
+from .schemas import RunResponse,Page,LoginResponse,RequirementResponse,PolicyResponse,PolicyDefinition,ComparisonResponse,SimulationResponse,ActionResponse,ChatResponse,ProcessingResult
 
 engine,Session=db.connect(); mutation_lock=RLock()
 configure_sessions(lambda:Session)
@@ -86,6 +86,12 @@ class AuthOptions(Body):
     submission_access:bool
     registration_enabled:bool
     roles:list[PublicRole]
+class DemoPreviewResponse(Body):
+    mode:Literal['synthetic_preview']='synthetic_preview'
+    persistent:Literal[False]=False
+    policy_version:Literal['5.0']='5.0'
+    source_note:str
+    result:ProcessingResult
 class PolicyBody(Body):
     policy:PolicyDefinition
     source_text:str=''
@@ -223,6 +229,26 @@ async def batch(file:UploadFile=File(...),policy_version:str|None=Form(None),act
     if role_of(actor)=='requester':
         for row in rows: row['requester']=str(actor)
     with Session.begin() as s: return execute_run(s,rows,policy_version or None,actor)
+
+async def demo_result(file):
+    from .demo import dataset,batch as example_batch
+    rows=read_csv(await content(file,{'.csv'}),INPUT_COLUMNS) if file is not None else example_batch()
+    if len(rows)>200: raise ValueError('Isolated demo accepts at most 200 rows; use ordinary Batch Lab for assessment batches')
+    return process(rows,dataset(),[initial_policy()],'5.0')
+
+@app.get('/api/demo/input.csv',tags=['Isolated Demo'],response_class=Response,responses={200:{'content':{'text/csv':{'schema':{'type':'string'}}}}})
+def demo_input(actor=Depends(user)):
+    from .demo import batch as example_batch
+    return Response(csv_bytes(example_batch(),INPUT_COLUMNS),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="synthetic-demo-input.csv"'})
+
+@app.post('/api/demo/preview',tags=['Isolated Demo'],response_model=DemoPreviewResponse)
+async def demo_preview(file:UploadFile|None=File(None),actor=Depends(user)):
+    return {'mode':'synthetic_preview','persistent':False,'policy_version':'5.0','source_note':'Fictional DEMO-prefixed inputs calculated with the real engine and a separate v5.0 policy. No assessment data, purchasing records or live ceilings are changed.','result':await demo_result(file)}
+
+@app.post('/api/demo/export.csv',tags=['Isolated Demo'],response_class=Response,responses={200:{'content':{'text/csv':{'schema':{'type':'string'}}}}})
+async def demo_export(file:UploadFile|None=File(None),actor=Depends(user)):
+    result=await demo_result(file)
+    return Response(csv_bytes(result['rows']),media_type='text/csv',headers={'Content-Disposition':'attachment; filename="synthetic-demo-decisions.csv"'})
 @app.get('/api/runs',tags=['Batch Lab'],response_model=Page)
 def runs(offset:int=Query(0,ge=0),limit:int=Query(25,ge=1,le=100),actor=Depends(user)):
     with Session() as s: return database_page(s,run_query(actor).order_by(Run.created_at.desc(),Run.id),offset,limit,lambda r:compact_run(r.payload))

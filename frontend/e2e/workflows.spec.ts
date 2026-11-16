@@ -164,6 +164,82 @@ async function noErrors(page: Page) {
   ).toHaveCount(0);
 }
 
+test("isolated synthetic demo calculates, changes with CSV input and leaves live runs unchanged", async ({
+  page,
+}) => {
+  const me = page.waitForRequest((r) => r.url().endsWith("/api/auth/me"));
+  await login(page);
+  const authorization = (await (await me).headerValue("authorization"))!;
+  const before = await (
+    await page.request.get("/api/overview", {
+      headers: { Authorization: authorization },
+    })
+  ).json();
+  await go(page, "Batch Lab");
+  const sandbox = page.getByTestId("demo-sandbox");
+  await sandbox.locator("summary").first().click();
+  const calculated = page.waitForResponse((r) =>
+    r.url().endsWith("/api/demo/preview"),
+  );
+  await sandbox
+    .getByRole("button", { name: "Calculate demo", exact: true })
+    .click();
+  const initial = await (await calculated).json();
+  expect(initial.persistent).toBe(false);
+  expect(initial.result.rows).toHaveLength(9);
+  await expect(
+    sandbox.getByText("SYNTHETIC PREVIEW · NOT SAVED · POLICY 5.0", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  const download = page.waitForEvent("download");
+  await sandbox.getByRole("button", { name: "Export demo decisions" }).click();
+  expect((await download).suggestedFilename()).toBe(
+    "synthetic-demo-decisions.csv",
+  );
+  const input = await (
+    await page.request.get("/api/demo/input.csv", {
+      headers: { Authorization: authorization },
+    })
+  ).text();
+  const lines = input.trim().split(/\r?\n/);
+  const row = lines.find((line) => line.startsWith("DEMO-PR-03,"))!.split(",");
+  row[8] = "50000";
+  await sandbox
+    .getByLabel("Demo CSV file (optional)", { exact: true })
+    .setInputFiles({
+      name: "changed-demo.csv",
+      mimeType: "text/csv",
+      buffer: Buffer.from(lines[0] + "\n" + row.join(",") + "\n"),
+    });
+  const changed = page.waitForResponse((r) =>
+    r.url().endsWith("/api/demo/preview"),
+  );
+  await sandbox
+    .getByRole("button", { name: "Calculate demo", exact: true })
+    .click();
+  const result = await (await changed).json();
+  expect(result.result.rows).toHaveLength(1);
+  expect(result.result.rows[0].route).toBe("RFP");
+  await expect(
+    sandbox.getByRole("cell", { name: "RFP", exact: true }),
+  ).toBeVisible();
+  const after = await (
+    await page.request.get("/api/overview", {
+      headers: { Authorization: authorization },
+    })
+  ).json();
+  expect(after).toEqual(before);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await sandbox.scrollIntoViewIfNeeded();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: "../.private/isolated-demo-mobile.png" });
+});
+
 test("real CSV, consolidated approval, policy amendment lifecycle, replay and authenticated export", async ({
   page,
 }) => {

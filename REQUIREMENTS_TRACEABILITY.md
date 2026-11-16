@@ -24,6 +24,7 @@ This matrix maps the supplied assessment requirements to implemented components 
 | Overrides and audit | Written reason, original recommendation retained, separate sourcing action | Real hosted preview override/audit; arbitrary direct-PO override intentionally unavailable |
 | Detailed explanations | Matching, source lines, anchors, valuation, contract rejections, policy trace and score components | Decision X-Ray and API schemas expose structured evidence |
 | Exact CSV output | Authoritative thirteen-column decision schema; decimal text; authenticated export | Serialization tests, browser download, submission integrity checker |
+| Optional synthetic demo | Separate DEMO-prefixed inputs, in-memory real-engine preview and CSV export | No live master/run/policy/ledger writes; modified input changes output; not submission data |
 | Two-run blind test | Explicit v5.0 run, amendment governance, same-input reprocessing, preferred export | Rehearsal produced three files and 55 affected lines; evaluator files not yet received |
 | Reproducibility | Input/data/policy hashes, immutable snapshots, replay | Original sample hash retained; persisted run survives redeployment |
 | Setup and delivery | One-command Docker startup, same-origin Vercel app, Neon persistence | Hosted browser verification, production health and clean repository checks |

@@ -16,8 +16,8 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-145_passed-28A745?style=flat-square)
-![Browser verification](https://img.shields.io/badge/Browser_scenarios-13_passed-6246FF?style=flat-square)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-150_passed-28A745?style=flat-square)
+![Browser verification](https://img.shields.io/badge/Browser_scenarios-14_passed-6246FF?style=flat-square)
 ![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-D7FF3F?style=flat-square&labelColor=171335)
 
 </div>
@@ -50,6 +50,12 @@ Choose **Controlled role account → Admin** to review every workspace. The subm
 | **Purchase Orders / Sourcing / Audit Trail** | Persisted purchasing records, overrides and actor/time evidence |
 
 Shared submission roles intentionally allow reviewers to change live data. Normal production operation can disable this configuration and use individual accounts. [Health endpoint](https://corvo-procurement.vercel.app/health).
+
+### Isolated synthetic examples
+
+In **Batch Lab → Try an isolated demo**, calculate nine fictional DEMO-prefixed requests using separate demo items, suppliers, history and contracts. Download the demo input, change quantities, upload it inside that section, and recalculate/export the result. The same backend procurement engine computes every outcome under a separate v5.0 policy.
+
+Demo previews are labeled **synthetic / not saved**. They do not read or modify assessment masters, live policies, saved runs, dashboard totals, purchase orders or contract ceilings. Demo CSV experiments are limited to 200 rows. Use the ordinary Batch Lab upload for supplied assessment files and submission exports.
 
 ## Technology stack
 
@@ -191,9 +197,9 @@ Replace version, paths and filenames with the supplied values. This read-only to
 
 | Evidence | Result |
 |---|---|
-| Linux / PostgreSQL suite | **145 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **143 passed**, with two PostgreSQL-only skips |
-| Real-backend browser suite | **13 scenarios passed** |
+| Linux / PostgreSQL suite | **150 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **148 passed**, with two PostgreSQL-only skips |
+| Real-backend browser suite | **14 scenarios passed** |
 | Disclosed worked examples | **14 procurement decisions + 3 supplier rankings match** |
 | Original sample | **186 outputs · 149 requirements · 2 explicit invalid lines** |
 | Amendment rehearsal | Five policy changes, **55 affected lines**, three exports and matching replays |
