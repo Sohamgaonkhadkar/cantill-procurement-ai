@@ -20,6 +20,11 @@ def main():
             if s.scalar(select(Item.id).limit(1)) is None:
                 save_data(s,dataset())
                 execute_run(s,batch(),'5.0','admin')
+        # Explicit deployment-time local indexing, never a cold-start task and
+        # never an external embedding call. Private PDFs are not auto-ingested.
+        if __import__('os').getenv('RAG_ENABLED','false').lower()=='true':
+            from backend.ai.knowledge import sync_core_sources
+            sync_core_sources(s)
     engine.dispose()
     print('Policy and role bootstrap complete; no private kit data bundled')
 if __name__=='__main__': main()

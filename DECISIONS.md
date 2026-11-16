@@ -78,3 +78,12 @@ Numeric resource bounds: financial arithmetic uses Decimal precision 64. Inputs 
 - **Resource budgets:** persist per-account batch, document-upload and chat operation budgets across workers. Return 429 with Retry-After; keep logout available. Limit a chat to 400 stored messages and ask for a new session rather than grow state indefinitely.
 - **Lock ordering:** take catalog coordination before contract locks and policy-calendar coordination before requirement locks. Bulk import takes the exclusive catalog lock before checking existing commitments. A process-local lock alone is not the PostgreSQL safety mechanism.
 - **Frontend precision:** UI formats decimal text directly, including numbers outside JavaScript's safe integer range. Financial decisions remain server-owned. Pending approval votes are described as pending reviews, with no synthetic success state.
+
+## AI and interface boundaries
+
+- **Direct free-tier provider:** use server-side Gemini credentials with a reviewed model allowlist. Do not enable AI Gateway, billing, automatic paid/provider fallbacks or a local inference dependency.
+- **Hard egress boundary:** require the isolated demo database, an external-call flag, per-turn fictional-data acknowledgment and approved source provenance before creating an external client. Live conversations remain local even when a key is accidentally present.
+- **Evidence before fluency:** include complete clause conditions and policy parameters, generate citation identities on the backend and reject unsupported numeric/entity claims. Show local evidence when synthesis fails.
+- **Durable turns:** persist request identity, lease and revision; release database transactions before network calls and revalidate actor and draft before committing. Retry of a completed confirmation returns the original run.
+- **Source revisions:** a newly uploaded draft does not hide its approved predecessor. Review supersedes the previous approved revision. An active policy's structured index is updated locally during activation.
+- **Readable operations:** prioritize tables, typed predicates and structured evidence over decorative graphs and JSON. Keep JSON available for exact inspection and 3D optional for exploration. Preserve all backend algorithms, migrations and regression tests.

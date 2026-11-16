@@ -170,6 +170,8 @@ class ActionResponse(Schema):
     approved_at:str
     reason:str
     status:str
+from .ai.schemas import Citation
+
 class ChatResponse(Schema):
     session_id:str
     message:str
@@ -177,3 +179,11 @@ class ChatResponse(Schema):
     alternatives:list[dict]
     run:RunResponse|None
     messages:list[dict]
+    intent:str|None=None
+    mode:str|None=None
+    citations:list[Citation]=Field(default_factory=list)
+    tools_used:list[str]=Field(default_factory=list)
+    grounded:bool=False
+    followups:list[str]=Field(default_factory=list)
+    revision:int=0
+    ai_status:str='disabled'

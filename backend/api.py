@@ -110,6 +110,10 @@ class OverrideBody(Note):
 class ChatBody(Body):
     session_id:str|None=None
     message:str=Field(min_length=1,max_length=4000)
+    request_id:str|None=Field(None,pattern=r'^[A-Za-z0-9_-]{8,80}$')
+    expected_revision:int|None=Field(None,ge=0)
+    action:Literal['message','confirm','cancel']='message'
+    demo_data_acknowledged:bool=False
 class ContractBody(Body):
     contract:dict
     reason:str=Field(min_length=5,max_length=2000)
@@ -385,6 +389,10 @@ def activate_policy(policy_id:str,body:Note,actor=Depends(user)):
         p=get(s,Policy,policy_id,lock=True)
         if p.status not in {'approved','superseded','active'}: raise HTTPException(409,'Approve policy first')
         p.status='active'; audit(s,actor,'policy.activation_scheduled',{'version':policy_id,'effective_date':p.payload['effective_date'],'reason':body.reason})
+        from .ai.config import settings
+        if settings().rag_enabled:
+            from .ai.knowledge import index_policy
+            index_policy(s,p.payload,p.status)
         return {'id':p.id,'status':'active','effective_date':p.payload['effective_date'],'scheduled':p.payload['effective_date']>business_today().isoformat()}
 @app.post('/api/policies/{policy_id}/simulate',tags=['Policy Studio'],response_model=SimulationResponse)
 def simulate_policy(policy_id:str,body:Simulation,actor=Depends(user)):
@@ -597,6 +605,10 @@ def audit_events(action:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(5
 def chat_message(body:ChatBody,actor=Depends(user)):
     from zoneinfo import ZoneInfo
     consume_rate_limit(actor,'chat',120)
+    from .ai.config import settings
+    if settings().enabled or settings().rag_enabled:
+        from .ai.coordinator import respond
+        return respond(Session,mutation_lock,body,actor)
     with mutation_lock,Session.begin() as s:
         session_id=body.session_id or 'CHAT-'+uuid4().hex
         record=s.scalar(select(Chat).where(Chat.id==session_id).with_for_update())
@@ -629,6 +641,9 @@ def chat_session(session_id:str,actor=Depends(user)):
         r=get(s,Chat,session_id)
         if r.payload['actor']!=actor: raise HTTPException(403,'This session belongs to another actor')
         return {'session_id':session_id,**r.payload}
+
+from .ai.routes import install as install_knowledge_routes
+install_knowledge_routes(app,lambda:Session,mutation_lock)
 
 @app.get('/',include_in_schema=False)
 def index():

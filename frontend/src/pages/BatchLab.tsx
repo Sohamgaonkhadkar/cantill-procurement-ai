@@ -1,3 +1,4 @@
+import { EvidenceView } from "@/components/EvidenceView";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type RunResponse } from "@/api";
@@ -10,8 +11,6 @@ import {
   RequirementsTable,
 } from "@/components/Workflow";
 import { Button, ErrorBlock, LoadingBlock, RouteTag } from "@/components/ui";
-import { IndustrialImage } from "@/components/media/IndustrialImage";
-import { VISUALS } from "@/components/media/assets";
 import { parseCsv, downloadBlob } from "@/lib/csv";
 import { DemoSandbox } from "@/components/DemoSandbox";
 export const INPUT_HEADERS = [
@@ -129,7 +128,14 @@ export default function BatchLab() {
     >
       <DemoSandbox />
       <div className="batch-upload-layout">
-        <section className="surface-dark p-6">
+        <section
+          className="surface-dark p-6"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            void load(e.dataTransfer.files[0]);
+          }}
+        >
           <label className="field">
             PR CSV file
             <input
@@ -182,11 +188,38 @@ export default function BatchLab() {
             <Json label="CSV preview (first five data rows)" value={preview} />
           ) : null}
         </section>
-        <IndustrialImage
-          className="h-full min-h-[260px] w-full"
-          asset={VISUALS.gears}
-          grade="violet"
-        />
+        <section className="surface-dark p-6">
+          <div className="eyebrow">Batch workflow</div>
+          <ol className="batch-steps">
+            <li>
+              <strong>01 · Prepare</strong>
+              <p>
+                Choose or drop a CSV, validate its headers and select the
+                effective policy.
+              </p>
+            </li>
+            <li>
+              <strong>02 · Process</strong>
+              <p>
+                The backend matches items, groups demand and evaluates each
+                requirement. No purchasing approval is performed.
+              </p>
+            </li>
+            <li>
+              <strong>03 · Review</strong>
+              <p>
+                Inspect route counts, rejected lines and the evidence. Export
+                the exact 13-column result or replay its stored inputs.
+              </p>
+            </li>
+          </ol>
+          {process.isPending ? (
+            <p role="status">
+              Processing on the server. The result will appear when the run is
+              stored.
+            </p>
+          ) : null}
+        </section>
       </div>
       <RunPicker selection={selection} />
       {existing.error ? (
@@ -315,6 +348,7 @@ export default function BatchLab() {
                   {comparison.data.affected_lines} affected lines ·{" "}
                   {comparison.data.explanation_changes} explanation changes
                 </p>
+                <EvidenceView value={comparison.data.changes} />
                 <Json
                   value={comparison.data.changes}
                   label="Exact before / after values"

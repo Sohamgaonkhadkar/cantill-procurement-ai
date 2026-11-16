@@ -15,10 +15,12 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini_API-Free_tier-4678E8?style=flat-square&logo=googlegemini&logoColor=white)
+![Local RAG](https://img.shields.io/badge/RAG-PostgreSQL_search-287C79?style=flat-square)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-211_passed-28A745?style=flat-square)
-![Browser verification](https://img.shields.io/badge/Browser_scenarios-15_passed-6246FF?style=flat-square)
-![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-D7FF3F?style=flat-square&labelColor=171335)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-232_passed-28A745?style=flat-square)
+![Browser verification](https://img.shields.io/badge/Browser_scenarios-16_passed-4678E8?style=flat-square)
+![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-287C79?style=flat-square&labelColor=142128)
 
 </div>
 
@@ -30,13 +32,25 @@ Corvo converts conversational purchase requests and CSV batches into determinist
 
 A policy amendment changes configuration through the application’s review and activation workflow. Earlier runs remain reproducible from immutable snapshots. Procurement calculations live in the Python backend; the React interface displays actual server results and never recalculates financial decisions.
 
-Built for the **Cantill.ai Full-stack Intern Challenge**. Verification badges record checks executed on **16 November 2026**; they are not continuous-monitoring or unseen-accuracy claims.
+Built for the **Cantill.ai Full-stack Intern Challenge**. Verification badges record checks executed on **17 November 2026**; they are not continuous-monitoring or unseen-accuracy claims.
+
+## Conversational assistance with a clear data boundary
+
+The [isolated demo Request Studio](https://corvo-procurement-demo.vercel.app/request-studio) supports direct Gemini conversation, exact-source retrieval and read-only procurement tools. Enable the fictional-data acknowledgment before sending a demo message to Gemini. The live workspace uses local retrieval and deterministic intake; real procurement records and private assessment documents are never sent to an external model.
+
+Google's `gemini-3.5-flash-lite` handles optional language planning and evidence explanation; `gemini-embedding-001` supplies optional 1536-dimensional embeddings for approved demo/public sources. PostgreSQL search, source access controls and purchasing decisions remain in FastAPI. Requests fall back transparently when the free service is unavailable or a response cannot be grounded. No AI Gateway, payment method, automatic paid fallback or local model is required.
+
+The server key is named `GEMINI_API_KEY` and belongs only in the isolated demo project's Sensitive Vercel environment variables. It is never a `VITE_` variable. `.env.example` documents feature flags and resource bounds; [solution design](SOLUTION_DESIGN.md) explains source governance and transaction boundaries, and [verification evidence](VALIDATION.md) distinguishes actual hosted model calls from mocked tests.
 
 ## Explore the application
 
+![Corvo workspace with synthetic verification data](docs/assets/corvo-overview.png)
+
+*Industrial Editorial interface. This screenshot uses isolated synthetic verification data; its counters are calculated by the real backend.*
+
 **[Open Corvo →](https://corvo-procurement.vercel.app)**
 
-Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged password is published by the application.
+Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged live-workspace password is published. The separate [fictional demo](https://corvo-procurement-demo.vercel.app) provides automatically filled demonstration roles against its isolated database schema.
 
 | Workspace | What to inspect |
 |---|---|

@@ -6,7 +6,7 @@ def main():
     files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
     if not any(files): raise SystemExit('No tracked files: stage the reviewed source tree before checking publication hygiene')
     problems=[]
-    patterns=[rb'gh[pousr]_[A-Za-z0-9]{25,}',rb'github_pat_[A-Za-z0-9_]{30,}',rb'AKIA[A-Z0-9]{16}',rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----']
+    patterns=[rb'gh[pousr]_[A-Za-z0-9]{25,}',rb'github_pat_[A-Za-z0-9_]{30,}',rb'AKIA[A-Z0-9]{16}',rb'AIza[0-9A-Za-z_-]{30,}',rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----']
     for filename in filter(None,files):
         path=Path(filename); name=path.name
         if filename.startswith(('.private/','.venv/','.vercel/')) or (name.startswith('.env') and name!='.env.example'):

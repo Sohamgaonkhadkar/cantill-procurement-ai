@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import os
 from pathlib import Path
-from sqlalchemy import create_engine, String, JSON, ForeignKey, UniqueConstraint, event, Integer, Boolean,text
+from sqlalchemy import create_engine, String, JSON, ForeignKey, UniqueConstraint, event, Integer, Boolean,Text,text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 class Base(DeclarativeBase): pass
@@ -142,6 +142,60 @@ class ContractProposal(Base):
     __tablename__='contract_proposals'
     id:Mapped[str]=mapped_column(String,primary_key=True)
     payload:Mapped[dict]=mapped_column(JSON)
+
+class KnowledgeDocument(Base):
+    __tablename__='knowledge_documents'
+    id:Mapped[str]=mapped_column(String,primary_key=True)
+    source_key:Mapped[str]=mapped_column(String,index=True)
+    source_hash:Mapped[str]=mapped_column(String,index=True)
+    owner_id:Mapped[str|None]=mapped_column(ForeignKey('users.id'),nullable=True,index=True)
+    classification:Mapped[str]=mapped_column(String,index=True)
+    status:Mapped[str]=mapped_column(String,index=True)
+    updated_at:Mapped[str]=mapped_column(String)
+    payload:Mapped[dict]=mapped_column(JSON)
+    __table_args__=(UniqueConstraint('source_key','source_hash',name='uq_knowledge_source_revision'),)
+
+class KnowledgeChunk(Base):
+    __tablename__='knowledge_chunks'
+    id:Mapped[str]=mapped_column(String,primary_key=True)
+    document_id:Mapped[str]=mapped_column(ForeignKey('knowledge_documents.id'),index=True)
+    ordinal:Mapped[int]=mapped_column(Integer)
+    content:Mapped[str]=mapped_column(Text)
+    content_hash:Mapped[str]=mapped_column(String)
+    embedding:Mapped[list|None]=mapped_column(JSON,nullable=True)
+    embedding_model:Mapped[str|None]=mapped_column(String,nullable=True)
+    payload:Mapped[dict]=mapped_column(JSON)
+    __table_args__=(UniqueConstraint('document_id','ordinal',name='uq_knowledge_chunk_position'),)
+
+class ChatTurn(Base):
+    __tablename__='chat_turns'
+    id:Mapped[str]=mapped_column(String,primary_key=True)
+    chat_id:Mapped[str]=mapped_column(ForeignKey('chat_sessions.id'),index=True)
+    actor:Mapped[str]=mapped_column(ForeignKey('users.id'),index=True)
+    request_hash:Mapped[str]=mapped_column(String)
+    revision:Mapped[int]=mapped_column(Integer)
+    status:Mapped[str]=mapped_column(String,index=True)
+    expires_at:Mapped[int]=mapped_column(Integer)
+    response:Mapped[dict|None]=mapped_column(JSON,nullable=True)
+    payload:Mapped[dict]=mapped_column(JSON)
+
+class AIUsage(Base):
+    __tablename__='ai_usage'
+    id:Mapped[str]=mapped_column(String,primary_key=True)
+    actor:Mapped[str]=mapped_column(ForeignKey('users.id'),index=True)
+    created_at:Mapped[str]=mapped_column(String,index=True)
+    model:Mapped[str]=mapped_column(String)
+    status:Mapped[str]=mapped_column(String)
+    input_tokens:Mapped[int]=mapped_column(Integer)
+    output_tokens:Mapped[int]=mapped_column(Integer)
+    cost_usd:Mapped[str]=mapped_column(String)
+    payload:Mapped[dict]=mapped_column(JSON)
+
+class AIBudget(Base):
+    __tablename__='ai_budgets'
+    id:Mapped[str]=mapped_column(String,primary_key=True)
+    tokens:Mapped[int]=mapped_column(Integer)
+    cost_usd:Mapped[str]=mapped_column(String)
 
 def now(): return datetime.now(timezone.utc).isoformat()
 

@@ -1,3 +1,4 @@
+import { EvidenceView } from "@/components/EvidenceView";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -110,6 +111,14 @@ function Actions({ kind }: { kind: "purchase-orders" | "sourcing" }) {
                   >
                     Open original decision
                   </Link>
+                  <EvidenceView
+                    value={{
+                      route: r.route,
+                      policy: r.policy_version,
+                      supplier: r.supplier_id,
+                      reason: r.reason,
+                    }}
+                  />
                   <Json value={r} label="Recommendation evidence" />
                 </div>
               ))}

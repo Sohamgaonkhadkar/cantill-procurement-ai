@@ -11,6 +11,7 @@ import {
   SimulationResponseSchema,
   ActionResponseSchema,
   ChatResponseSchema,
+  AIStatusSchema,
   RankingSchema,
   ProcessingResultSchema,
 } from "./generated";
@@ -194,11 +195,21 @@ export const api = {
       ActionResponseSchema,
       json({ route, reason }),
     ),
-  chat: (message: string, session_id?: string) =>
+  aiStatus: () => call("/api/ai/status", AIStatusSchema),
+  chat: (
+    message: string,
+    session_id?: string,
+    options: {
+      request_id?: string;
+      expected_revision?: number;
+      action?: "message" | "confirm" | "cancel";
+      demo_data_acknowledged?: boolean;
+    } = {},
+  ) =>
     call(
       "/api/chat/messages",
       ChatResponseSchema,
-      json({ message, ...(session_id ? { session_id } : {}) }),
+      json({ message, ...(session_id ? { session_id } : {}), ...options }),
     ),
   session: (sessionId: string) =>
     call(

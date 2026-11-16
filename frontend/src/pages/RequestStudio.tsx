@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { api, type ChatResponse } from "@/api";
@@ -11,12 +11,25 @@ import { formatMoney } from "@/lib/format";
 export default function RequestStudio() {
   const qc = useQueryClient();
   const [input, setInput] = useState("");
+  const [fictionalAcknowledged, setFictionalAcknowledged] = useState(false);
+  const ai = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus });
   const [chat, setChat] = useState<ChatResponse | null>(
     () => qc.getQueryData<ChatResponse>(["chat-current"]) ?? null,
   );
   const masters = useMasters();
   const send = useMutation({
-    mutationFn: (message: string) => api.chat(message, chat?.session_id),
+    mutationFn: (message: string) =>
+      api.chat(message, chat?.session_id, {
+        request_id: crypto.randomUUID(),
+        expected_revision: chat?.revision ?? 0,
+        action:
+          message === "confirm"
+            ? "confirm"
+            : message === "cancel"
+              ? "cancel"
+              : "message",
+        demo_data_acknowledged: fictionalAcknowledged,
+      }),
     onSuccess: (data) => {
       setChat(data);
       qc.setQueryData(["chat-current"], data);
@@ -36,6 +49,35 @@ export default function RequestStudio() {
           title="Start with what you need."
           lede="Describe your request. Inspect the specification, correct it and confirm before creating a PR."
         />
+        <div className="chat-privacy-note mt-5" role="status">
+          <strong>
+            {ai.data?.external_eligible
+              ? ai.data.configuration_status === "configured"
+                ? "Gemini · fictional demo only"
+                : "Gemini key required · local mode active"
+              : "Local procurement assistant"}
+          </strong>
+          <p>
+            Purchasing decisions are calculated by the deterministic engine.
+            Source references identify the records used in an answer.
+          </p>
+          {ai.data?.external_eligible ? (
+            <label className="check-field mt-3">
+              <input
+                type="checkbox"
+                checked={fictionalAcknowledged}
+                onChange={(e) => setFictionalAcknowledged(e.target.checked)}
+              />
+              I confirm that my messages contain only fictional demo data. Allow
+              Gemini to process them.
+            </label>
+          ) : (
+            <p>
+              Live records and private documents stay within this workspace.
+              External AI is disabled.
+            </p>
+          )}
+        </div>
         <div className="mt-8 space-y-4" aria-live="polite">
           {messages.length ? (
             messages.map((m, i) => (
@@ -49,6 +91,32 @@ export default function RequestStudio() {
               >
                 <span className="eyebrow">{String(m.role)}</span>
                 <p className="mt-2 whitespace-pre-wrap">{String(m.content)}</p>
+                {Array.isArray(m.citations) && m.citations.length ? (
+                  <div className="source-cards">
+                    {m.citations.map((raw, j) => {
+                      const source = raw as Record<string, unknown>;
+                      return (
+                        <details key={j}>
+                          <summary>
+                            {String(source.title)}
+                            {source.clause ? " · " + String(source.clause) : ""}
+                            {source.page
+                              ? " · page " + String(source.page)
+                              : ""}
+                          </summary>
+                          <p className="whitespace-pre-wrap">
+                            {String(source.excerpt)}
+                          </p>
+                          <small>
+                            Version{" "}
+                            {String(source.policy_version ?? "record snapshot")}{" "}
+                            · {String(source.content_hash).slice(0, 12)}
+                          </small>
+                        </details>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </motion.div>
             ))
           ) : (
@@ -58,6 +126,17 @@ export default function RequestStudio() {
             </div>
           )}
         </div>
+        {chat ? (
+          <p className="mt-3 text-sm text-lavender">
+            {chat.ai_status === "available"
+              ? "Gemini response · validated against backend evidence"
+              : chat.ai_status === "local_only"
+                ? "Local response · no external model call"
+                : chat.ai_status === "disabled"
+                  ? "Deterministic intake"
+                  : `Local evidence · ${String(chat.ai_status).replace(/_/g, " ")}`}
+          </p>
+        ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
           {chat?.alternatives.map((a, i) => (
             <Button
@@ -85,7 +164,7 @@ export default function RequestStudio() {
               maxLength={4000}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Need 2 ITM-1038 at PUN1 by 2026-12-01 normal"
+              placeholder="Describe an item, quantity, plant, need-by date and urgency"
             />
           </label>
           <div className="flex flex-wrap justify-between gap-3">

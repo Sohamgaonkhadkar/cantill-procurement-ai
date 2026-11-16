@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { EvidenceView } from "@/components/EvidenceView";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
@@ -11,14 +12,19 @@ import {
   Pagination,
 } from "@/components/Workflow";
 import { Button, ErrorBlock, LoadingBlock, RouteTag } from "@/components/ui";
-import { XRayScene, type XPlate, type ViewState } from "@/components/XRayScene";
+import type { XPlate, ViewState } from "@/components/XRayScene";
+const XRayScene = lazy(() =>
+  import("@/components/XRayScene").then((m) => ({ default: m.XRayScene })),
+);
 import { ApprovalPanel } from "@/components/ApprovalPanel";
 import { formatMoney } from "@/lib/format";
 const TITLES = [
   "ITEM RESOLUTION",
   "REQUIREMENT GROUPING",
   "VALUATION",
+  "CONTRACT EVALUATION",
   "POLICY EVALUATION",
+  "SUPPLIER SELECTION",
   "FINAL ROUTE",
 ];
 export default function DecisionXray() {
@@ -41,7 +47,7 @@ export default function DecisionXray() {
     enabled: !!pick && !!selection.runId,
   });
   const [stage, setStage] = useState(0);
-  const [twoD, setTwoD] = useState(false);
+  const [twoD, setTwoD] = useState(true);
   const view = useRef<ViewState>({ yaw: 0, pitch: 0 });
   const drag = useRef<{
     x: number;
@@ -66,13 +72,23 @@ export default function DecisionXray() {
         },
         {
           title: TITLES[3],
+          value: e!.selected_contract || "No selected contract",
+          sub: `${e!.contracts.length} evaluated contracts`,
+        },
+        {
+          title: TITLES[4],
           value: r.policy_version,
           sub: e!.rule_trace
             .filter((x) => x.matched)
             .map((x) => String(x.rule))
             .join(", "),
         },
-        { title: TITLES[4], value: r.route, sub: r.approval_status },
+        {
+          title: TITLES[5],
+          value: r.supplier_id || "Sourcing candidates",
+          sub: `${e!.ranking.length} ranked candidates`,
+        },
+        { title: TITLES[6], value: r.route, sub: r.approval_status },
       ]
     : TITLES.map((title) => ({ title, value: "AWAITING TRACE", sub: "—" }));
   return (
@@ -139,6 +155,7 @@ export default function DecisionXray() {
               size="sm"
               onClick={() => {
                 view.current = { yaw: 0, pitch: 0 };
+                window.dispatchEvent(new Event("corvo:xray-interaction"));
               }}
             >
               Reset view
@@ -170,7 +187,7 @@ export default function DecisionXray() {
                     event.currentTarget.setPointerCapture(event.pointerId);
                   }}
                   onPointerMove={(event) => {
-                    if (drag.current)
+                    if (drag.current) {
                       view.current = {
                         yaw: Math.max(
                           -0.55,
@@ -189,25 +206,35 @@ export default function DecisionXray() {
                           ),
                         ),
                       };
+                      window.dispatchEvent(new Event("corvo:xray-interaction"));
+                    }
                   }}
                   onPointerUp={() => {
                     drag.current = null;
                   }}
                 >
-                  <XRayScene
-                    plates={plates}
-                    selected={stage}
-                    route={
-                      r.decision === "PO"
-                        ? "direct"
-                        : r.decision === "SOURCING_REQUEST"
-                          ? "sourcing"
-                          : null
+                  <Suspense
+                    fallback={
+                      <p className="p-5 text-white">
+                        Loading optional 3D evidence…
+                      </p>
                     }
-                    view={view}
-                    onSelect={setStage}
-                    runId={0}
-                  />
+                  >
+                    <XRayScene
+                      plates={plates}
+                      selected={stage}
+                      route={
+                        r.decision === "PO"
+                          ? "direct"
+                          : r.decision === "SOURCING_REQUEST"
+                            ? "sourcing"
+                            : null
+                      }
+                      view={view}
+                      onSelect={setStage}
+                      runId={0}
+                    />
+                  </Suspense>
                 </div>
               ) : null}
               <div className="surface-dark mt-4 p-5">
@@ -215,6 +242,30 @@ export default function DecisionXray() {
                 <p className="mt-2">
                   {plates[stage].value} · {plates[stage].sub}
                 </p>
+                <EvidenceView
+                  value={
+                    [
+                      e!.matching,
+                      {
+                        anchor: e!.group_anchor,
+                        grouping: e!.grouping,
+                        lines: r.lines,
+                      },
+                      e!.valuation,
+                      e!.contracts,
+                      { facts: e!.facts, rule_trace: e!.rule_trace },
+                      e!.ranking,
+                      {
+                        route: r.route,
+                        reason: r.reason,
+                        supplier: r.supplier_id,
+                        order_reference: e!.order_reference,
+                        selected_contract: e!.selected_contract,
+                        po_anchor: e!.po_anchor,
+                      },
+                    ][stage]
+                  }
+                />
                 <Json
                   label="Stage evidence"
                   value={
@@ -226,7 +277,9 @@ export default function DecisionXray() {
                         lines: r.lines,
                       },
                       e!.valuation,
+                      e!.contracts,
                       { facts: e!.facts, rule_trace: e!.rule_trace },
+                      e!.ranking,
                       {
                         route: r.route,
                         reason: r.reason,
@@ -245,10 +298,12 @@ export default function DecisionXray() {
                   Exact remaining headroom and rejection reasons at processing
                   time.
                 </p>
+                <EvidenceView value={e!.contracts} />
                 <Json value={e!.contracts} label="All evaluated contracts" />
                 <h2 className="font-display mt-5 text-xl">
                   Supplier selection
                 </h2>
+                <EvidenceView value={e!.ranking} />
                 <Json
                   value={e!.ranking}
                   label="Ranking components and reference prices"

@@ -1,3 +1,4 @@
+import { EvidenceView } from "@/components/EvidenceView";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
@@ -6,8 +7,6 @@ import { api } from "@/api";
 import { useAuth } from "@/auth";
 import { Page, Pagination, Json } from "@/components/Workflow";
 import { Button, ErrorBlock, LoadingBlock } from "@/components/ui";
-import { MaterialBand } from "@/components/media/MaterialBand";
-import { VISUALS } from "@/components/media/assets";
 import { formatMoney } from "@/lib/format";
 export default function ContractVault() {
   const { contractId } = useParams();
@@ -81,13 +80,6 @@ export default function ContractVault() {
       title="Every agreement, under inspection."
       lede="Register values include committed approvals. Uploads remain proposals until a buyer verifies and approves the structured terms."
     >
-      <MaterialBand
-        asset={VISUALS.coolant}
-        statement="Every agreement is a physical record."
-        caption="RATES, CEILINGS AND HEADROOM — VERIFIED AGAINST THE DOCUMENT"
-        vertical="VAULT · TECHNICAL RECORDS"
-        height={164}
-      />
       <div className="toolbar">
         <label className="field">
           Contract as-of date
@@ -129,7 +121,10 @@ export default function ContractVault() {
           {detail.error ? (
             <ErrorBlock error={detail.error} />
           ) : detail.data ? (
-            <Json value={detail.data} label="Contract terms and provenance" />
+            <>
+              <EvidenceView value={detail.data} />
+              <Json value={detail.data} label="Contract terms and provenance" />
+            </>
           ) : (
             <LoadingBlock />
           )}
@@ -232,10 +227,13 @@ export default function ContractVault() {
                   {proposal.validation_error}
                 </div>
               ) : null}
-              <Json
-                value={proposal.source_text}
-                label="Extracted source text"
-              />
+              <details open>
+                <summary>Extracted source text</summary>
+                <p className="contract-source">
+                  {proposal.source_text ||
+                    "No readable source text was extracted. Manual transcription is required."}
+                </p>
+              </details>
               <label className="field">
                 Verified contract JSON
                 <textarea

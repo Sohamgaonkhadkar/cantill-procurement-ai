@@ -53,3 +53,11 @@ The running backend does not invoke an LLM. Procurement arithmetic and routing a
 ## Scope boundaries
 
 The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Evaluator access uses private individual accounts; privileged public aliases are removed.
+
+## Conversational and presentation extensions
+
+The optional LLM acts as a constrained language interface. It proposes structured fields with literal user evidence and selects from an intent-specific read-only tool registry. Independent validation and the existing procurement engine retain authority. A leased chat turn separates network work from database writes; explicit confirmation is the only path from a draft to `execute_run`.
+
+Retrieval runs locally over reviewed, versioned sources. Source metadata, clause/page identifiers, hashes, visibility and effective dates travel with every citation. The isolated fictional demo can use direct Gemini free-tier generation and embeddings after explicit acknowledgment. Live data stays local. Provider outages, quota limits and unsupported grounding preserve a usable local workflow and are reported as fallback states.
+
+The redesigned interface uses graphite brand surfaces and mineral operational pages, stable grouped navigation and source-first evidence panels. Financial values remain decimal strings. Optional 3D supplements the readable decision trace; it does not encode a second decision algorithm.

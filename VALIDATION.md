@@ -1,14 +1,14 @@
 # Verification evidence
 
-Reviewed 16 November 2026. Results distinguish pure business checks, API tests, real PostgreSQL transactions, browser workflows and actual hosted behavior. Test counts are evidence of asserted behaviors, not an independent assessment score.
+Reviewed 17 November 2026. Results distinguish pure business checks, API tests, real PostgreSQL transactions, browser workflows and actual hosted behavior. Test counts are evidence of asserted behaviors, not an independent assessment score.
 
 ## Current automated baseline
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **207 passed, 4 PostgreSQL-only tests skipped** |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **211 passed**, including independent approval and chat-confirmation transactions |
-| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **15 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **228 passed, 4 PostgreSQL-only tests skipped** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **232 passed**, including independent approval and chat-confirmation transactions |
+| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **16 passed**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
 | CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
 | OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
 | Generated frontend models | OpenAPI-derived TypeScript and Zod | Drift check passes; release build enforces TypeScript compilation |
@@ -90,3 +90,13 @@ Hosted sign-in configuration update: both Controlled role account and Individual
 
 
 Public demo extension: seven additional backend checks reject non-isolated database configurations, keep public passwords disabled on the live deployment and verify all demo roles remain unable to administer identities. The full backend suite passed 211 cases on PostgreSQL and 207 plus four PostgreSQL-only skips on SQLite. The demo uses a separate restricted PostgreSQL role/schema and session key, not request-based switching of the live connection. Existing migrations initialize that schema; only fictional inputs are seeded through the real engine.
+
+## Corvo 2 and Gemini verification
+
+The additional AI tests cover live-data egress rejection before client creation, fictional-input acknowledgment, private-source provenance, credential/identifier rejection, source review and ACLs, index idempotency, effective policy filtering, source revision isolation, unknown/write-tool rejection, independent field evidence, spoken quantities, negative SKU corrections, citation/numeric guards, distributed budgets, duplicate confirmation and concurrent turn leases. Native embedding tests check 1536-dimensional normalized vectors and label token estimates when the provider omits usage.
+
+Hosted checks call the real direct Gemini API from Vercel Functions using the Sensitive server-side key. Successful generation was observed with `gemini-3.5-flash-lite`, including a current-policy answer with a backend-generated citation. The native `gemini-embedding-001` endpoint embedded eight approved fictional policy chunks; an immediate repeat embedded zero chunks, demonstrating persistent idempotency. Provider 503 responses and rejected grounding were also observed: the application showed local source evidence rather than fabricating success. Free-tier latency and availability are external limitations, not a guaranteed service level.
+
+Visual review captures all eleven screens at 1440×900, 1280×800, 768×1024, 390×844 and 360×800. Horizontal overflow is confined to scrollable data regions; page overflow and browser exceptions are checked. The former continuous homepage core is replaced by a static industrial photograph; the seven-layer 3D trace is loaded on request and renders on interaction, with offscreen pausing. Keyboard tests cover modal focus retention/restoration and the complete 2D alternative. These checks do not constitute a complete independent WCAG certification.
+
+In the same headless Chromium software-GPU setup, the earlier Overview recorded 19 animation frames over approximately three seconds (median interval 166.6 ms); the revised page recorded 181 frames (median 16.7 ms). This measures the test browser's rendering opportunity, not a physical-device or universal 60 FPS guarantee. Four self-hosted WOFF2 font files total 110,192 bytes. The optional Three.js bundle remains approximately 1.13 MB before compression and is excluded from routine page loading until the 3D trace is requested.

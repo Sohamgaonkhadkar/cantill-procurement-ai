@@ -1,6 +1,12 @@
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import * as THREE from "three";
 import { getDeviceTier, prefersReducedMotion } from "@/lib/config";
 
@@ -17,11 +23,13 @@ type Props = {
 };
 
 export const LAYER_COLORS = [
-  "#32e6d2",
-  "#8f7bff",
-  "#d08c5a",
-  "#b7b3d7",
-  "#d7ff3f",
+  "#76A0F4",
+  "#82929A",
+  "#D8DEDD",
+  "#68B8B4",
+  "#A9C5FA",
+  "#D8A58D",
+  "#76A0F4",
 ];
 const SPACING = 1.12;
 
@@ -91,7 +99,22 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
     progress.current = 0;
   }, [runId]);
 
+  const invalidate = useThree((state) => state.invalidate);
+  const remainingFrames = useRef(120);
+  useEffect(() => {
+    const refresh = () => {
+      remainingFrames.current = 120;
+      invalidate();
+    };
+    refresh();
+    window.addEventListener("corvo:xray-interaction", refresh);
+    return () => window.removeEventListener("corvo:xray-interaction", refresh);
+  }, [selected, runId, invalidate]);
   useFrame((state, dt) => {
+    if (remainingFrames.current > 0) {
+      remainingFrames.current--;
+      state.invalidate();
+    }
     progress.current = Math.min(
       1,
       progress.current + dt * (reduce ? 10 : 0.55),
@@ -100,7 +123,8 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
     const e = 1 - Math.pow(1 - p, 3);
 
     if (root.current) {
-      const targetY = -((2 - selected) * SPACING * e) * 0.6;
+      const targetY =
+        -(((plates.length - 1) / 2 - selected) * SPACING * e) * 0.6;
       root.current.position.y += (targetY - root.current.position.y) * 0.08;
       root.current.rotation.y +=
         (view.current.yaw - root.current.rotation.y) * 0.09;
@@ -116,7 +140,7 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
       const tz = isSel ? 0.7 : -0.35 * Math.abs(i - selected) * 0.5;
       g.position.set(
         g.position.x + (tx - g.position.x) * 0.1,
-        (2 - i) * SPACING * e,
+        ((plates.length - 1) / 2 - i) * SPACING * e,
         g.position.z + (tz - g.position.z) * 0.1,
       );
       const m = plateMats.current[i];
@@ -138,11 +162,11 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
       const mat = m.material as THREE.MeshBasicMaterial;
       const lit = i === selected - 1 || i === selected;
       mat.opacity += ((lit ? 0.95 : 0.22) - mat.opacity) * 0.12;
-      mat.color.set(lit ? "#d7ff3f" : "#8f7bff");
+      mat.color.set(lit ? "#A9C5FA" : "#82929A");
     });
 
     // route split after the last layer
-    const last = pos(4).clone();
+    const last = pos(plates.length - 1).clone();
     const endA = new THREE.Vector3(last.x + 2.9, last.y + 1.25, last.z - 0.2);
     const endB = new THREE.Vector3(last.x + 2.9, last.y - 1.35, last.z + 0.3);
     if (branchA.current) {
@@ -151,7 +175,7 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
       const on = route === "direct";
       mat.opacity +=
         ((on ? 1 : route === null ? 0.12 : 0.1) - mat.opacity) * 0.1;
-      mat.color.set("#32e6d2");
+      mat.color.set("#68B8B4");
     }
     if (branchB.current) {
       segment(branchB.current, last, endB);
@@ -159,17 +183,15 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
       const on = route === "sourcing";
       mat.opacity +=
         ((on ? 1 : route === null ? 0.12 : 0.1) - mat.opacity) * 0.1;
-      mat.color.set(on ? "#ff664f" : "#b7b3d7");
+      mat.color.set(on ? "#D8A58D" : "#D8DEDD");
     }
 
     // pulses travel the chain once the layers have aligned
     pulses.current.forEach((m, k) => {
       if (!m) return;
-      const u = reduce
-        ? (k * 0.33) % 1
-        : (state.clock.elapsedTime * 0.14 + k * 0.33) % 1;
-      const f = u * 4;
-      const i0 = Math.min(3, Math.floor(f));
+      const u = (k * 0.33) % 1;
+      const f = u * (plates.length - 1);
+      const i0 = Math.min(plates.length - 2, Math.floor(f));
       const frac = f - i0;
       const a = pos(i0);
       const b = pos(i0 + 1);
@@ -230,7 +252,7 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
         </group>
       ))}
 
-      {[0, 1, 2, 3].map((i) => (
+      {Array.from({ length: plates.length - 1 }, (_, i) => i).map((i) => (
         <mesh
           key={`c${i}`}
           ref={(m) => {
@@ -240,7 +262,7 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
           renderOrder={4}
         >
           <meshBasicMaterial
-            color="#8f7bff"
+            color="#82929A"
             transparent
             opacity={0.22}
             toneMapped={false}
@@ -249,7 +271,7 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
       ))}
       <mesh ref={branchA} geometry={segGeo} renderOrder={4}>
         <meshBasicMaterial
-          color="#32e6d2"
+          color="#68B8B4"
           transparent
           opacity={0.1}
           toneMapped={false}
@@ -257,7 +279,7 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
       </mesh>
       <mesh ref={branchB} geometry={segGeo} renderOrder={4}>
         <meshBasicMaterial
-          color="#b7b3d7"
+          color="#D8DEDD"
           transparent
           opacity={0.1}
           toneMapped={false}
@@ -271,7 +293,7 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
             if (m) pulses.current[k] = m;
           }}
         >
-          <meshBasicMaterial color="#d7ff3f" toneMapped={false} />
+          <meshBasicMaterial color="#A9C5FA" toneMapped={false} />
         </mesh>
       ))}
     </group>
@@ -280,9 +302,19 @@ function Stack({ plates, selected, route, view, onSelect, runId }: Props) {
 
 export function XRayScene(props: Props) {
   const tier = useMemo(() => getDeviceTier(), []);
+  const root = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) =>
+      setVisible(entry.isIntersecting),
+    );
+    if (root.current) observer.observe(root.current);
+    return () => observer.disconnect();
+  }, []);
   return (
-    <div className="absolute inset-0">
+    <div ref={root} className="absolute inset-0">
       <Canvas
+        frameloop={visible ? "demand" : "never"}
         dpr={tier === "high" ? [1, 1.6] : [1, 1.2]}
         camera={{ position: [0, 3.9, 8.6], fov: 30 }}
         gl={{ antialias: tier !== "mobile", alpha: true }}

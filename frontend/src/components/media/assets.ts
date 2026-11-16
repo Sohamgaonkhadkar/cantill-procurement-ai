@@ -6,11 +6,7 @@
  * ------------------------------------------------------------------ */
 import bearingMacro from "@/assets/media/images/bearing-macro.webp";
 import fastenerMacro from "@/assets/media/images/fastener-macro.webp";
-import hydraulicFitting from "@/assets/media/images/hydraulic-fitting.webp";
 import safetyGlove from "@/assets/media/images/safety-glove.webp";
-import pumpAssembly from "@/assets/media/images/pump-assembly.webp";
-import circuitMacro from "@/assets/media/images/circuit-macro.webp";
-import gearMacro from "@/assets/media/images/gear-macro.webp";
 import cncToolDark from "@/assets/media/images/cnc-tool-dark.webp";
 import robotWelding from "@/assets/media/images/robot-welding.webp";
 import cncCoolant from "@/assets/media/images/cnc-coolant.webp";
@@ -62,13 +58,6 @@ export const VISUALS = {
       "https://www.pexels.com/photo/a-robot-industrial-machine-grinding-a-steel-11951215/",
     tone: "dark",
   },
-  gears: {
-    src: gearMacro,
-    alt: "Macro photograph of interlocking mechanical gears",
-    creator: "Pixabay",
-    source: "https://www.pexels.com/photo/clock-motor-209255/",
-    tone: "mid",
-  },
 } satisfies Record<string, MediaAsset>;
 
 /**
@@ -92,36 +81,12 @@ export const CATEGORY_VISUALS: Record<string, MediaAsset> = {
       "https://www.pexels.com/photo/close-up-of-metal-screw-with-textured-surface-31970894/",
     tone: "mid",
   },
-  HYDRAULICS: {
-    src: hydraulicFitting,
-    alt: "Braided steel hose fittings and hex nuts on a black background",
-    creator: "Nic Wood",
-    source:
-      "https://www.pexels.com/photo/flexible-water-pipe-with-steel-braid-28101094/",
-    tone: "dark",
-  },
   PPE: {
     src: safetyGlove,
     alt: "Close-up of black protective industrial gloves worn by a worker",
     creator: "Jimmy Nilsson Masth",
     source: "https://www.pexels.com/photo/a-person-wearing-gloves-11427398/",
     tone: "dark",
-  },
-  PUMPS: {
-    src: pumpAssembly,
-    alt: "Industrial pump and engine assembly with hoses and mechanical parts",
-    creator: "Jonathan Cooper",
-    source:
-      "https://www.pexels.com/photo/close-up-of-a-blue-painted-engine-10290625/",
-    tone: "mid",
-  },
-  CAPEX: {
-    src: circuitMacro,
-    alt: "Macro photograph of soldered circuit board components and connectors",
-    creator: "Ivan Chumak",
-    source:
-      "https://www.pexels.com/photo/close-up-of-electronic-circuit-board-components-40068135/",
-    tone: "mid",
   },
   TOOLING: {
     src: cncToolDark,
@@ -133,7 +98,7 @@ export const CATEGORY_VISUALS: Record<string, MediaAsset> = {
   },
 };
 
-export const FALLBACK_VISUAL: MediaAsset = VISUALS.gears;
+export const FALLBACK_VISUAL: MediaAsset = VISUALS.awaiting;
 
 /** Resolve a category illustration; never invents a match for an unknown category. */
 export function visualForCategory(

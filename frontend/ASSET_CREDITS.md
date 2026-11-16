@@ -27,8 +27,8 @@ of a specific SKU. The UI states this explicitly wherever a category illustratio
 
 | File | Source page | Creator | License | Used in | Attribution required |
 | --- | --- | --- | --- | --- | --- |
-| `videos/cnc-turning-coolant.mp4` | https://www.pexels.com/video/cnc-machine-tool-cutting-metal-with-coolant-spray-5998850/ | frank Diego | Pexels License | Overview hero back layer (`IndustrialHero`) | No (credited in-app and here) |
-| `posters/cnc-turning-coolant.webp` | Poster frame of the same video | frank Diego | Pexels License | Hero poster / reduced-motion still | No |
+| `videos/cnc-turning-coolant.mp4` | https://www.pexels.com/video/cnc-machine-tool-cutting-metal-with-coolant-spray-5998850/ | frank Diego | Pexels License | Retained footage component; not autoplayed on the revised Overview | No (credited in-app and here) |
+| `posters/cnc-turning-coolant.webp` | Poster frame of the same video | frank Diego | Pexels License | Static Overview industrial photograph | No |
 
 ## Photography
 
@@ -37,14 +37,10 @@ of a specific SKU. The UI states this explicitly wherever a category illustratio
 | `images/hero-cnc-poster.webp` | https://www.pexels.com/video/cnc-machine-tool-cutting-metal-with-coolant-spray-5998850/ | frank Diego | Pexels License | Hero poster | No |
 | `images/bearing-macro.webp` | https://www.pexels.com/photo/macro-shot-of-metal-ball-bearings-in-ukraine-35568191/ | Kostiantyn Klymovets | Pexels License | `ProductVisual` → BEARINGS category (Request Studio, Decision X-Ray stage 1) | No |
 | `images/fastener-macro.webp` | https://www.pexels.com/photo/close-up-of-metal-screw-with-textured-surface-31970894/ | Sonny Sixteen | Pexels License | `ProductVisual` → FASTENERS | No |
-| `images/hydraulic-fitting.webp` | https://www.pexels.com/photo/flexible-water-pipe-with-steel-braid-28101094/ | Nic Wood | Pexels License | `ProductVisual` → HYDRAULICS | No |
 | `images/safety-glove.webp` | https://www.pexels.com/photo/a-person-wearing-gloves-11427398/ | Jimmy Nilsson Masth | Pexels License | `ProductVisual` → PPE | No |
-| `images/pump-assembly.webp` | https://www.pexels.com/photo/close-up-of-a-blue-painted-engine-10290625/ | Jonathan Cooper | Pexels License | `ProductVisual` → PUMPS | No |
-| `images/circuit-macro.webp` | https://www.pexels.com/photo/close-up-of-electronic-circuit-board-components-40068135/ | Ivan Chumak | Pexels License | `ProductVisual` → CAPEX / electrical | No |
-| `images/cnc-tool-dark.webp` | https://www.pexels.com/photo/close-up-photo-of-metal-tool-10406128/ | Daniel Smyth | Pexels License | `ProductVisual` → TOOLING, and the "AWAITING ITEM RESOLUTION" state | No |
-| `images/gear-macro.webp` | https://www.pexels.com/photo/clock-motor-209255/ | Pixabay | Pexels License | `MaterialBand` transitions (Overview, Contract Vault); fallback visual | No |
-| `images/robot-welding.webp` | https://www.pexels.com/photo/a-robot-industrial-machine-grinding-a-steel-11951215/ | alex | Pexels License | Batch Lab intake panel | No |
-| `images/cnc-coolant.webp` | https://www.pexels.com/photo/close-up-of-machine-splashing-milk-8956445/ | Daniel Smyth | Pexels License | Batch Lab upload chamber backdrop; hero secondary frame; Contract Vault band | No |
+| `images/cnc-tool-dark.webp` | https://www.pexels.com/photo/close-up-photo-of-metal-tool-10406128/ | Daniel Smyth | Pexels License | `ProductVisual` → TOOLING, category illustration only | No |
+| `images/robot-welding.webp` | https://www.pexels.com/photo/a-robot-industrial-machine-grinding-a-steel-11951215/ | alex | Pexels License | Retained licensed media; not used as purchasing evidence | No |
+| `images/cnc-coolant.webp` | https://www.pexels.com/photo/close-up-of-machine-splashing-milk-8956445/ | Daniel Smyth | Pexels License | Retained licensed industrial media | No |
 
 ## Also considered but not used
 
@@ -64,3 +60,9 @@ Created for this project, no third-party rights involved:
 - Policy Reactor node geometry, Batch Lab pipeline graphics, Supplier Constellation plot, procedural fallback textures
 
 No challenge dataset is published in source. The integrated application has no mock-data mode; automated tests seed clearly synthetic records into an isolated real backend database.
+
+## Corvo 2 font licenses and illustration accuracy
+
+Archivo, IBM Plex Sans and IBM Plex Mono are self-hosted as four Latin WOFF2 files. Their SIL Open Font License texts are retained in `src/assets/fonts/archivo-OFL.txt`, `ibmplexsans-OFL.txt` and `ibmplexmono-OFL.txt`. Font sources: [Google Fonts](https://github.com/google/fonts), with Archivo by Omnibus-Type and Plex by IBM. No external font request is required at runtime.
+
+The previous clock, water-pipe, generic engine and circuit images were removed from category selection. Categories without an appropriate image display the actual catalog record and an explicit missing-photograph state. Category photos are illustrations, never product verification or evidence that a specific SKU was supplied. The Overview uses the credited CNC photograph without a decorative 3D overlay.
