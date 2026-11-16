@@ -1,5 +1,5 @@
 // Generated from root openapi.json; do not edit.
-// sha256: 743a47c2ca5d91198bbbc18613af88d0de51a3e93af459cdf8f45234ac733c2d
+// sha256: a170961f9eec4f65680c1ff5350308344867313d641dac6658a27bbcb499eac5
 import { z } from "zod";
 export type ActionResponse = { "id": string; "run_id": string; "requirements": Array<string>; "recommendations": Array<RequirementResponse>; "actor": string; "approved_at": string; "reason": string; "status": string; [key: string]: unknown };
 export type AllCondition_Input = { "all": Array<(Predicate | AllCondition_Input | AnyCondition_Input | NotCondition_Input)> };
@@ -19,7 +19,7 @@ export type ChatResponse = { "session_id": string; "message": string; "state": {
 export type ComparisonResponse = { "affected_lines": number; "explanation_changes": number; "changes": Array<{ [key: string]: unknown }>; [key: string]: unknown };
 export type ContractBody = { "contract": { [key: string]: unknown }; "reason": string };
 export type ContractEvidence = { "contract_id": string; "supplier_id": string; "rate": string; "remaining": string; "required": string; "applicable": boolean; "usable": boolean; "rejection": (string | null); [key: string]: unknown };
-export type CreateUserBody = { "username": string; "display_name": string; "role": "requester" | "buyer" | "admin"; "password": string };
+export type CreateUserBody = { "username": string; "display_name": string; "role": "requester" | "buyer" | "admin"; "password": string; "access_scope"?: "standard" | "evaluation" };
 export type DemoPreviewResponse = { "mode"?: "synthetic_preview"; "persistent"?: false; "policy_version"?: "5.0"; "source_note": string; "result": ProcessingResult };
 export type Evidence = { "facts": { [key: string]: unknown }; "rule_trace": Array<{ [key: string]: unknown }>; "valuation": ValuationEvidence; "contracts": Array<ContractEvidence>; "ranking": Array<Ranking>; "order_reference": string; "selected_contract": (string | null); "group_anchor": { [key: string]: string }; "grouping": string; "matching": Array<{ [key: string]: unknown }>; "po_anchor"?: (string | null); [key: string]: unknown };
 export type HTTPValidationError = { "detail"?: Array<ValidationError> };
@@ -68,7 +68,7 @@ export const ChatResponseSchema: z.ZodType<ChatResponse> = z.object({"session_id
 export const ComparisonResponseSchema: z.ZodType<ComparisonResponse> = z.object({"affected_lines": z.number().int(), "explanation_changes": z.number().int(), "changes": z.array(z.record(z.string(),z.unknown()))}).passthrough();
 export const ContractBodySchema: z.ZodType<ContractBody> = z.object({"contract": z.record(z.string(),z.unknown()), "reason": z.string().min(5).max(2000)}).strict();
 export const ContractEvidenceSchema: z.ZodType<ContractEvidence> = z.object({"contract_id": z.string(), "supplier_id": z.string(), "rate": z.string(), "remaining": z.string(), "required": z.string(), "applicable": z.boolean(), "usable": z.boolean(), "rejection": z.union([z.string(), z.null()])}).passthrough();
-export const CreateUserBodySchema: z.ZodType<CreateUserBody> = z.object({"username": z.string().regex(new RegExp("^[a-z][a-z0-9._-]{2,63}$")), "display_name": z.string().min(1).max(100), "role": z.enum(["requester", "buyer", "admin"]), "password": z.string().min(15).max(128)}).strict();
+export const CreateUserBodySchema: z.ZodType<CreateUserBody> = z.object({"username": z.string().regex(new RegExp("^[a-z][a-z0-9._-]{2,63}$")), "display_name": z.string().min(1).max(100), "role": z.enum(["requester", "buyer", "admin"]), "password": z.string().min(15).max(128), "access_scope": z.enum(["standard", "evaluation"]).optional()}).strict();
 export const DemoPreviewResponseSchema: z.ZodType<DemoPreviewResponse> = z.object({"mode": z.literal("synthetic_preview").optional(), "persistent": z.literal(false).optional(), "policy_version": z.literal("5.0").optional(), "source_note": z.string(), "result": z.lazy(() => ProcessingResultSchema)}).strict();
 export const EvidenceSchema: z.ZodType<Evidence> = z.object({"facts": z.record(z.string(),z.unknown()), "rule_trace": z.array(z.record(z.string(),z.unknown())), "valuation": z.lazy(() => ValuationEvidenceSchema), "contracts": z.array(z.lazy(() => ContractEvidenceSchema)), "ranking": z.array(z.lazy(() => RankingSchema)), "order_reference": z.string(), "selected_contract": z.union([z.string(), z.null()]), "group_anchor": z.record(z.string(),z.string()), "grouping": z.string(), "matching": z.array(z.record(z.string(),z.unknown())), "po_anchor": z.union([z.string(), z.null()]).optional()}).passthrough();
 export const HTTPValidationErrorSchema: z.ZodType<HTTPValidationError> = z.object({"detail": z.array(z.lazy(() => ValidationErrorSchema)).optional()});

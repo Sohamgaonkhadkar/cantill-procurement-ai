@@ -22,7 +22,7 @@ from .engine import process,select_policy
 from .policy import initial_policy,validate_policy,FACTS,OPS,ROUTES
 from .ingest import pdf_text,extract_contract,validate_contract
 from .service import current_data,execute_run,policies,audit,comparison,save_data
-from .security import authenticate,user,require,DEMO,configure_sessions,role_of,hash_password,submission_access,SUBMISSION_PASSWORDS
+from .security import authenticate,user,require,require_owner,DEMO,configure_sessions,role_of,hash_password,submission_access,registration_enabled,SUBMISSION_PASSWORDS,ROLES
 from .suppliers import preferred
 from .amendments import policy_diff as field_diff
 from .language import interpret
@@ -75,6 +75,7 @@ class CreateUserBody(Body):
     display_name:str=Field(min_length=1,max_length=100)
     role:Literal['requester','buyer','admin']
     password:str=Field(min_length=15,max_length=128)
+    access_scope:Literal['standard','evaluation']='standard'
 class RegisterBody(Body):
     username:str=Field(pattern=r'^[a-z][a-z0-9._-]{2,63}$')
     display_name:str=Field(min_length=1,max_length=100)
@@ -113,8 +114,8 @@ class AmendmentTextBody(Body):
     effective_date:date
     base_version:str='5.0'
 
-def get(s,model,key):
-    obj=s.get(model,key)
+def get(s,model,key,lock=False):
+    obj=s.scalar(select(model).where(model.id==key).with_for_update()) if lock else s.get(model,key)
     if not obj: raise HTTPException(404,'Record not found')
     return obj
 def page(items,offset,limit): return {'items':items[offset:offset+limit],'total':len(items),'offset':offset,'limit':limit}
@@ -147,11 +148,11 @@ def sign_in(body:LoginBody):
 @app.get('/api/auth/options',tags=['Authentication'],response_model=AuthOptions)
 def auth_options():
     enabled=submission_access()
-    return {'submission_access':enabled,'registration_enabled':enabled,'roles':[{'role':role,'password':password} for role,password in SUBMISSION_PASSWORDS.items()] if enabled else []}
+    return {'submission_access':enabled,'registration_enabled':registration_enabled(),'roles':[{'role':role,'password':password} for role,password in SUBMISSION_PASSWORDS.items()] if enabled else []}
 
 @app.post('/api/auth/register',tags=['Authentication'],response_model=LoginResponse,status_code=201)
 def register(body:RegisterBody,request:Request):
-    if not submission_access(): raise HTTPException(403,'Self-registration is disabled')
+    if not registration_enabled(): raise HTTPException(403,'Self-registration is disabled')
     # Requester-only registration, with an atomic persistent per-address quota.
     # Never accept a role from this public endpoint.
     from .db import AuthThrottle
@@ -172,12 +173,12 @@ def register(body:RegisterBody,request:Request):
         delay=max(1,900-(now-throttle.window_started))
     if limited: raise HTTPException(429,'Too many account creation attempts; retry later',headers={'Retry-After':str(delay)})
     with Session.begin() as s:
-        if body.username in SUBMISSION_PASSWORDS or s.get(User,body.username): raise HTTPException(409,'Username already exists')
+        if body.username in ROLES or s.get(User,body.username): raise HTTPException(409,'Username already exists')
         s.add(User(id=body.username,role='requester',payload={'display_name':body.display_name,'password_hash':hash_password(body.password),'enabled':True,'type':'individual'}))
         audit(s,body.username,'user.self_registered',{'user_id':body.username,'role':'requester'})
     return authenticate(body.username,body.password)
 @app.get('/api/auth/me',tags=['Authentication'])
-def me(actor=Depends(user)): return {'id':str(actor),'role':role_of(actor),'demo_mode':DEMO}
+def me(actor=Depends(user)): return {'id':str(actor),'role':role_of(actor),'demo_mode':DEMO,'access_scope':getattr(actor,'access_scope','standard')}
 @app.post('/api/auth/logout',tags=['Authentication'])
 def logout(actor=Depends(user)):
     with Session.begin() as s:
@@ -186,19 +187,19 @@ def logout(actor=Depends(user)):
     return {'revoked':True}
 @app.post('/api/users',tags=['Private Administration'])
 def create_user(body:CreateUserBody,actor=Depends(user)):
-    require(actor,'admin')
+    require_owner(actor)
     with Session.begin() as s:
         if s.get(User,body.username): raise HTTPException(409,'Username already exists')
-        s.add(User(id=body.username,role=body.role,payload={'display_name':body.display_name,'password_hash':hash_password(body.password),'enabled':True,'type':'individual'}))
+        s.add(User(id=body.username,role=body.role,payload={'display_name':body.display_name,'password_hash':hash_password(body.password),'enabled':True,'type':'individual','access_scope':body.access_scope}))
         audit(s,actor,'user.created',{'user_id':body.username,'role':body.role})
     return {'id':body.username,'role':body.role,'display_name':body.display_name,'enabled':True}
 @app.get('/api/users',tags=['Private Administration'],response_model=Page)
 def list_users(offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),actor=Depends(user)):
-    require(actor,'admin')
+    require_owner(actor)
     with Session() as s: return database_page(s,select(User).order_by(User.id),offset,limit,lambda r:{'id':r.id,'role':r.role,'display_name':r.payload.get('display_name',r.id),'enabled':r.payload.get('enabled',True)})
 @app.post('/api/users/{user_id}/disable',tags=['Private Administration'])
 def disable_user(user_id:str,body:Note,actor=Depends(user)):
-    require(actor,'admin')
+    require_owner(actor)
     if user_id==str(actor): raise HTTPException(409,'Cannot disable your own account')
     with Session.begin() as s:
         account=get(s,User,user_id); account.payload={**account.payload,'enabled':False}
@@ -316,7 +317,7 @@ def text_amendment(body:AmendmentTextBody,actor=Depends(user)):
 def edit_policy(policy_id:str,body:PolicyBody,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
-        r=get(s,Policy,policy_id)
+        r=get(s,Policy,policy_id,lock=True)
         if r.status!='draft': raise HTTPException(409,'Approved policy snapshots are immutable')
         p=validate_policy(body.policy.model_dump(by_alias=True))
         if p['version']!=policy_id: raise ValueError('Cannot rename policy version')
@@ -340,7 +341,7 @@ async def upload_amendment(file:UploadFile=File(...),version:str=Form(...),effec
 def review_policy(policy_id:str,body:PolicyReviewBody,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
-        p=get(s,Policy,policy_id)
+        p=get(s,Policy,policy_id,lock=True)
         if p.status!='draft': raise HTTPException(409,'Only drafts can be reviewed')
         if p.payload.get('governance',{}).get('interpretation',{}).get('unresolved_clauses') and not body.manual_verification: raise HTTPException(409,'Unresolved source clauses require structured manual authoring and manual_verification=true')
         p.payload={**p.payload,'governance':{**p.payload.get('governance',{}),'reviewed':True,'review_note':body.reason,'reviewed_by':actor,'reviewed_at':db.now(),'manual_verification':body.manual_verification}}
@@ -350,7 +351,7 @@ def review_policy(policy_id:str,body:PolicyReviewBody,actor=Depends(user)):
 def approve_policy(policy_id:str,body:Note,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
-        p=get(s,Policy,policy_id)
+        p=get(s,Policy,policy_id,lock=True)
         if p.status!='draft' or not p.payload.get('governance',{}).get('reviewed'): raise HTTPException(409,'Review this draft before approval')
         validate_policy(p.payload); p.status='approved'
         p.payload={**p.payload,'governance':{**p.payload['governance'],'approved_by':actor,'approved_at':db.now(),'approval_reason':body.reason,'snapshot_hash':digest(p.payload)}}
@@ -361,7 +362,7 @@ def approve_policy(policy_id:str,body:Note,actor=Depends(user)):
 def activate_policy(policy_id:str,body:Note,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
-        p=get(s,Policy,policy_id)
+        p=get(s,Policy,policy_id,lock=True)
         if p.status not in {'approved','superseded','active'}: raise HTTPException(409,'Approve policy first')
         p.status='active'; audit(s,actor,'policy.activation_scheduled',{'version':policy_id,'effective_date':p.payload['effective_date'],'reason':body.reason})
         return {'id':p.id,'status':'active','effective_date':p.payload['effective_date'],'scheduled':p.payload['effective_date']>business_today().isoformat()}
@@ -379,7 +380,7 @@ def simulate_policy(policy_id:str,body:Simulation,actor=Depends(user)):
 def deactivate_policy(policy_id:str,body:Note,actor=Depends(user)):
     require(actor,'admin')
     with Session.begin() as s:
-        p=get(s,Policy,policy_id)
+        p=get(s,Policy,policy_id,lock=True)
         if p.status!='active': raise HTTPException(409,'Only active policies can be deactivated')
         p.status='superseded'
         audit(s,actor,'policy.deactivated',{'version':policy_id,'reason':body.reason})
@@ -436,7 +437,7 @@ def contract_proposals(actor=Depends(user)):
 def approve_contract(proposal_id:str,body:ContractBody,actor=Depends(user)):
     require(actor,'admin','buyer')
     with mutation_lock,Session.begin() as s:
-        proposal=get(s,ContractProposal,proposal_id)
+        proposal=get(s,ContractProposal,proposal_id,lock=True)
         if proposal.payload['status']!='pending_review': raise HTTPException(409,'Proposal already approved')
         c=validate_contract(deepcopy(body.contract),current_data(s))
         if s.get(Contract,c['contract_id']): raise HTTPException(409,'Contract ID already exists; resolve conflicting authoritative records privately')
@@ -578,7 +579,7 @@ async def import_data(file:UploadFile=File(...),actor=Depends(user)):
     from pathlib import PurePosixPath
     import tempfile,zipfile
     from .ingest import load_kit
-    require(actor,'admin'); raw=await content(file,{'.zip'})
+    require_owner(actor); raw=await content(file,{'.zip'})
     try:
         with zipfile.ZipFile(BytesIO(raw)) as archive,tempfile.TemporaryDirectory(prefix='corvo-import-') as temp:
             infos=archive.infolist()

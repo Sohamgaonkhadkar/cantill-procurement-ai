@@ -9,19 +9,22 @@ from sqlalchemy.exc import SQLAlchemyError
 from .db import User,AuthSession,AuthThrottle,Audit,now as timestamp
 
 SECRET=os.getenv('SESSION_SECRET') or secrets.token_hex(32)
-DEMO=os.getenv('DEMO_MODE','true').lower()=='true'
+DEMO=os.getenv('DEMO_MODE','true').lower()=='true' and not bool(os.getenv('VERCEL'))
 ROLES={'requester','buyer','admin'}
-SUBMISSION_PASSWORDS={role:f'corvo-{role}-demo' for role in sorted(ROLES)}
+SUBMISSION_PASSWORDS={'requester':'corvo-requester-demo'}
 
 def submission_access():
-    return os.getenv('SUBMISSION_ACCESS','false').lower()=='true'
+    return DEMO and not os.getenv('VERCEL') and os.getenv('SUBMISSION_ACCESS','false').lower()=='true'
+
+def registration_enabled():
+    return os.getenv('PUBLIC_REGISTRATION','false').lower()=='true'
 if not DEMO and (not os.getenv('SESSION_SECRET') or any(not os.getenv(r.upper()+'_PASSWORD') for r in ROLES)):
     raise RuntimeError('Production requires SESSION_SECRET and all three role passwords')
 _sessions=None
 
 class Principal(str):
-    def __new__(cls,user_id,role,session_id=''):
-        obj=str.__new__(cls,user_id); obj.role=role; obj.session_id=session_id
+    def __new__(cls,user_id,role,session_id='',access_scope='standard'):
+        obj=str.__new__(cls,user_id); obj.role=role; obj.session_id=session_id; obj.access_scope=access_scope
         return obj
 
 def configure_sessions(factory):
@@ -72,7 +75,7 @@ def authenticate(name,password):
             valid=verify_password(password,stored) and usable_credential
             # Explicit public submission access uses published demo credentials,
             # never exposes or substitutes the private operational passwords.
-            if submission_access() and name in ROLES and account and account.payload.get('type')=='controlled_demo_account':
+            if submission_access() and name in SUBMISSION_PASSWORDS and account and account.payload.get('type')=='controlled_demo_account':
                 valid=valid or hmac.compare_digest(password.encode(),SUBMISSION_PASSWORDS[name].encode())
             if not account or account.payload.get('enabled',True) is False or not valid:
                 throttle.failures+=1
@@ -103,9 +106,14 @@ def user(credentials:HTTPAuthorizationCredentials|None=Depends(bearer)):
         with _sessions()() as s:
             session=s.get(AuthSession,value['sid']); account=s.get(User,value['sub'])
             if not session or session.user_id!=value['sub'] or session.revoked or session.expires_at<=now or not account or account.payload.get('enabled',True) is False or account.role not in ROLES: raise ValueError()
-            return Principal(account.id,account.role,session.id)
+            return Principal(account.id,account.role,session.id,account.payload.get('access_scope','standard'))
     except SQLAlchemyError: raise HTTPException(503,'Authentication storage temporarily unavailable',headers={'Retry-After':'5'})
     except Exception: raise HTTPException(401,'Sign in required',headers={'WWW-Authenticate':'Bearer'})
 
 def require(actor,*roles):
     if role_of(actor) not in roles: raise HTTPException(403,'Role not permitted')
+
+def require_owner(actor):
+    require(actor,'admin')
+    if getattr(actor,'access_scope','standard')=='evaluation':
+        raise HTTPException(403,'Evaluator accounts cannot administer identities or replace assessment data')

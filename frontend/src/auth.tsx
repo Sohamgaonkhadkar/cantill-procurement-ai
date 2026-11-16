@@ -173,6 +173,8 @@ export function Login() {
               value={role}
               onChange={(e) => {
                 setRole(e.target.value);
+                setPassword("");
+                setShowPassword(false);
                 setError(null);
               }}
             >
@@ -237,6 +239,12 @@ export function Login() {
           <p className="text-sm text-lavender mt-3 mb-3">
             Submission password is filled automatically for the selected shared
             role.
+          </p>
+        ) : null}
+        {!options.isPending && !options.data?.submission_access ? (
+          <p className="text-sm text-lavender mb-3">
+            Use your private individual credentials. Ask the workspace
+            administrator for access.
           </p>
         ) : null}
         <label className="field">

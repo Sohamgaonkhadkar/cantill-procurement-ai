@@ -5555,6 +5555,15 @@
             "maxLength": 128,
             "minLength": 15,
             "title": "Password"
+          },
+          "access_scope": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "evaluation"
+            ],
+            "title": "Access Scope",
+            "default": "standard"
           }
         },
         "additionalProperties": false,

@@ -63,7 +63,7 @@ def execute_run(session,rows,explicit,actor,data=None,policy_list=None):
     # Governance status can change after activation/withdrawal without changing
     # an approved policy's immutable content. Unused versions are not inputs.
     policy_hash=digest([{k:v for k,v in p.items() if k not in {'id','status'}} for p in snapshot_policies])
-    run_id='RUN-'+digest([input_hash,data_hash,policy_hash,explicit])[:20]
+    run_id='RUN-'+digest([input_hash,data_hash,policy_hash,explicit,str(actor)])[:20]
     existing=session.get(Run,run_id)
     if existing: return existing.payload
     if not session.get(Dataset,data_hash): session.add(Dataset(id=data_hash,payload=data.snapshot())); session.flush()

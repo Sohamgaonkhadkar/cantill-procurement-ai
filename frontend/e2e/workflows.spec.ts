@@ -31,23 +31,22 @@ test("blocked entry script shows reload recovery instead of a blank page", async
 const csv =
   headers +
   "\nPR-E2E-A,1,2026-11-01 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-B,1,2026-11-02 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing 6205-2RS,10,NOS,,2026-11-20,Normal\nPR-E2E-C,1,2026-11-03 10:00,Synthetic user,Testing,P-A,ITM-9002,Hydraulic hose 1/2 inch 2 wire,3,MTR,,2026-11-20,Normal\nPR-E2E-BAD,1,2026-11-04 10:00,Synthetic user,Testing,P-A,ITM-9001,Ball bearing,abc,NOS,,2026-11-20,Normal\n";
-test("submission role passwords fill visibly and the core leaves its background visible", async ({
+test("privileged credentials are never autofilled and the core leaves its background visible", async ({
   page,
 }) => {
   await page.addInitScript(() =>
     localStorage.setItem("corvo.intro.seen.v1", "1"),
   );
   await page.goto("/");
-  for (const role of ["requester", "buyer", "admin"]) {
+  for (const role of ["buyer", "admin"]) {
     await page.getByLabel("Role", { exact: true }).selectOption(role);
-    await expect(page.getByLabel("Password", { exact: true })).toHaveValue(
-      `corvo-${role}-demo`,
-    );
+    await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
     await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
       "type",
-      "text",
+      "password",
     );
   }
+  await page.getByLabel("Password", { exact: true }).fill("corvo-demo");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
     page.getByRole("heading", { level: 1, name: /PROCUREMENT/ }),

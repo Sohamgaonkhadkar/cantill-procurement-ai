@@ -6,6 +6,7 @@ os.chdir(root)
 os.environ['DATABASE_URL']='sqlite:///'+str(root/'.private'/('e2e-'+secrets.token_hex(5)+'.db'))
 os.environ['DEMO_MODE']='true'
 os.environ['SUBMISSION_ACCESS']='true'
+os.environ['PUBLIC_REGISTRATION']='true'
 os.environ.pop('VERCEL',None)
 from backend import api
 from backend.domain import Data
