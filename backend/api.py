@@ -10,6 +10,7 @@ from fastapi import FastAPI,Depends,HTTPException,UploadFile,File,Form,Query,Req
 from fastapi.responses import Response,FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel,Field,ConfigDict
 from sqlalchemy import select,text,func,or_
@@ -251,14 +252,18 @@ def masters(actor=Depends(user)):
 
 @app.post('/api/process-batch',tags=['Batch Lab'],response_model=RunResponse)
 async def batch(file:UploadFile=File(...),policy_version:str|None=Form(None),policy_mode:Literal['pinned','calendar']=Form('pinned'),actor=Depends(user)):
-    consume_rate_limit(actor,'batch',60)
+    await run_in_threadpool(consume_rate_limit,actor,'batch',60)
     raw=await content(file,{'.csv'})
     if len(raw)>4_000_000:raise HTTPException(413,'Maximum batch CSV size is 4,000,000 bytes; keep the complete business batch together')
-    rows=read_csv(raw,INPUT_COLUMNS)
-    if isolated_demo():assert_demo_rows(rows)
-    if role_of(actor)=='requester':
-        for row in rows: row['requester']=str(actor)
-    with Session.begin() as s: return execute_run(s,rows,policy_version or None,actor,policy_mode=policy_mode)
+    def execute():
+        # SQLAlchemy is synchronous. Keep its session and the complete business
+        # batch in one worker, allowing the event loop to serve other requests.
+        rows=read_csv(raw,INPUT_COLUMNS)
+        if isolated_demo():assert_demo_rows(rows)
+        if role_of(actor)=='requester':
+            for row in rows: row['requester']=str(actor)
+        with Session.begin() as s:return execute_run(s,rows,policy_version or None,actor,policy_mode=policy_mode)
+    return await run_in_threadpool(execute)
 
 async def demo_result(file):
     from .demo import dataset,batch as example_batch

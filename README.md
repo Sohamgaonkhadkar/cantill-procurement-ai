@@ -18,7 +18,7 @@
 ![Gemini](https://img.shields.io/badge/Gemini_API-Free_tier-4678E8?style=flat-square&logo=googlegemini&logoColor=white)
 ![Local RAG](https://img.shields.io/badge/RAG-PostgreSQL_search-287C79?style=flat-square)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-298_passed-28A745?style=flat-square)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-299_passed-28A745?style=flat-square)
 ![Browser verification](https://img.shields.io/badge/Browser_scenarios-21_passed-4678E8?style=flat-square)
 ![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-287C79?style=flat-square&labelColor=142128)
 
@@ -215,8 +215,8 @@ Replace version, paths and filenames with the supplied values. This read-only to
 
 | Evidence | Result |
 |---|---|
-| Linux / PostgreSQL suite | **298 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **294 passed**, with four PostgreSQL-only skips |
+| Linux / PostgreSQL suite | **299 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **295 passed**, with four PostgreSQL-only skips |
 | Complete real-backend browser suite | **21 scenarios passed** against the retained Arena interface |
 | Frontend quality gates | **7 unit tests passed**; lint, type checking and production build passed |
 | Hosted Gemini and retrieval | Real cited response, confirmed stored request and eight persisted demo embeddings; repeat embedding produced no duplicates |

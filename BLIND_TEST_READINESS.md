@@ -14,8 +14,8 @@ Production database inspection confirmed **Alembic revision 004**, persistent Po
 
 | Check | Result |
 |---|---|
-| Windows / Python 3.14 / SQLite | **294 passed, 4 PostgreSQL-only skips** |
-| Linux / Python 3.12 / PostgreSQL | **298 passed**, including all independent concurrency tests |
+| Windows / Python 3.14 / SQLite | **295 passed, 4 PostgreSQL-only skips** |
+| Linux / Python 3.12 / PostgreSQL | **299 passed**, including all independent concurrency tests |
 | Full Chromium suite / isolated real FastAPI | **21 passed**, including desktop/mobile workspaces and the new blind rehearsal |
 | Frontend unit tests | **7 passed** |
 | Type checking, ESLint, Vite production build | Passed |
@@ -67,7 +67,7 @@ The first new export assertion expected `100` instead of the authoritative `100.
 ## Remaining risks
 
 - **Medium — bounded interpretation:** arbitrary English is not guaranteed to compile. Unsupported wording requires faithful structured authoring and human review. Rules needing an unregistered business fact or a new engine operation are outside the present DSL; the unseen amendment has not been received.
-- **Medium — hosted resource bounds:** measured tests passed through 2,500 grouped lines and 1,000 separate requirements. The 20,000-row parser bound is not a hosted-capacity guarantee. Client/API cap CSV uploads at 4,000,000 bytes; response size and group count also matter. Do not split a business batch: that changes grouping and ceiling allocation.
+- **Medium — hosted resource bounds:** measured tests passed through 2,500 grouped lines and 1,000 separate requirements. A later concurrent load check caused delayed exports/retries and a client timeout; serial recovery preserved the saved runs. A reproduced event-loop blocking defect is fixed and covered by a liveness regression. The 20,000-row parser bound is not a hosted-capacity guarantee. Client/API cap CSV uploads at 4,000,000 bytes; response size and group count also matter. Do not split a business batch: that changes grouping and ceiling allocation.
 - **Low — operational availability:** managed free services can cold-start or throttle. Gemini is optional and disabled for live data; blind-test calculations and amendment governance do not require external AI.
 - **Low — broader assurance:** no exhaustive penetration or fault-injection audit is claimed. Dependency results are point-in-time checks, not a security certification.
 

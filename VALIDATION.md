@@ -6,9 +6,9 @@ Reviewed **17 November 2026**. Results describe executed checks, not a predicted
 
 | Check | Environment | Result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite | **294 passed; 4 PostgreSQL-only skips** |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL `corvo_test` | **298 passed**, including concurrent approval and chat-confirmation tests |
-| Browser release gate | Chromium / real isolated FastAPI, SQLite and Vite | **21 passed in the final clean full run (3.2 minutes)** |
+| Complete Python suite | Windows / Python 3.14 / SQLite | **295 passed; 4 PostgreSQL-only skips** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL `corvo_test` | **299 passed**, including concurrent approval and chat-confirmation tests |
+| Browser release gate | Chromium / real isolated FastAPI, SQLite and Vite | **21 passed in the final clean full run (4.0 minutes)** |
 | Frontend unit tests | Node test runner | **7 passed** |
 | ESLint, TypeScript and Vite build | Retained Arena frontend | Passed; nonblocking large-3D-bundle and dependency-comment warnings remain |
 | Container build | Pinned Python dependencies and production frontend | Passed |
@@ -77,6 +77,8 @@ Real fictional-demo requests to the canonical Vercel deployment produced these m
 Every case passed authenticated export, snapshot replay and identical-request retry with the same run ID. No purchasing commitments were created. These timings are observations, not latency guarantees or a claim that 20,000 rows are hosted-safe.
 
 Client and batch API enforce **4,000,000 CSV bytes**, leaving multipart overhead below the platform request ceiling. A local padded one-line CSV at exactly that boundary succeeds; one extra byte returns 413 and creates no run. This byte-boundary check is separate from realistic workload tests above. Response evidence and group count also affect resource use. Larger/highly fragmented workloads remain unqualified; never split a business batch across independent processing calls because that changes grouping and ceiling allocation.
+
+A later concurrent hosted check exposed delayed export/retry requests and one client timeout on a 2,500-line batch. Subsequent serial export and identical-request retry recovered the same saved runs. A controlled regression reproduced synchronous database work blocking the asynchronous batch handler: `/health` could not respond while that work waited. Batch parsing and the complete database transaction now run together in a worker thread, preserving atomic grouping and ceiling allocation while allowing unrelated requests to proceed. The regression fails before this transport fix and passes after it. Concurrent hosted latency remains resource-dependent; the final release report records the post-deployment results rather than treating earlier sequential timings as concurrency guarantees.
 
 Injected database connection failures and pool timeouts return retryable 503 responses with `Retry-After: 5`, conceal connection details, and recover without duplicate runs. Actual platform/function failure beyond tested workloads is not exhaustively fault-injected.
 
