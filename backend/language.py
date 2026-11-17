@@ -189,7 +189,7 @@ def apply_statement(policy,text,data=None,context=None):
         if any(r['id']==rid for r in policy['rules']): raise ValueError('Equivalent amendment rule already exists')
         priorities={r['priority'] for r in policy['rules']}
         priority=int(m[3]) if m[3] else next(i for i in range(1,10000) if i not in priorities)
-        if priority in priorities: raise ValueError('Requested priority is already used')
+        if priority in priorities: raise ValueError('Conflicting priority: requested priority is already used')
         policy['rules'].append({'id':rid,'priority':priority,'when':node,'route':route,'reason':'Reviewed amendment: '+text})
         return f'New {route} rule proposed at priority {priority}; review scope and precedence'
     raise ValueError('Statement needs structured manual authoring')

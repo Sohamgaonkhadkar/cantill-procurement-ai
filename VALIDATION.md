@@ -6,16 +6,16 @@ Reviewed 17 November 2026. Results distinguish pure business checks, API tests, 
 
 | Check | Environment | Executed result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **243 passed, 4 PostgreSQL-only tests skipped**, including conversational routing and readable policy answers |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **233 passed**, including independent approval and chat-confirmation transactions |
-| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **17 passed before Arena visual restoration**, including startup recovery, signup, real policy/approval/export workflows and all-screen desktop/mobile layouts |
+| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **250 passed, 4 PostgreSQL-only tests skipped**, including new amendment rehearsals and export-checker corruption tests |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **254 passed**, including independent approval and chat-confirmation transactions |
+| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **18 passed against the retained Arena interface**, including the new two-run amendment and three-download rehearsal |
 | Restored Arena regression checks | Chromium / real isolated FastAPI and SQLite / Vite | **4 targeted checks passed**: isolated-demo autofill, private live credentials and hero layout, chat confirmation, keyboard/focus and 3D-to-2D navigation; build and lint passed |
 | CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
 | OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
 | Generated frontend models | OpenAPI-derived TypeScript and Zod | Drift check passes; release build enforces TypeScript compilation |
 | Repository hygiene | Tracked source/configuration/tests; private original hashes and actual secrets | No original kit artifacts or deployment credentials in the audited staged tree/history |
 
-The Python suite emits one Starlette TestClient/httpx deprecation warning. It does not invalidate passing assertions. PostgreSQL tests operate only against the explicitly named isolated corvo_test database, never the hosted application database.
+The final PostgreSQL run used the pinned dependency set in a fresh Docker image with the current backend, scripts and tests mounted read-only. PostgreSQL tests operate only against the explicitly named isolated corvo_test database, never the hosted application database. Earlier test-count and warning observations below are dated historical evidence; the table above is the final audit baseline.
 
 ## Business correctness evidence
 
@@ -32,7 +32,7 @@ The sample does not provide a complete answer key. Passing all disclosed example
 
 ## Browser and deployment evidence
 
-The complete 17-scenario browser suite exercises a real isolated FastAPI server and synthetic database. Coverage includes blocked startup resources, visible script-failure recovery, privileged-password non-disclosure, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling, pagination, independent two-reviewer sourcing approval and demo isolation. The four targeted Arena checks are a subsequent regression pass, not a second execution of the complete suite.
+The complete 18-scenario browser suite exercises a real isolated FastAPI server and synthetic database. Coverage includes blocked startup resources, visible script-failure recovery, privileged-password non-disclosure, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling, pagination, independent two-reviewer sourcing approval, demo isolation and the new blind-test rehearsal. The suite was rerun in full during the final audit; the four targeted Arena checks are earlier historical evidence.
 
 All eleven screens have desktop/mobile captures at 1440px and 390px, horizontal-overflow checks and visual inspection. The custom Arena 3D scenes remain; the hero's opaque shader, oversized composition and overlapping inset/caption issues were corrected. Startup recovery was additionally checked with denied localStorage, blocked external fonts and a deliberately blocked entry script.
 
@@ -120,3 +120,13 @@ The deployed public demo browser passed greeting, copied intake prompt and thank
 Follow-up coverage includes quoted combined greetings, the exact phrase "current procurement policy", dynamically rendered policy conditions, altered thresholds and one-generation current-policy retrieval. Local fallback explains actual source values and conditions instead of reporting only that passages were found. Model prose omits internal citation hashes while preserving validated source cards. Seven additional tests passed, bringing the full Windows suite to 243 passed plus four PostgreSQL-only skips; frontend lint and type checking passed.
 
 Application release `c806536` was published to both existing projects. Public demo browser verification used the exact quoted greeting and current-procurement-policy question: the greeting returned capabilities without retrieval, and the policy question returned an actual grounded Gemini response identifying version 5.0 and its effective date. Disabling fictional-data consent then produced a readable local answer containing the source thresholds without JSON. Acknowledgments created no purchasing request; no browser exceptions were observed. The live staged health check confirmed PostgreSQL connectivity before promotion.
+
+## Final blind-test audit — 17 November 2026
+
+All current automated gates were rerun: 250 Windows tests plus four PostgreSQL-only skips, 254 PostgreSQL tests, 18 full browser scenarios and seven frontend unit tests. Frontend lint, type checking, production build and OpenAPI-generation checks passed. Runtime npm audit and the pinned Python dependency audit reported no known vulnerabilities at this check. The original 14 decision examples and three supplier rankings matched again; the 186-row sample retained its documented hash.
+
+Fresh unauthenticated browser access reached the production application's own login with HTTP 200 and no Vercel login. The private evaluator authenticated with role admin and evaluation scope, reached all eleven screens and downloaded a 13-column CSV. Identity administration and bulk import returned 403; an unauthenticated export returned 401. Production PostgreSQL was at migration 004 with the required knowledge/chat tables. No access-control settings were changed.
+
+New API tests exercised a nine-clause amendment, exact thresholds, an eleven-day grouping window, supplier and contract restrictions, ranking weights, an emergency exception, manual inclusive-range authoring and a future effective date. The new browser scenario uploaded four clauses, reconciled one unsupported range through Policy DSL JSON, simulated, reviewed, approved, activated and exported the same three input rows twice. Literal expected routes changed from CONTRACT_PO / CONTRACT_PO / SPOT_PO to RFQ / CONTRACT_PO / RFP. Both run-specific replays matched; zero purchasing approvals or overrides occurred. The preferred export used the chosen version and 19 November 2026 as-of date. The standalone checker accepted all three downloads with Active-supplier validation.
+
+The larger private rehearsal was repeated separately: 186 rows in each run, five amendment clauses, 55 affected lines, 155 preferred rows, identical input hashes and matching replays. It remains a sample-derived rehearsal, not unseen accuracy evidence. See [BLIND_TEST_READINESS.md](BLIND_TEST_READINESS.md) for fixes, remaining risks and the freeze procedure.

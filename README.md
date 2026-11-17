@@ -18,8 +18,8 @@
 ![Gemini](https://img.shields.io/badge/Gemini_API-Free_tier-4678E8?style=flat-square&logo=googlegemini&logoColor=white)
 ![Local RAG](https://img.shields.io/badge/RAG-PostgreSQL_search-287C79?style=flat-square)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-233_passed-28A745?style=flat-square)
-![Browser verification](https://img.shields.io/badge/Browser_scenarios-17_passed-4678E8?style=flat-square)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-254_passed-28A745?style=flat-square)
+![Browser verification](https://img.shields.io/badge/Browser_scenarios-18_passed-4678E8?style=flat-square)
 ![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-287C79?style=flat-square&labelColor=142128)
 
 </div>
@@ -215,17 +215,17 @@ Replace version, paths and filenames with the supplied values. This read-only to
 
 | Evidence | Result |
 |---|---|
-| Linux / PostgreSQL suite | **233 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **243 passed**, with four PostgreSQL-only skips |
-| Complete real-backend browser suite | **17 scenarios passed** before the Arena visual restoration |
-| Restored Arena interface | **4 targeted browser checks passed**; build and lint passed |
+| Linux / PostgreSQL suite | **254 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **250 passed**, with four PostgreSQL-only skips |
+| Complete real-backend browser suite | **18 scenarios passed** against the retained Arena interface |
+| Frontend quality gates | **7 unit tests passed**; lint, type checking and production build passed |
 | Hosted Gemini and retrieval | Real cited response, confirmed stored request and eight persisted demo embeddings; repeat embedding produced no duplicates |
 | Disclosed worked examples | **14 procurement decisions + 3 supplier rankings match** |
 | Original sample | **186 outputs · 149 requirements · 2 explicit invalid lines** |
 | Amendment rehearsal | Five policy changes, **55 affected lines**, three exports and matching replays |
 | Hosted checks | Real API workflows, authenticated downloads, persistence after redeployment and startup recovery |
 
-These results describe executed checks, not a predicted blind-test score. The Arena restoration preserved backend code, migrations and tests; the complete browser suite was not rerun after that visual change. Both public deployments were checked for successful startup and health. See [VALIDATION.md](VALIDATION.md) for scope and limitations.
+These results describe checks executed for the final readiness audit, not a predicted blind-test score. Fresh-browser production access, private evaluator permissions and authenticated CSV downloads were verified without changing deployment protection. A new browser rehearsal covered upload, structured amendment reconciliation, simulation, activation, unchanged-input reprocessing and all three exports without a purchasing approval. See the [blind-test readiness report](BLIND_TEST_READINESS.md) and [verification evidence](VALIDATION.md) for scope and limitations.
 
 ```sh
 python -m pytest -q
@@ -250,6 +250,7 @@ Browser tests start isolated FastAPI/SQLite with synthetic data. Install Chromiu
 | [APPROACH.md](APPROACH.md) | Implementation strategy, technical choices and AI-tool disclosure |
 | [REQUIREMENTS_TRACEABILITY.md](REQUIREMENTS_TRACEABILITY.md) | Requirement-to-code and verification mapping |
 | [VALIDATION.md](VALIDATION.md) | Executed evidence, test environments and known limits |
+| [BLIND_TEST_READINESS.md](BLIND_TEST_READINESS.md) | Final audit findings, independent rehearsals, access checks and freeze procedure |
 | [Asset credits](frontend/ASSET_CREDITS.md) | Third-party visual attribution and source provenance |
 
 ## Boundaries

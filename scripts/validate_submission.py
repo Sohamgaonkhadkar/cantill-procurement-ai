@@ -20,13 +20,19 @@ SOURCING_ROUTES = {'RFQ', 'RFP', 'CAPEX_SOURCING', 'NEW_ITEM_SOURCING'}
 
 def load(path, columns, exact=True):
     with Path(path).open(encoding='utf-8-sig', newline='') as source:
-        reader = csv.DictReader(source)
-        headers = reader.fieldnames or []
+        reader = csv.DictReader(source, strict=True)
+        try:
+            headers = reader.fieldnames or []
+        except csv.Error as exc:
+            raise ValueError(f'{Path(path).name}: Malformed CSV header') from exc
         if (headers != columns if exact else not set(columns) <= set(headers)):
             raise ValueError(f'{Path(path).name}: unexpected CSV headers')
         if len(set(headers)) != len(headers):
             raise ValueError(f'{Path(path).name}: duplicate CSV headers')
-        rows = list(reader)
+        try:
+            rows = list(reader)
+        except csv.Error as exc:
+            raise ValueError(f'{Path(path).name}: Malformed CSV content') from exc
     if any(None in row or any(value is None for value in row.values()) for row in rows):
         raise ValueError(f'{Path(path).name}: malformed CSV row width')
     return [{key: value.strip() for key, value in row.items()} for row in rows]
@@ -70,6 +76,8 @@ def validate(input_path, run1_path, run2_path, preferred_path, amended_version, 
             route = row['route']
             if not row['reason']:
                 raise ValueError(f'{where}: decision reason is required')
+            if row['policy_version'] and row['policy_version'] != version:
+                raise ValueError(f'{where}: wrong policy version; expected {version}')
             if route == 'NOT_PROCESSED':
                 if any(row[key] for key in ['decision', 'po_id', 'supplier_id', 'unit_price', 'suggested_supplier_ids']):
                     raise ValueError(f'{where}: NOT_PROCESSED must not contain a purchasing action')

@@ -71,6 +71,7 @@ export default function SupplierConstellation() {
         <label className="field">
           Ranking policy
           <select
+              aria-label="Supplier ranking policy"
             value={version}
             onChange={(e) => {
               setVersion(e.target.value);

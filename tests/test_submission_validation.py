@@ -66,3 +66,17 @@ def test_duplicate_input_identities_are_retained_when_not_processed(exports):
         for row in invalid:row.update(pr_no=rows[0]['pr_no'],pr_line='1',route='NOT_PROCESSED',reason='Duplicate PR line identity')
         exports[name].write_bytes(csv_bytes(invalid))
     assert check(exports)['run1']['rows']==2
+
+
+@pytest.mark.parametrize('content',['id,value\n1,"unfinished','id,value\n1,"closed"junk'])
+def test_checker_rejects_malformed_csv_quotes(tmp_path,content):
+    from scripts.validate_submission import load
+    path=tmp_path/'malformed.csv';path.write_text(content)
+    with pytest.raises(ValueError,match='Malformed CSV'):load(path,['id','value'])
+
+
+def test_checker_rejects_wrong_nonempty_policy_even_on_invalid_lines(exports):
+    def corrupt(rows):
+        rows[0].update(route='NOT_PROCESSED',decision='',po_id='',supplier_id='',unit_price='',suggested_supplier_ids='',policy_version='wrong-version',reason='Synthetic invalid input')
+    mutate(exports,'run1',corrupt)
+    with pytest.raises(ValueError,match='wrong policy version'):check(exports)
