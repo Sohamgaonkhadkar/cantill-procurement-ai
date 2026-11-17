@@ -52,9 +52,10 @@ async function response(path: string, init: RequestInit = {}) {
   if (token) headers.set("Authorization", "Bearer " + token);
   let res: Response;
   try {
-    const routedPath = demoWorkspace && path.startsWith("/api/")
-      ? "/demo-api/" + path.slice(5)
-      : path;
+    const routedPath =
+      demoWorkspace && path.startsWith("/api/")
+        ? "/demo-api/" + path.slice(5)
+        : path;
     res = await fetch(API_BASE_URL + routedPath, { ...init, headers });
   } catch {
     throw new ApiError(
@@ -158,11 +159,15 @@ export const api = {
   runs: (offset = 0) =>
     call("/api/runs" + qs({ offset, limit: 25 }), pageSchema(RunSummarySchema)),
   run: (runId: string) => call("/api/runs/" + id(runId), RunResponseSchema),
-  processBatch: (file: File, version = "") =>
+  processBatch: (
+    file: File,
+    version = "",
+    policy_mode: "pinned" | "calendar" = "pinned",
+  ) =>
     call(
       "/api/process-batch",
       RunResponseSchema,
-      form(file, { policy_version: version }),
+      form(file, { policy_version: version, policy_mode }),
     ),
   replay: (runId: string) =>
     call(
@@ -286,17 +291,29 @@ export const api = {
     action: "review" | "approve" | "activate" | "deactivate",
     reason: string,
     manual_verification = false,
+    review: {
+      precedence_acknowledged?: boolean;
+      reconciliations?: Record<string, unknown>[];
+    } = {},
   ) =>
     call(
       "/api/policies/" + id(version) + "/" + action,
       z.object({}).passthrough(),
-      json(action === "review" ? { reason, manual_verification } : { reason }),
+      json(
+        action === "review"
+          ? { reason, manual_verification, ...review }
+          : { reason },
+      ),
     ),
-  simulate: (version: string, runId: string) =>
+  simulate: (
+    version: string,
+    runId: string,
+    policy_mode: "pinned" | "calendar" = "pinned",
+  ) =>
     call(
       "/api/policies/" + id(version) + "/simulate",
       SimulationResponseSchema,
-      json({ run_id: runId }),
+      json({ run_id: runId, policy_mode }),
     ),
   suppliers: (
     as_of: string,

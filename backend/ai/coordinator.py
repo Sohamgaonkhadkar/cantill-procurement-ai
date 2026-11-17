@@ -83,6 +83,11 @@ def _compute(factory,body,actor,payload,session_id):
     with factory() as session:
         authorize_actor(session,actor);data=current_data(session)
     state=deepcopy(payload.get('state',{}));intent=local_intent(body.message,state)
+    from ..proposals import handoff
+    from ..security import role_of
+    proposal=handoff(state,body.message,role_of(actor)) if body.action=='message' else None
+    if proposal:return proposal[0],proposal[1],'policy_proposal','knowledge',[],[],False,[],'local_only',False
+    state.pop('policy_proposal_text',None)
     if body.action=='message':
         guidance=conversational_reply(body.message,state)
         if guidance is not None:

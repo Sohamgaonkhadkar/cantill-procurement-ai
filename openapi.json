@@ -183,6 +183,7 @@
           "Authentication"
         ],
         "summary": "Register",
+        "description": "Create a requester account only in the isolated fictional demo or local development when enabled. Hosted assessment registration returns 403; assessment identities must be provisioned privately by the owner.",
         "operationId": "register_api_auth_register_post",
         "requestBody": {
           "content": {
@@ -1485,6 +1486,95 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RunResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role not permitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/runs/{run_id}/master-snapshot": {
+      "get": {
+        "tags": [
+          "Batch Lab"
+        ],
+        "summary": "Run Master Snapshot",
+        "operationId": "run_master_snapshot_api_runs__run_id__master_snapshot_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Run Master Snapshot Api Runs  Run Id  Master Snapshot Get"
                 }
               }
             }
@@ -2920,6 +3010,91 @@
           },
           "429": {
             "description": "Request temporarily throttled; see Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Storage temporarily unavailable; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign-in required or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role not permitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Record not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/{policy_id}/precedence": {
+      "get": {
+        "tags": [
+          "Policy Studio"
+        ],
+        "summary": "Policy Precedence",
+        "operationId": "policy_precedence_api_policies__policy_id__precedence_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "policy_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Policy Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
             "content": {
               "application/json": {
                 "schema": {
@@ -6708,6 +6883,15 @@
               }
             ],
             "title": "Policy Version"
+          },
+          "policy_mode": {
+            "type": "string",
+            "enum": [
+              "pinned",
+              "calendar"
+            ],
+            "title": "Policy Mode",
+            "default": "pinned"
           }
         },
         "type": "object",
@@ -7198,6 +7382,75 @@
           "href"
         ],
         "title": "Citation"
+      },
+      "ClauseReconciliation": {
+        "properties": {
+          "clause_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Clause Id"
+          },
+          "meaning": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Meaning"
+          },
+          "scope": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 5,
+            "title": "Scope"
+          },
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Paths"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective Date"
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 15,
+            "title": "Evidence"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "clause_id",
+          "meaning",
+          "scope",
+          "paths",
+          "effective_date",
+          "evidence",
+          "confirmed"
+        ],
+        "title": "ClauseReconciliation"
       },
       "ComparisonResponse": {
         "properties": {
@@ -8212,6 +8465,19 @@
             "type": "boolean",
             "title": "Manual Verification",
             "default": false
+          },
+          "precedence_acknowledged": {
+            "type": "boolean",
+            "title": "Precedence Acknowledged",
+            "default": false
+          },
+          "reconciliations": {
+            "items": {
+              "$ref": "#/components/schemas/ClauseReconciliation"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "Reconciliations"
           }
         },
         "additionalProperties": false,
@@ -8743,6 +9009,32 @@
             "type": "object",
             "title": "Counts"
           },
+          "policy_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pinned",
+                  "calendar"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Mode"
+          },
+          "calendar_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calendar Version"
+          },
           "id": {
             "type": "string",
             "title": "Id"
@@ -8830,6 +9122,15 @@
           "run_id": {
             "type": "string",
             "title": "Run Id"
+          },
+          "policy_mode": {
+            "type": "string",
+            "enum": [
+              "pinned",
+              "calendar"
+            ],
+            "title": "Policy Mode",
+            "default": "pinned"
           }
         },
         "additionalProperties": false,

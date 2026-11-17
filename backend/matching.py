@@ -31,25 +31,30 @@ def subsequence(a,b):
 
 def resolve(code,description,uom,items):
     if code:
-        return (code,{'method':'code','confidence':1}) if code in items else ('NEW',{'method':'invalid_code','confidence':0,'error':'Unknown supplied item code'})
+        canonical=code if code in items else next(iter(found)) if len(found:=[key for key in items if key.casefold()==code.casefold()])==1 else None
+        return (canonical,{'method':'code','classification':'exact_master','confidence':1}) if canonical else ('NEW',{'method':'invalid_code','classification':'invalid_code','confidence':0,'error':'Unknown supplied item code'})
     query=normalize(description)
     if not query: return 'NEW',{'method':'empty','confidence':0,'error':'Description is required'}
-    candidates=[]
+    candidates=[];unit_conflicts=[]
     for key,item in items.items():
         target=normalize(item['description'])
         # Partial specifications remain candidates for clarification, never
         # evidence that a vaguely described catalog item is genuinely NEW.
         if not subsequence(specs(query),specs(target)): continue
-        if not model_tokens(query)<=model_tokens(target): continue
-        if uom and uom.upper()!=item['uom'].upper(): continue
+        models=model_tokens(query);target_models=model_tokens(target)
+        if not all(token in target_models or any(other.startswith(token) for other in target_models) for token in models):continue
         score=token_set_ratio(query,target)
         coverage=len(set(query.split())&set(target.split()))/max(1,len(set(target.split())))
-        complete=specs(query)==specs(target) and coverage>=.6
+        complete=specs(query)==specs(target) and coverage>=.6 and models<=target_models
+        if uom and uom.upper()!=item['uom'].upper():
+            if score>=88 and complete:unit_conflicts.append(key)
+            continue
         candidates.append((score,key,complete))
     candidates.sort(key=lambda x:(-x[0],x[1]))
     evidence={'method':'normalized_fuzzy','candidates':[{'item_code':k,'score':round(s,2),'specifications_complete':complete} for s,k,complete in candidates[:4]]}
     if candidates and candidates[0][2] and candidates[0][0]>=88 and (len(candidates)<2 or candidates[0][0]-candidates[1][0]>=7):
-        return candidates[0][1],dict(evidence,confidence=candidates[0][0]/100)
+        return candidates[0][1],dict(evidence,classification='equivalent_description',confidence=candidates[0][0]/100)
     if candidates and candidates[0][0]>=65:
-        return 'NEW',dict(evidence,confidence=0,error='Ambiguous or incomplete item match; select a master item explicitly')
-    return 'NEW',dict(evidence,confidence=0)
+        return 'NEW',dict(evidence,classification='ambiguous_catalog' if candidates[0][2] else 'partial_catalog',confidence=0,error='Ambiguous or incomplete item match; select a master item explicitly')
+    if unit_conflicts:return 'NEW',dict(evidence,classification='unit_conflict',unit_conflict_candidates=unit_conflicts,confidence=0,error='Catalog specification matches but UoM differs; confirm the catalog unit before processing')
+    return 'NEW',dict(evidence,classification='new_item',confidence=0)

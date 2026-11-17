@@ -1,5 +1,6 @@
 """Fail-closed configuration for the separately hosted public demonstration."""
 import os
+import re
 from urllib.parse import urlsplit,parse_qs
 
 DEMO_ROLE='corvo_demo_app'
@@ -19,3 +20,17 @@ def check_workspace_database(url):
         raise RuntimeError('Public demo requires its restricted database role, direct endpoint and isolated schema')
 
 def workspace_mode(): return 'demo' if isolated_demo() else 'live'
+
+class WrongWorkspaceError(ValueError):pass
+
+def assert_demo_rows(rows):
+    """No persistence or financial processing of assessment rows in public demos."""
+    from .demo import dataset
+    data=dataset()
+    for row in rows:
+        if row.get('plant') not in data.plants or (row.get('item_code') and row['item_code'] not in data.items):
+            raise WrongWorkspaceError('This is the DEMO WORKSPACE with fictional masters. Assessment batches are blocked here. Sign out and choose Individual account with your private evaluator credentials to process assessment data.')
+
+def assert_demo_text(text):
+    if re.search(r'\b(?:ITM-\d+|RC-\d{4}-\d+|S\d{3,}|PUN1|CHK1)\b',text,re.I):
+        raise WrongWorkspaceError('Assessment identifiers cannot be stored in the public demo. Choose Individual account / private evaluator on the same login page.')

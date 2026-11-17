@@ -1,136 +1,93 @@
 # Verification evidence
 
-Reviewed 17 November 2026. Results distinguish pure business checks, API tests, real PostgreSQL transactions, browser workflows and actual hosted behavior. Test counts are evidence of asserted behaviors, not an independent assessment score.
+Reviewed **17 November 2026**. Results describe executed checks, not a predicted assessment score. Private source documents, credentials, master snapshots and rehearsal artifacts remain outside Git.
 
-## Current automated baseline
+## Release checks
 
-| Check | Environment | Executed result |
+| Check | Environment | Result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite API fixtures | **250 passed, 4 PostgreSQL-only tests skipped**, including new amendment rehearsals and export-checker corruption tests |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL corvo_test | **254 passed**, including independent approval and chat-confirmation transactions |
-| Complete browser suite | Chromium / real isolated FastAPI and SQLite / Vite | **18 passed against the retained Arena interface**, including the new two-run amendment and three-download rehearsal |
-| Restored Arena regression checks | Chromium / real isolated FastAPI and SQLite / Vite | **4 targeted checks passed**: isolated-demo autofill, private live credentials and hero layout, chat confirmation, keyboard/focus and 3D-to-2D navigation; build and lint passed |
-| CSV intake and submission checker | Synthetic public fixtures and real engine output | 14 targeted tests pass; malformed headers and corrupted exports are rejected |
-| OpenAPI snapshot | Application-generated schema versus checked-in openapi.json | Automated equality test passes |
-| Generated frontend models | OpenAPI-derived TypeScript and Zod | Drift check passes; release build enforces TypeScript compilation |
-| Repository hygiene | Tracked source/configuration/tests; private original hashes and actual secrets | No original kit artifacts or deployment credentials in the audited staged tree/history |
+| Complete Python suite | Windows / Python 3.14 / SQLite | **294 passed; 4 PostgreSQL-only skips** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL `corvo_test` | **298 passed**, including concurrent approval and chat-confirmation tests |
+| Browser release gate | Chromium / real isolated FastAPI, SQLite and Vite | **21 passed in the final clean full run (3.2 minutes)** |
+| Frontend unit tests | Node test runner | **7 passed** |
+| ESLint, TypeScript and Vite build | Retained Arena frontend | Passed; nonblocking large-3D-bundle and dependency-comment warnings remain |
+| Container build | Pinned Python dependencies and production frontend | Passed |
+| OpenAPI equality and generated client | FastAPI schema / checked-in JSON / generated TypeScript and Zod | Passed |
+| Publication hygiene | Staged source and private-artifact/credential scan | Required before publication: repository checker plus private artifact/credential scan; exact outcome is recorded in the release report |
 
-The final PostgreSQL run used the pinned dependency set in a fresh Docker image with the current backend, scripts and tests mounted read-only. PostgreSQL tests operate only against the explicitly named isolated corvo_test database, never the hosted application database. Earlier test-count and warning observations below are dated historical evidence; the table above is the final audit baseline.
+PostgreSQL tests use only the explicitly named disposable `corvo_test` database, with current source mounted read-only. They never drop or reset hosted data. Browser fixtures use synthetic masters. Test counts are not independent accuracy percentages.
 
-## Business correctness evidence
+## Original-data regression
 
-| Check | Result | What it establishes |
-|---|---|---|
-| Supplied worked procurement decisions | All 14 match | Agreement on the disclosed worked cases, including PDF-only contracts and consolidation |
-| Supplied supplier-ranking examples | All 3 match | Agreement on disclosed ranking/reference behavior |
-| Complete original sample | 186 output rows, 149 requirements, 2 explicit invalid-line outcomes | Full ingestion, stable output cardinality and explainable rejection |
-| Contract import | 12 PDFs reconciled with shared register terms; 2 PDF-only contracts loaded | The register is not incorrectly treated as complete |
-| Original sample output hash | 9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f | A stable business-output baseline across hardening and deployment checks |
-| Boundary/invariant tests | Inclusive grouping/contract dates, nontransitive anchors, exact thresholds, eligible suppliers, deterministic ordering | Targeted behavior under synthetic adversarial cases |
-
-The sample does not provide a complete answer key. Passing all disclosed examples does not prove that every sample decision or future unseen decision matches the evaluator's interpretation. Original assertions and source artifacts stay private.
-
-## Browser and deployment evidence
-
-The complete 18-scenario browser suite exercises a real isolated FastAPI server and synthetic database. Coverage includes blocked startup resources, visible script-failure recovery, privileged-password non-disclosure, individual signup/re-login, CSV/policy/approval/export workflows, chat confirmation, manual contract proposals, all-screen desktop/mobile layouts, validation/outage behavior, unresolved amendment reconciliation, session revocation, throttling, pagination, independent two-reviewer sourcing approval, demo isolation and the new blind-test rehearsal. The suite was rerun in full during the final audit; the four targeted Arena checks are earlier historical evidence.
-
-All eleven screens have desktop/mobile captures at 1440px and 390px, horizontal-overflow checks and visual inspection. The custom Arena 3D scenes remain; the hero's opaque shader, oversized composition and overlapping inset/caption issues were corrected. Startup recovery was additionally checked with denied localStorage, blocked external fonts and a deliberately blocked entry script.
-
-Actual hosted checks are separate from these local browser tests:
-
-| Hosted environment | Verified behavior |
+| Evidence | Result |
 |---|---|
-| Isolated Vercel preview + Neon | Original CSV, authenticated export/replay, amendment lifecycle/comparison (48 affected lines), chat confirmation, PO approval, sourcing override, supplier export, contract upload and audit. Test policy withdrawn afterward |
-| Public Vercel production + Neon | Eleven screens; original sample/hash; authenticated 13-column export; ranking; logout revocation; exclusively same-origin API calls; no normal browser exceptions |
-| Public production redeployment | A preexisting run retained its hash and replayed after a new release; database persistence is independent of the function filesystem |
-| Retired submission-access release | Historical only: replaced by private evaluator identities. Public demonstration password aliases remain disabled. Controlled roles require private passwords; requester self-registration is enabled by explicit owner choice |
-| Public startup-recovery release | Missing previous-release asset returns 404 JSON; HTML uses no-store; blocked fonts/storage permit sign-in; failed entry download exposes recovery; reload restores sign-in |
+| Disclosed procurement examples | **14/14 match** |
+| Disclosed preferred-supplier examples | **3/3 match** |
+| Complete original sample | **186 outputs; 149 requirements; 2 explicit invalid outcomes** |
+| Signed-contract import | 12 PDFs reconciled with register terms; two PDF-only contracts included |
+| Business-output SHA-256 | `9f4352ff8b07a32ce146194d44e336f4470de19c26fc2daba7a4000d55ebd94f` |
 
-Production synthetic purchase commitments were avoided. Mutable purchasing verification used the separate preview database. The hosted application uses the same reviewed FastAPI backend, with persistent PostgreSQL and same-origin frontend requests.
+The private regression was rerun after procurement hardening and retained this hash. No PR-specific answer map or synthetic production-success fallback is used. The disclosed examples do not provide an answer key for every sample row or unseen input.
 
-## Blind-test rehearsal and export preflight
+## Independent business and amendment checks
 
-A private API rehearsal used all 186 sample-derived lines with altered PR identities and quantities. A five-part text amendment changed spot/RFQ limits, the grouping window, a scoped plant/category rule and the RFP supplier count. Upload, simulation, review, approval, activation, reprocessing and three exports completed through unchanged application APIs.
+Synthetic expectations cover exact monetary boundaries, fixed-anchor and nontransitive grouping, earliest eligible anchors, normal/emergency grouping, sequential competing ceilings, exhausted-contract valuation, blocked/inactive suppliers, historical benchmarks, expired contract relationships, PO consolidation, decimal precision, invalid identities, shuffling and large quantities. A literal thirteen-field CSV expectation checks equal-rate contract selection and stable IDs independently of engine helpers.
 
-The amendment changed 55 line outcomes. Both runs had the same input hash, both replays matched, repeating v5.0 remained unchanged, and all chosen/suggested suppliers were Active. The preferred export contained 155 rows across 68 items with eligible relationships; catalog items with no qualifying preferred supplier legitimately had no ranking row.
+Mixed-date fixtures use PRs dated 14, 15 and 16 November around an amendment effective on the 15th. They distinguish automatic dated selection, pinned v5.0, pinned amendment applicability and Run 2 calendar processing, then verify exported versions, grouping boundaries and replay. Same-date policy activation tests establish explicit supersession for numeric and descriptive version names.
 
-The standalone read-only checker accepted all three rehearsal files with supplier-status validation. Its corruption tests cover lost/duplicate PR lines, policy mismatch, invalid decimals, blocked suppliers, inconsistent repeated requirements, wrong headers and malformed preferred ranks. It checks output integrity rather than recalculating routing, quantities, effective dates or as-of-date correctness.
+Amendment tests cover equivalent wording, old-value/direction conflicts, Indian currency notation, exact comparisons, plant/category scope and protected-route precedence. Three unresolved clauses cannot be cleared using one mapping or unrelated parameter edits. Wrong scope, amount, priority, date, missing confirmation and reason-only changes are rejected. Negative/broad predicates and reversed or exclusive inclusive-interval bounds are also rejected. A date-only correction is executable and must match the stated source date. Approval is tied to the reviewed definition hash.
 
-## Limits of the evidence
+The independent read-only checker imports neither the production engine nor supplier-ranking implementation. With run/master snapshots and preferred-export metadata it recalculates selected arithmetic, membership, calendar, source-price, ranking, ceiling and PO-window invariants. It checks CSV versus snapshot and same-input hashes. Missing evidence produces warnings; failures prevent publication. Natural-language meaning remains a human review responsibility.
 
-- The actual blind batch and amendment have not been received; submission/ contains no fabricated evaluator outputs.
-- Controlled-language parsing is bounded. Unsupported clauses require faithful structured authoring and explicit review.
-- No unrestricted LLM, OCR, cryptographic signature verifier, corporate SSO/MFA/recovery or external PO fulfillment is claimed.
-- Private evaluator accounts permit procurement and policy evaluation; only the owner can administer identities or replace master data.
-- Exhaustive load, fault-injection and penetration testing have not been performed. The 20,000-row API bound is not a hosted throughput guarantee; Vercel's payload limit is 4.5 MB.
-- The assessment form, code freeze and timely output-only Git push remain human obligations. The submission procedure is summarized in README.md.
+## Complete novel rehearsal
 
-## Synthetic demo isolation
+Eight lines cover multiple item classes, two plants, normal/emergency requests, a genuinely new item, an invalid quantity and a policy-date boundary. Six source instructions include a plant/category exception and one unsupported inclusive interval. The interval is authored in the existing DSL and reconciled explicitly before review, approval and activation; no application-code edit occurs during the rehearsal.
 
-Five backend regressions check calculated demo responses against the real engine, quantity-sensitive outcomes, CSV fidelity, authentication, assessment-record isolation and the 200-row demo limit. The real-browser demo scenario calculates nine rows, downloads a synthetic export, uploads an edited demo CSV, verifies the changed route and confirms unchanged live overview data. The demo uses fictional input data rather than precomputed output fixtures.
-
-The public production browser check also passed: nine computed demo rows spanning eight route families, authenticated synthetic CSV export, changed-quantity RFP routing, identical live overview and contract-register responses before/after, unchanged assessment sample hash and zero browser exceptions. Live OpenAPI matches the checked-in schema.
-
-
-## Historical hardening baseline — 16 November 2026
-
-At this intermediate milestone, the PostgreSQL suite contained 204 passing tests. The current counts appear at the top of this document. Added independent expectations cover twelve exact monetary boundaries, competing contract ceilings, a 500-line mixed-item/plant batch with shuffled-input equivalence, unrelated-plant isolation, industrial aliases/mixed fractions and explicit UoM/model protection. These synthetic cases have literal expectations and invariants; they do not import an assessment answer key.
-
-New API/security checks cover private evaluator scope, non-disclosure of legacy privileged aliases, owner-specific run IDs, persisted expiry, malformed CSV quoting, spreadsheet formula injection, operation budgets, exact amendment-upload hashes, direct contract retrieval, manual source reconciliation, stale-policy approval rejection and additional sourcing approvals. Four PostgreSQL-specific tests exercise separate transactions: contract ceiling contention, chat confirmation, policy edit versus approval, and simultaneous distinct sourcing votes.
-
-Seven frontend unit assertions cover quoted CSV round trips, BOM/blank rows, malformed quoting/null bytes and exact formatting beyond JavaScript's safe integer range. ESLint checks TypeScript correctness patterns and React hook ordering; type checking remains an independent build gate. The supported lint toolchain uses a pinned patched minimatch override; dependency audit reports zero known advisories at this check. This is a point-in-time dependency result, not a penetration-test claim.
-
-The amendment compiler accounts for source clauses as proposed, preserved, unresolved or conflicting. Supported additions include exclusions, supplier-ranking weights, RFQ supplier counts, spelled-out grouping windows, scoped thresholds, exceptions and explicit dates. Unsupported text still requires saved structured corrections and a human reconciliation statement; checking a box alone cannot authorize unchanged missing rules.
-
-Recommendation output hashes for the original sample remain unchanged. Additional-approval policies delay sourcing creation until the configured number of distinct reviewers has voted. Policy calendar and catalog locks prevent stale-policy commitments and import/approval races. Every approval still rechecks current financial headroom with Decimal arithmetic.
-
-The final full browser rerun passed all 15 scenarios. A stale effective-date fixture initially hit the intended freshness rejection; correcting the fixture to use the latest policy allowed the quorum workflow to complete without changing its assertions. Both full backend environments then passed: PostgreSQL 204/204, SQLite 200 passed plus four PostgreSQL-only skips. The pinned Python requirements audit also reported no known vulnerabilities.
-
-
-Hosted sign-in configuration update: both Controlled role account and Individual account are available. The owner explicitly enabled requester self-registration. New users choose their own password, which is hashed and verified by the backend. Admin/Buyer roles cannot be self-registered and no privileged password is returned in authentication options. Controlled role access uses private credentials; retired public aliases remain rejected.
-
-
-Public demo extension: seven additional backend checks reject non-isolated database configurations, keep public passwords disabled on the live deployment and verify all demo roles remain unable to administer identities. The full backend suite passed 211 cases on PostgreSQL and 207 plus four PostgreSQL-only skips on SQLite. The demo uses a separate restricted PostgreSQL role/schema and session key, not request-based switching of the live connection. Existing migrations initialize that schema; only fictional inputs are seeded through the real engine.
-
-## Gemini and retrieval verification
-
-The additional AI tests cover live-data egress rejection before client creation, fictional-input acknowledgment, private-source provenance, credential/identifier rejection, source review and ACLs, index idempotency, effective policy filtering, source revision isolation, unknown/write-tool rejection, independent field evidence, spoken quantities, negative SKU corrections, citation/numeric guards, distributed budgets, duplicate confirmation and concurrent turn leases. Native embedding tests check 1536-dimensional normalized vectors and label token estimates when the provider omits usage.
-
-Hosted checks call the real direct Gemini API from Vercel Functions using the Sensitive server-side key. Successful generation was observed with `gemini-3.5-flash-lite`, including a current-policy answer with a backend-generated citation. The native `gemini-embedding-001` endpoint embedded eight approved fictional policy chunks; an immediate repeat embedded zero chunks, demonstrating persistent idempotency. Provider 503 responses and rejected grounding were also observed: the application showed local source evidence rather than fabricating success. Free-tier latency and availability are external limitations, not a guaranteed service level.
-
-## Current published interface — 17 November 2026
-
-Both public deployments retain the original Arena palette, typography, navigation, page layouts and custom scenes. Gemini consent, citations, server-session handling, authentication fixes and keyboard focus safeguards are retained. The four targeted browser checks and build/lint results above apply to this interface; the complete 17-scenario run and hosted Gemini workflow preceded the visual restoration. Backend code, migrations and tests were unchanged by that restoration.
-
-The Arena restoration was published in source commit `5a984fe05f943f83aa748fc0ab0ce9beb22bd05c`. Public browser checks confirmed the dark interface, live sign-in, demo-only requester autofill and HTTP 200 health responses on both deployments. Subsequent releases retain this interface.
-
-| Deployment | Application | Health |
+| Measure | Run 1 | Run 2 |
 |---|---|---|
-| Private live workspace | [Corvo](https://corvo-procurement.vercel.app) | [Live health](https://corvo-procurement.vercel.app/health) |
-| Isolated fictional workspace | [Corvo demo](https://corvo-procurement-demo.vercel.app) | [Demo health](https://corvo-procurement-demo.vercel.app/health) |
+| Input / output lines | 8 / 8 | 8 / 8 |
+| Requirements | 6 | 7 |
+| Planned consolidated POs | 3 | 3 |
+| Invalid lines | 1 | 1 |
+| Supplier eligibility failures | 0 | 0 |
+| Purchasing approvals / overrides | 0 / 0 | 0 / 0 |
 
-## Conversational routing regression — 17 November 2026
+Three lines change. Both input hashes match, both immutable replays match, and both decision CSVs plus the one-row preferred export pass independent validation without missing-evidence warnings. Files are temporary/private and never placed in `submission/`. This is a synthetic rehearsal, not a passed blind test.
 
-Greetings, acknowledgments and intake-help prompts are handled locally without model calls, retrieval, citations or draft mutation. Questions phrased as purchase requests retain the intake path. A substantive question prefixed by thanks still reaches knowledge routing. Acknowledgments preserve the preceding conversation mode, so thanking a policy answer cannot make a subsequent yes confirm an existing purchase draft.
+## Browser and conversational coverage
 
-Seven additional regressions cover the reported messages, provider bypass, draft preservation and confirmation safety. The focused chat suite passed 46 tests with one PostgreSQL-only skip; the complete Windows backend suite passed 236 tests with four PostgreSQL-only skips. The previous PostgreSQL result of 233 is retained as a prior executed baseline; these seven additions have not been rerun against PostgreSQL.
+The twenty-one scenarios cover single-page role/individual login, demo-only autofill, signup, startup recovery, real CSV/policy/approval/export workflows, clause reconciliation, all eleven desktop/mobile screens, errors/outages, revocation, throttling, pagination, distinct-reviewer sourcing approval, focus handling and the 3D/2D alternative. New coverage exercises spoken quantities, corrections, ambiguous weekdays, the exact-text policy handoff, calendar mode and client rejection above the upload limit.
 
-The deployed public demo browser passed greeting, copied intake prompt and thanks checks with no irrelevant citations. A subsequent current-policy question returned a real Gemini response with `ai_status=available`, grounded citations and the `get_active_policy` tool. Thanking that answer preserved knowledge mode, and a following yes created no PR. No browser exceptions were observed. The application release is `0995f1c`; both existing Vercel projects were rebuilt from that release without visual changes.
+During release preparation one overlapping build/database/browser run had two browser timeouts; a later complete run passed those cases but exhausted the long rehearsal's 120-second total budget after business processing and cleanup. Its overall budget is now 300 seconds; the new chat test allows 45 seconds for the send action plus its response. Correctness assertions remain unchanged. The final full run passed all 21 scenarios with trace recording disabled to reduce local recording overhead. A new signup fixture's outdated button label was corrected; one in-flight run was invalidated by schema regeneration. The accepted run used unchanged application sources.
 
-Follow-up coverage includes quoted combined greetings, the exact phrase "current procurement policy", dynamically rendered policy conditions, altered thresholds and one-generation current-policy retrieval. Local fallback explains actual source values and conditions instead of reporting only that passages were found. Model prose omits internal citation hashes while preserving validated source cards. Seven additional tests passed, bringing the full Windows suite to 243 passed plus four PostgreSQL-only skips; frontend lint and type checking passed.
+Local intake and policy proposals work without Gemini. Chat cannot approve or activate policies. The isolated demo's optional real Gemini integration was verified in earlier hosted checks; this sprint does not introduce a new AI provider or claim that a mocked response proves model availability. Live external-AI access remains disabled.
 
-Application release `c806536` was published to both existing projects. Public demo browser verification used the exact quoted greeting and current-procurement-policy question: the greeting returned capabilities without retrieval, and the policy question returned an actual grounded Gemini response identifying version 5.0 and its effective date. Disabling fictional-data consent then produced a readable local answer containing the source thresholds without JSON. Acknowledgments created no purchasing request; no browser exceptions were observed. The live staged health check confirmed PostgreSQL connectivity before promotion.
+## Hosted capacity and failure recovery
 
-## Final blind-test audit — 17 November 2026
+Real fictional-demo requests to the canonical Vercel deployment produced these measured results during release preparation:
 
-All current automated gates were rerun: 250 Windows tests plus four PostgreSQL-only skips, 254 PostgreSQL tests, 18 full browser scenarios and seven frontend unit tests. Frontend lint, type checking, production build and OpenAPI-generation checks passed. Runtime npm audit and the pinned Python dependency audit reported no known vulnerabilities at this check. The original 14 decision examples and three supplier rankings matched again; the 186-row sample retained its documented hash.
+| Rows | Requirements | CSV bytes | Response bytes | Processing seconds |
+|---|---|---|---|---|
+| 500 | 24 | 83,792 | 650,162 | 1.29 |
+| 1,000 | 24 | 168,452 | 1,249,545 | 1.66 |
+| 2,500 | 24 | 420,938 | 3,042,986 | 2.68 |
+| 500 separate new-item requirements | 500 | 85,557 | 1,482,053 | 1.81 |
+| 1,000 separate new-item requirements | 1,000 | 172,092 | 2,970,139 | 2.82 |
 
-Fresh unauthenticated browser access reached the production application's own login with HTTP 200 and no Vercel login. The private evaluator authenticated with role admin and evaluation scope, reached all eleven screens and downloaded a 13-column CSV. Identity administration and bulk import returned 403; an unauthenticated export returned 401. Production PostgreSQL was at migration 004 with the required knowledge/chat tables. No access-control settings were changed.
+Every case passed authenticated export, snapshot replay and identical-request retry with the same run ID. No purchasing commitments were created. These timings are observations, not latency guarantees or a claim that 20,000 rows are hosted-safe.
 
-New API tests exercised a nine-clause amendment, exact thresholds, an eleven-day grouping window, supplier and contract restrictions, ranking weights, an emergency exception, manual inclusive-range authoring and a future effective date. The new browser scenario uploaded four clauses, reconciled one unsupported range through Policy DSL JSON, simulated, reviewed, approved, activated and exported the same three input rows twice. Literal expected routes changed from CONTRACT_PO / CONTRACT_PO / SPOT_PO to RFQ / CONTRACT_PO / RFP. Both run-specific replays matched; zero purchasing approvals or overrides occurred. The preferred export used the chosen version and 19 November 2026 as-of date. The standalone checker accepted all three downloads with Active-supplier validation.
+Client and batch API enforce **4,000,000 CSV bytes**, leaving multipart overhead below the platform request ceiling. A local padded one-line CSV at exactly that boundary succeeds; one extra byte returns 413 and creates no run. This byte-boundary check is separate from realistic workload tests above. Response evidence and group count also affect resource use. Larger/highly fragmented workloads remain unqualified; never split a business batch across independent processing calls because that changes grouping and ceiling allocation.
 
-The larger private rehearsal was repeated separately: 186 rows in each run, five amendment clauses, 55 affected lines, 155 preferred rows, identical input hashes and matching replays. It remains a sample-derived rehearsal, not unseen accuracy evidence. See [BLIND_TEST_READINESS.md](BLIND_TEST_READINESS.md) for fixes, remaining risks and the freeze procedure.
+Injected database connection failures and pool timeouts return retryable 503 responses with `Retry-After: 5`, conceal connection details, and recover without duplicate runs. Actual platform/function failure beyond tested workloads is not exhaustively fault-injected.
 
-## Single-page account entry
+## Evaluator access and publication
 
-The main login now offers built-in Admin, Buyer and Requester accounts with public demo passwords filled and shown automatically. Individual accounts remain private and support requester registration. The browser stays on the main origin: built-in sessions use the fixed `/demo-api/` deployment rewrite to the isolated demo backend, while individual sessions use the ordinary `/api/` endpoints. Session tokens and workspace selection remain in memory; switching identity clears the token and cached data. The existing backend audit baseline above is unchanged. Workspace routing, cross-workspace token rejection, downloads and private evaluator access are deployment verification gates.
+The exact public hostname is [corvo-procurement.vercel.app](https://corvo-procurement.vercel.app), with a public [health endpoint](https://corvo-procurement.vercel.app/health). Fresh unauthenticated browser checks reach the application login without Vercel account access. Built-in roles use the isolated fictional database through the same website; private evaluator credentials use the assessment database. Public signup now creates fictional-demo Requesters only. Hosted assessment self-registration is rejected even with a mistaken enabling flag. Legacy self-registered assessment sessions are denied; owner-provisioned individuals remain authorized. Public demo Admins cannot administer identities or replace master data.
+
+The evaluator uses Admin role with evaluation scope: policy and procurement workflows are available, while account administration and bulk master replacement return 403. Anonymous export and cross-workspace tokens are rejected. Credentials are handed privately to the recruiter, not embedded in the public URL, repository or frontend. The URL-only form is not treated as a credential channel.
+
+The final release report records the full GitHub SHA and both Vercel deployment SHAs from deployment metadata. Publication is accepted only when these match and canonical-host smoke checks pass. Canonical release acceptance additionally requires the original-data hash, authenticated exports/replay, workspace boundaries and fresh-browser checks on that exact deployed commit. The final release report records those outcomes rather than embedding a self-referential commit hash here.
+
+## Assurance limits
+
+Unseen accuracy is unmeasured. Arbitrary language, unregistered business facts, scanned-document authenticity, exhaustive penetration testing, unlimited hosted capacity, corporate SSO/MFA/recovery and external supplier dispatch are outside this evidence. Optional free services can throttle or cold-start. A human reviewer must still compare each unfamiliar amendment with its executable DSL and inspect consequential route changes.

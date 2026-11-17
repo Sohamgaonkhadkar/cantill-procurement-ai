@@ -18,9 +18,9 @@ def upload_policy(client,source,version):
 def process(client,batch,version):
     return ok(client.post('/api/process-batch',files={'file':('synthetic.csv',batch,'text/csv')},data={'policy_version':version}))
 
-def activate(client,version,manual=False):
+def activate(client,version,manual=False,reconciliations=None):
     for action in ['review','approve','activate']:
-        ok(client.post(f'/api/policies/{version}/{action}',json={'reason':'Independently checked source clauses, scope and precedence','manual_verification':manual} if action=='review' else {'reason':'Independently checked source clauses, scope and precedence'}))
+        ok(client.post(f'/api/policies/{version}/{action}',json={'reason':'Independently checked source clauses, scope and precedence','manual_verification':manual,'precedence_acknowledged':True,'reconciliations':reconciliations or []} if action=='review' else {'reason':'Independently checked source clauses, scope and precedence'}))
 
 def test_nine_clause_two_run_rehearsal_and_three_exports(client,tmp_path):
     source='''Do not change the emergency limit.
@@ -87,8 +87,9 @@ def test_unfamiliar_representable_clause_requires_real_structured_reconciliation
         {'fact':'requirement.group_value_inr','op':'gte','value':'700'},
         {'fact':'requirement.group_value_inr','op':'lte','value':'900'}]}})
     saved=ok(client.put('/api/policies/AUDIT-MANUAL',json={'policy':definition,'base_version':'5.0','source_text':source}))
-    assert saved['governance']['manual_reconciled'] and saved['governance']['original_source_text']==source
-    activate(client,'AUDIT-MANUAL',manual=True)
+    assert saved['governance']['structured_changes_saved'] and not saved['governance']['manual_reconciled'] and saved['governance']['original_source_text']==source
+    mapping={'clause_id':draft['interpretation']['unresolved_clauses'][0]['id'],'meaning':'Inclusive normal-only bearing value interval requires RFQ','scope':'Bearings at P-A; emergency unchanged','paths':['rules[inclusive-normal-range]'],'priority':5,'effective_date':draft['effective_date'],'evidence':'Checked plant, category, both inclusive boundaries and emergency exclusion','confirmed':True}
+    activate(client,'AUDIT-MANUAL',manual=True,reconciliations=[mapping])
     for quantity,plant,urgency,route in [('7','P-A','Normal','RFQ'),('9','P-A','Normal','RFQ'),('9.0001','P-A','Normal','SPOT_PO'),('8','P-B','Normal','SPOT_PO'),('8','P-A','Emergency','EMERGENCY_PO')]:
         run=process(client,csv_bytes([line(quantity=quantity,plant=plant,urgency=urgency)],INPUT_COLUMNS),'AUDIT-MANUAL')
         assert run['rows'][0]['route']==route

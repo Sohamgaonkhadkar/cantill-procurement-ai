@@ -28,7 +28,7 @@ def test_parameters_and_indian_amounts(data,policy):
     assert result['policy']['rules'][4]['when']['all'][0]['value']=='150000'
 
 def test_unknown_scope_and_qualifiers_remain_unresolved(data,policy):
-    for text in ['If plant is UNKNOWN and value above INR 750 require RFQ','Change spot limit from INR 200000 to INR 75000','For Bearings require RFQ above INR 75000','If plant is P-A unless emergency require RFQ']:
+    for text in ['If plant is UNKNOWN and value above INR 750 require RFQ','Change spot limit from INR 199999 to INR 75000','For Bearings require RFQ above INR 75000','If plant is P-A unless emergency require RFQ']:
         result=interpret(policy,text,'6.0','2026-04-01',data)
         if 'unless emergency' in text:
             assert result['complete'] and not result['unresolved_clauses']

@@ -27,7 +27,7 @@ from .suppliers import preferred
 from .amendments import policy_diff as field_diff
 from .language import interpret
 from .chat import parse_message
-from .workspace import workspace_mode
+from .workspace import workspace_mode,isolated_demo,WrongWorkspaceError,assert_demo_rows,assert_demo_text
 from .security import public_passwords
 from .security import consume_rate_limit
 from .schemas import RunResponse,Page,LoginResponse,RequirementResponse,PolicyResponse,PolicyDefinition,ComparisonResponse,SimulationResponse,ActionResponse,ChatResponse,ProcessingResult
@@ -55,6 +55,8 @@ app.add_middleware(CORSMiddleware,allow_origins=[origin.strip() for origin in os
 
 @app.exception_handler(ValueError)
 async def value_error(_,exc): return JSONResponse(status_code=422,content={'error':{'code':'VALIDATION_ERROR','message':str(exc),'details':[]}})
+@app.exception_handler(WrongWorkspaceError)
+async def wrong_workspace(_,exc): return JSONResponse(status_code=422,content={'error':{'code':'WRONG_WORKSPACE','message':str(exc),'details':[]}})
 @app.exception_handler(HTTPException)
 async def http_error(_,exc): return JSONResponse(status_code=exc.status_code,headers=exc.headers,content={'error':{'code':f'HTTP_{exc.status_code}','message':str(exc.detail),'details':[]}})
 @app.exception_handler(RequestValidationError)
@@ -103,8 +105,22 @@ class PolicyBody(Body):
     source_text:str=''
     base_version:str='5.0'
 class Note(Body): reason:str=Field(min_length=5,max_length=2000)
-class PolicyReviewBody(Note): manual_verification:bool=False
-class Simulation(Body): run_id:str
+class ClauseReconciliation(Body):
+    clause_id:str=Field(min_length=1,max_length=128)
+    meaning:str=Field(min_length=10,max_length=2000)
+    scope:str=Field(min_length=5,max_length=1000)
+    paths:list[str]=Field(min_length=1,max_length=12)
+    priority:int|None=None
+    effective_date:date
+    evidence:str=Field(min_length=15,max_length=2000)
+    confirmed:bool
+class PolicyReviewBody(Note):
+    manual_verification:bool=False
+    precedence_acknowledged:bool=False
+    reconciliations:list[ClauseReconciliation]=Field(default_factory=list,max_length=500)
+class Simulation(Body):
+    run_id:str
+    policy_mode:Literal['pinned','calendar']='pinned'
 class OverrideBody(Note):
     route:Literal['RFQ','RFP','CAPEX_SOURCING','NEW_ITEM_SOURCING']
 class ChatBody(Body):
@@ -159,7 +175,7 @@ def auth_options():
     enabled=submission_access()
     return {'submission_access':enabled,'registration_enabled':registration_enabled(),'roles':[{'role':role,'password':password} for role,password in public_passwords().items()] if enabled else [],'workspace_mode':workspace_mode(),'demo_url':os.getenv('PUBLIC_DEMO_URL') or None}
 
-@app.post('/api/auth/register',tags=['Authentication'],response_model=LoginResponse,status_code=201)
+@app.post('/api/auth/register',tags=['Authentication'],response_model=LoginResponse,status_code=201,description='Create a requester account only in the isolated fictional demo or local development when enabled. Hosted assessment registration returns 403; assessment identities must be provisioned privately by the owner.')
 def register(body:RegisterBody,request:Request):
     if not registration_enabled(): raise HTTPException(403,'Self-registration is disabled')
     # Requester-only registration, with an atomic persistent per-address quota.
@@ -199,7 +215,7 @@ def create_user(body:CreateUserBody,actor=Depends(user)):
     require_owner(actor)
     with Session.begin() as s:
         if s.get(User,body.username): raise HTTPException(409,'Username already exists')
-        s.add(User(id=body.username,role=body.role,payload={'display_name':body.display_name,'password_hash':hash_password(body.password),'enabled':True,'type':'individual','access_scope':body.access_scope}))
+        s.add(User(id=body.username,role=body.role,payload={'display_name':body.display_name,'password_hash':hash_password(body.password),'enabled':True,'type':'individual','access_scope':body.access_scope,'provisioned_by_owner':True}))
         audit(s,actor,'user.created',{'user_id':body.username,'role':body.role})
     return {'id':body.username,'role':body.role,'display_name':body.display_name,'enabled':True}
 @app.get('/api/users',tags=['Private Administration'],response_model=Page)
@@ -234,16 +250,20 @@ def masters(actor=Depends(user)):
         return {'items':list(d.items.values()),'plants':list(d.plants.values()),'suppliers':list(d.suppliers.values())}
 
 @app.post('/api/process-batch',tags=['Batch Lab'],response_model=RunResponse)
-async def batch(file:UploadFile=File(...),policy_version:str|None=Form(None),actor=Depends(user)):
+async def batch(file:UploadFile=File(...),policy_version:str|None=Form(None),policy_mode:Literal['pinned','calendar']=Form('pinned'),actor=Depends(user)):
     consume_rate_limit(actor,'batch',60)
-    rows=read_csv(await content(file,{'.csv'}),INPUT_COLUMNS)
+    raw=await content(file,{'.csv'})
+    if len(raw)>4_000_000:raise HTTPException(413,'Maximum batch CSV size is 4,000,000 bytes; keep the complete business batch together')
+    rows=read_csv(raw,INPUT_COLUMNS)
+    if isolated_demo():assert_demo_rows(rows)
     if role_of(actor)=='requester':
         for row in rows: row['requester']=str(actor)
-    with Session.begin() as s: return execute_run(s,rows,policy_version or None,actor)
+    with Session.begin() as s: return execute_run(s,rows,policy_version or None,actor,policy_mode=policy_mode)
 
 async def demo_result(file):
     from .demo import dataset,batch as example_batch
     rows=read_csv(await content(file,{'.csv'}),INPUT_COLUMNS) if file is not None else example_batch()
+    assert_demo_rows(rows)
     if len(rows)>200: raise ValueError('Isolated demo accepts at most 200 rows; use ordinary Batch Lab for assessment batches')
     return process(rows,dataset(),[initial_policy()],'5.0')
 
@@ -266,6 +286,12 @@ def runs(offset:int=Query(0,ge=0),limit:int=Query(25,ge=1,le=100),actor=Depends(
 @app.get('/api/runs/{run_id}',tags=['Batch Lab'],response_model=RunResponse)
 def run_detail(run_id:str,actor=Depends(user)):
     with Session() as s: return accessible_run(s,run_id,actor).payload
+@app.get('/api/runs/{run_id}/master-snapshot',tags=['Batch Lab'],response_model=dict)
+def run_master_snapshot(run_id:str,actor=Depends(user)):
+    require(actor,'admin','buyer')
+    with Session() as s:
+        run=accessible_run(s,run_id,actor)
+        return get(s,Dataset,run.payload['data_hash']).payload
 @app.get('/api/runs/{run_id}/export.csv',tags=['Batch Lab'],response_class=Response,responses={200:{'content':{'text/csv':{'schema':{'type':'string'}}}}})
 def run_export(run_id:str,actor=Depends(user)):
     with Session() as s: return Response(csv_bytes(accessible_run(s,run_id,actor).payload['rows']),media_type='text/csv',headers={'Content-Disposition':f'attachment; filename="{run_id}.csv"'})
@@ -305,14 +331,16 @@ def list_policies(actor=Depends(user)):
     with Session() as s: return {'items':[{**r.payload,'status':r.status,'id':r.id} for r in s.scalars(select(Policy))]}
 def policy_content_hash(policy):
     definition=PolicyDefinition.model_validate(policy).model_dump(by_alias=True)
-    return digest({'parameters':definition['parameters'],'rules':definition['rules']})
+    return digest({key:definition[key] for key in ['version','effective_date','parameters','rules']})
 
 def new_policy(s,body,actor,interpretation=None):
+    if isolated_demo():assert_demo_text(body.source_text+json.dumps(body.policy.model_dump(mode='json',by_alias=True)))
     policy=validate_policy(body.policy.model_dump(by_alias=True))
     if s.get(Policy,policy['version']): raise HTTPException(409,'Policy version already exists')
     base=get(s,Policy,body.base_version)
     content_hash=policy_content_hash(policy)
-    payload={**policy,'governance':{'base_version':body.base_version,'source_text':body.source_text,'original_source_text':body.source_text,'source_hash':hashlib.sha256(body.source_text.encode()).hexdigest(),'interpretation_definition_hash':content_hash,'manual_reconciled':False,'proposed_by':actor,'proposed_at':db.now(),'reviewed':False,'diff':field_diff(base.payload,policy)}}
+    from .precedence import analyze
+    payload={**policy,'governance':{'base_version':body.base_version,'source_text':body.source_text,'original_source_text':body.source_text,'source_hash':hashlib.sha256(body.source_text.encode()).hexdigest(),'interpretation_definition_hash':content_hash,'interpretation_definition':{k:deepcopy(policy[k]) for k in ['version','effective_date','parameters','rules']},'manual_reconciled':False,'structured_changes_saved':False,'precedence_analysis':analyze(base.payload,policy),'proposed_by':actor,'proposed_at':db.now(),'reviewed':False,'diff':field_diff(base.payload,policy)}}
     if interpretation: payload['governance']['interpretation']={k:v for k,v in interpretation.items() if k!='policy'}
     s.add(Policy(id=policy['version'],status='draft',payload=payload)); audit(s,actor,'policy.proposed',{'version':policy['version']})
     return {**payload,'status':'draft','id':policy['version']}
@@ -323,6 +351,7 @@ def create_policy(body:PolicyBody,actor=Depends(user)):
 @app.post('/api/policies/propose-amendment',tags=['Policy Studio'],response_model=PolicyResponse)
 def text_amendment(body:AmendmentTextBody,actor=Depends(user)):
     require(actor,'admin')
+    if isolated_demo():assert_demo_text(body.text)
     with Session.begin() as s:
         base=deepcopy(get(s,Policy,body.base_version).payload); base.pop('governance',None)
         interpreted=interpret(base,body.text,body.version,body.effective_date.isoformat(),current_data(s))
@@ -331,6 +360,7 @@ def text_amendment(body:AmendmentTextBody,actor=Depends(user)):
 @app.put('/api/policies/{policy_id}',tags=['Policy Studio'],response_model=PolicyResponse)
 def edit_policy(policy_id:str,body:PolicyBody,actor=Depends(user)):
     require(actor,'admin')
+    if isolated_demo():assert_demo_text(body.source_text+json.dumps(body.policy.model_dump(mode='json',by_alias=True)))
     with Session.begin() as s:
         r=get(s,Policy,policy_id,lock=True)
         if r.status!='draft': raise HTTPException(409,'Approved policy snapshots are immutable')
@@ -340,7 +370,8 @@ def edit_policy(policy_id:str,body:PolicyBody,actor=Depends(user)):
         governance=r.payload.get('governance',{})
         original_hash=governance.get('interpretation_definition_hash',policy_content_hash(r.payload))
         reconciled=policy_content_hash(p)!=original_hash
-        r.payload={**p,'governance':{**governance,'interpretation_definition_hash':original_hash,'manual_reconciled':reconciled,'source_text':body.source_text,'base_version':body.base_version,'reviewed':False,'diff':field_diff(base.payload,p)}}
+        from .precedence import analyze
+        r.payload={**p,'governance':{**governance,'interpretation_definition_hash':original_hash,'manual_reconciled':False,'structured_changes_saved':reconciled,'clause_reconciliations':[],'precedence_analysis':analyze(base.payload,p),'source_text':body.source_text,'base_version':body.base_version,'reviewed':False,'diff':field_diff(base.payload,p)}}
         audit(s,actor,'policy.edited',{'version':policy_id})
         return {**r.payload,'status':r.status,'id':r.id}
 @app.post('/api/policies/upload-amendment',tags=['Policy Studio'],response_model=PolicyResponse)
@@ -348,6 +379,7 @@ async def upload_amendment(file:UploadFile=File(...),version:str=Form(...),effec
     consume_rate_limit(actor,'policy-upload',20)
     require(actor,'admin'); raw=await content(file,{'.pdf','.txt','.json'})
     text_source=pdf_text(raw) if file.filename.lower().endswith('.pdf') else raw.decode('utf-8-sig')
+    if isolated_demo():assert_demo_text(text_source)
     with Session.begin() as s:
         base=deepcopy(get(s,Policy,base_version).payload); base.pop('governance',None)
         if file.filename.lower().endswith('.json'):
@@ -365,9 +397,16 @@ def review_policy(policy_id:str,body:PolicyReviewBody,actor=Depends(user)):
     with Session.begin() as s:
         p=get(s,Policy,policy_id,lock=True)
         if p.status!='draft': raise HTTPException(409,'Only drafts can be reviewed')
-        if p.payload.get('governance',{}).get('interpretation',{}).get('unresolved_clauses') and (not body.manual_verification or not p.payload.get('governance',{}).get('manual_reconciled')):
-            raise HTTPException(409,'Unresolved source clauses require saved structured corrections and explicit manual verification; a checkbox alone cannot implement them')
-        p.payload={**p.payload,'governance':{**p.payload.get('governance',{}),'reviewed':True,'review_note':body.reason,'reviewed_by':actor,'reviewed_at':db.now(),'manual_verification':body.manual_verification}}
+        from .precedence import analyze
+        from .reconciliation import verify
+        gov=p.payload.get('governance',{});base=get(s,Policy,gov.get('base_version','5.0'))
+        analysis=analyze(base.payload,p.payload)
+        unresolved=gov.get('interpretation',{}).get('unresolved_clauses',[])
+        if unresolved and not body.manual_verification:raise HTTPException(409,'Every unresolved clause requires a confirmed mapping to saved structured corrections')
+        try:evidence=verify(p.payload,gov,body.reconciliations,current_data(s))
+        except ValueError as exc:raise HTTPException(409,str(exc)) from None
+        if analysis['requires_acknowledgement'] and not body.precedence_acknowledged:raise HTTPException(409,'Review and acknowledge possible rule shadowing before approving this draft')
+        p.payload={**p.payload,'governance':{**gov,'reviewed':True,'review_note':body.reason,'reviewed_by':str(actor),'reviewed_at':db.now(),'manual_verification':body.manual_verification,'manual_reconciled':bool(unresolved and len(evidence)==len(unresolved)),'clause_reconciliations':evidence,'precedence_analysis':analysis,'precedence_acknowledged':body.precedence_acknowledged,'reviewed_definition_hash':policy_content_hash(p.payload)}}
         audit(s,actor,'policy.reviewed',{'version':policy_id,'reason':body.reason})
         return {**p.payload,'id':p.id,'status':p.status}
 @app.post('/api/policies/{policy_id}/approve',tags=['Policy Studio'],response_model=PolicyResponse)
@@ -376,11 +415,18 @@ def approve_policy(policy_id:str,body:Note,actor=Depends(user)):
     with Session.begin() as s:
         p=get(s,Policy,policy_id,lock=True)
         if p.status!='draft' or not p.payload.get('governance',{}).get('reviewed'): raise HTTPException(409,'Review this draft before approval')
+        if p.payload['governance'].get('reviewed_definition_hash')!=policy_content_hash(p.payload):raise HTTPException(409,'The saved definition changed or has not completed the current review; review again')
         validate_policy(p.payload); p.status='approved'
         p.payload={**p.payload,'governance':{**p.payload['governance'],'approved_by':actor,'approved_at':db.now(),'approval_reason':body.reason,'snapshot_hash':digest(p.payload)}}
         s.add(PolicyApproval(id='APPROVAL-'+uuid4().hex,policy_id=policy_id,payload={'actor':actor,'timestamp':db.now(),'reason':body.reason,'snapshot_hash':digest(p.payload)}))
         audit(s,actor,'policy.approved',{'version':policy_id,'reason':body.reason})
         return {**p.payload,'id':p.id,'status':p.status}
+@app.get('/api/policies/{policy_id}/precedence',tags=['Policy Studio'])
+def policy_precedence(policy_id:str,actor=Depends(user)):
+    from .precedence import analyze
+    with Session() as s:
+        p=get(s,Policy,policy_id);base=get(s,Policy,p.payload.get('governance',{}).get('base_version','5.0'))
+        return {'policy_id':policy_id,'definition_hash':policy_content_hash(p.payload),**analyze(base.payload,p.payload)}
 @app.post('/api/policies/{policy_id}/activate',tags=['Policy Studio'])
 def activate_policy(policy_id:str,body:Note,actor=Depends(user)):
     require(actor,'admin')
@@ -388,12 +434,17 @@ def activate_policy(policy_id:str,body:Note,actor=Depends(user)):
         db.transaction_lock(s,db.POLICY_CALENDAR_LOCK,exclusive=True)
         p=get(s,Policy,policy_id,lock=True)
         if p.status not in {'approved','superseded','active'}: raise HTTPException(409,'Approve policy first')
+        replaced=[]
+        for previous in s.scalars(select(Policy).where(Policy.status=='active').with_for_update()):
+            if previous.id!=p.id and previous.payload['effective_date']==p.payload['effective_date']:
+                previous.status='superseded';replaced.append(previous.id)
+                audit(s,actor,'policy.superseded',{'version':previous.id,'by':p.id,'effective_date':p.payload['effective_date']})
         p.status='active'; audit(s,actor,'policy.activation_scheduled',{'version':policy_id,'effective_date':p.payload['effective_date'],'reason':body.reason})
         from .ai.config import settings
         if settings().rag_enabled:
             from .ai.knowledge import index_policy
             index_policy(s,p.payload,p.status)
-        return {'id':p.id,'status':'active','effective_date':p.payload['effective_date'],'scheduled':p.payload['effective_date']>business_today().isoformat()}
+        return {'id':p.id,'status':'active','effective_date':p.payload['effective_date'],'supersedes':replaced,'scheduled':p.payload['effective_date']>business_today().isoformat()}
 @app.post('/api/policies/{policy_id}/simulate',tags=['Policy Studio'],response_model=SimulationResponse)
 def simulate_policy(policy_id:str,body:Simulation,actor=Depends(user)):
     require(actor,'admin','buyer')
@@ -401,8 +452,11 @@ def simulate_policy(policy_id:str,body:Simulation,actor=Depends(user)):
         old=get(s,Run,body.run_id).payload; p=get(s,Policy,policy_id)
         snapshot=Data(**get(s,Dataset,old['data_hash']).payload)
         # Draft is allowed only in an explicitly labeled non-persisting simulation.
-        ps=[x for x in old['policy_snapshots'] if x['version']!=policy_id]+[{**p.payload,'status':'active'}]
-        new=process(old['input'],snapshot,ps,policy_id)
+        if body.policy_mode=='calendar':
+            # Use the captured historical calendar, not today's changing database.
+            ps=[{**x,'status':'active'} for x in old['policy_snapshots'] if x['effective_date']<p.payload['effective_date']]+[{**p.payload,'status':'active'}]
+        else:ps=[{**p.payload,'status':'active'}]
+        new=process(old['input'],snapshot,ps,policy_id if body.policy_mode=='pinned' else None)
         return {'simulation':True,'policy_id':policy_id,'base_run_id':body.run_id,'result':new,'comparison':comparison(old,new)}
 @app.post('/api/policies/{policy_id}/deactivate',tags=['Policy Studio'])
 def deactivate_policy(policy_id:str,body:Note,actor=Depends(user)):
@@ -448,6 +502,7 @@ def contracts(as_of:date|None=None,offset:int=Query(0,ge=0),limit:int=Query(50,g
 async def upload_contract(file:UploadFile=File(...),actor=Depends(user)):
     consume_rate_limit(actor,'contract-upload',20)
     require(actor,'admin','buyer'); raw=await content(file,{'.pdf'}); source=pdf_text(raw,allow_empty=True)
+    if isolated_demo():assert_demo_text(source)
     try: proposed=extract_contract(raw); error=None
     except ValueError as exc: proposed=None; error=str(exc)
     proposal_id='CP-'+uuid4().hex
@@ -604,6 +659,7 @@ def audit_events(action:str|None=None,offset:int=Query(0,ge=0),limit:int=Query(5
 @app.post('/api/chat/messages',tags=['Request Desk'],response_model=ChatResponse)
 def chat_message(body:ChatBody,actor=Depends(user)):
     from zoneinfo import ZoneInfo
+    if isolated_demo():assert_demo_text(body.message)
     consume_rate_limit(actor,'chat',120)
     from .ai.config import settings
     if settings().enabled or settings().rag_enabled:
@@ -618,7 +674,10 @@ def chat_message(body:ChatBody,actor=Depends(user)):
         if len(payload['messages'])>=400: raise HTTPException(409,'Chat session limit reached; start a new session')
         payload['messages'].append({'role':'user','content':body.message,'timestamp':db.now()})
         result=None
-        if body.message.strip().lower() in {'confirm','yes','submit'} and payload['state'].get('ready'):
+        from .proposals import handoff
+        proposal=handoff(payload['state'],body.message,role_of(actor))
+        if proposal:payload['state'],reply=proposal
+        elif body.message.strip().lower() in {'confirm','yes','submit'} and payload['state'].get('ready'):
             state=payload['state']; item=current_data(s).items.get(state['item_code'],{})
             created=datetime.now(ZoneInfo('Asia/Kolkata')).replace(tzinfo=None).isoformat(timespec='seconds')
             submission=int(payload.get('submission_count',0))+1

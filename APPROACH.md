@@ -52,7 +52,17 @@ The live procurement workspace uses local retrieval and deterministic intake. Th
 
 ## Scope boundaries
 
-The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Evaluator access uses private individual accounts; privileged public aliases are removed.
+The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Evaluator access uses private individual accounts shared privately with the recruiter. Public controlled-role passwords grant fictional-demo access only.
+
+## Final hardening architecture
+
+`backend/precedence.py` performs bounded symbolic overlap analysis independently of purchasing execution. `backend/reconciliation.py` binds each unresolved source clause to saved executable changes and reviewer evidence. Policy review records a definition hash; approval rejects stale review. Calendar-mode Run 2 processing is separate from pinned historical processing, and equal-effective-date activation records explicit supersession rather than ordering version names.
+
+`scripts/submission_semantics.py` reads captured evidence and master snapshots without calling the production engine. It independently checks selected financial, membership, date, supplier and consolidation invariants. It explicitly reports the limits of CSV-only verification. Buyers/Admins can retrieve the immutable master snapshot for a run through an authenticated, role-checked endpoint; requester access is denied.
+
+Local intake parses bounded cardinal quantities, asks for ambiguous weekday dates and retains confirmed fields during model corrections. Authorized policy-change messages provide an exact-text handoff into Policy Reactor. The existing compiler, structured editor, simulation and approval lifecycle remain the only policy-write path; neither Gemini nor a chat acknowledgment can activate a policy.
+
+Assessment access is owner-provisioned. Public self-registration is enabled only for fictional data in production, and existing self-registered live sessions cannot authorize master-data access. Personal demo users choose their own passwords; built-in demo roles retain automatic credentials. Both routes stay on one login page with an explicit workspace choice for individual identities.
 
 ## Conversational and presentation extensions
 

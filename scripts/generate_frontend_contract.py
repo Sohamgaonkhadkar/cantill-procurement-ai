@@ -2,7 +2,9 @@
 import hashlib,json,re,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-source=(ROOT/'openapi.json').read_bytes()
+# Git checkouts can use CRLF on Windows; normalize before hashing so the
+# generated contract is identical to the committed LF source on Linux.
+source=(ROOT/'openapi.json').read_text(encoding='utf-8').encode('utf-8')
 schemas=json.loads(source)['components']['schemas']
 def name(value): return re.sub(r'\W','_',value)
 def ref(s): return name(s['$ref'].rsplit('/',1)[1])

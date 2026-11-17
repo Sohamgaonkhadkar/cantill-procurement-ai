@@ -3,9 +3,10 @@ from zoneinfo import ZoneInfo
 import re
 from .matching import normalize,specs,model_tokens
 from .domain import digest,number
+from .quantities import quantity_phrase
 
 NUMERIC=r'[+-]?\d[\d,]*(?:\.\d+)?(?:e[+-]?\d+)?'
-QUANTITY=r'\b(?:need|quantity|qty|around|about|make it)\s*(?:is|to|:|=)?\s*('+NUMERIC+r')\b(?![-/][a-z0-9])(?!\s*(?:inch|mm|hp|kw|gb|tons?)\b)'
+QUANTITY=r'\b(?:need|get|quantity|qty|around|about|make (?:it|that))\s*(?:is|to|:|=)?\s*('+NUMERIC+r')\b(?![-/][a-z0-9])(?!\s*(?:inch|mm|hp|kw|gb|tons?)\b)'
 UNITS=r'(?<![\w.])('+NUMERIC+r')\s*(?:units?|pieces?|nos|pairs?|kg|ltr|litres?|meters?|mtr)\b'
 
 def specification_text(text,data):
@@ -47,6 +48,13 @@ def parse_message(state,message,data):
     quantity=re.search(QUANTITY,text)
     if not quantity: quantity=re.search(UNITS,text)
     raw_quantity=quantity[1] if quantity else text.strip() if re.fullmatch(NUMERIC,text.strip(),re.I) else None
+    try:spoken=quantity_phrase(text)
+    except ValueError:
+        state.pop('quantity',None);state['ready']=False
+        return state,'Please clarify the quantity with a positive number, for example 35 or thirty-five.'
+    dozen=re.search(r'\b(\d+)\s+dozen\b',text)
+    if dozen:raw_quantity=str(number(dozen[1])*12)
+    elif spoken is not None:raw_quantity=str(spoken)
     if raw_quantity is not None:
         try:
             value=number(raw_quantity)
@@ -80,8 +88,16 @@ def parse_message(state,message,data):
         for day,name in enumerate(['monday','tuesday','wednesday','thursday','friday','saturday','sunday']):
             if name in text:
                 delta=(day-today.weekday())%7 or 7
-                if 'next '+name in text and today.weekday()<day: delta+=7
+                if 'next '+name in text:
+                    state.pop('need_by_date',None);state['ready']=False
+                    first=today+timedelta(days=delta)
+                    return state,f'Do you mean {first.isoformat()} or {(first+timedelta(days=7)).isoformat()}? Reply with the exact YYYY-MM-DD date.'
                 state['need_by_date']=(today+timedelta(days=delta)).isoformat()
+    old=data.items.get(state.get('item_code',''),{})
+    excluded=any(re.search(r'\bnot\s+(?:the\s+)?'+re.escape(token)+r'\b',text) for token in specs(old.get('description',''))+list(model_tokens(old.get('description',''))))
+    if excluded or re.search(r'\b(?:other|different)\s+(?:bearing\s+)?(?:model|item|product)\b',text):
+        state.pop('item_code',None);state.pop('alternatives',None);state['description']='';state['ready']=False
+        return state,'Which replacement item code or complete model specification should I use? Your quantity, plant, date and urgency are retained.'
     known=[key for key in data.items if re.search(r'\b'+re.escape(key)+r'\b',message,re.I)]
     selected=None
     for key in known:

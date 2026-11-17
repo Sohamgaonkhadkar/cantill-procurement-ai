@@ -52,6 +52,7 @@ export default function BatchLab() {
   const [preview, setPreview] = useState<string[][]>([]);
   const [fileError, setFileError] = useState<unknown>(null);
   const [version, setVersion] = useState("5.0");
+  const [policyMode, setPolicyMode] = useState<"pinned" | "calendar">("pinned");
   const [local, setLocal] = useState<RunResponse | null>(null);
   const [other, setOther] = useState("");
   const [page, setPage] = useState(0);
@@ -62,7 +63,7 @@ export default function BatchLab() {
   });
   const run = local?.id === selection.runId ? local : existing.data;
   const process = useMutation({
-    mutationFn: () => api.processBatch(file!, version),
+    mutationFn: () => api.processBatch(file!, version, policyMode),
     onSuccess: (r) => {
       setLocal(r);
       selection.setRunId(r.id);
@@ -100,9 +101,9 @@ export default function BatchLab() {
     try {
       if (!f.name.toLowerCase().endsWith(".csv"))
         throw new Error("Choose a CSV file.");
-      if (f.size > 10 * 1024 * 1024)
+      if (f.size > 4_000_000)
         throw new Error(
-          "Maximum upload is 10 MiB; hosted platform limits may be lower.",
+          "Maximum hosted CSV size is 4,000,000 bytes, leaving room for multipart overhead. Keep the business batch intact; do not split grouping or contract allocation across uploads.",
         );
       const parsed = parseCsv((await f.text()).replace(/^\uFEFF/, ""));
       const missing = INPUT_HEADERS.filter((h) => !parsed[0]?.includes(h));
@@ -139,6 +140,26 @@ export default function BatchLab() {
               onChange={(e) => void load(e.target.files?.[0])}
             />
           </label>
+          <label className="field">
+            Processing mode
+            <select
+              aria-label="Batch processing mode"
+              value={policyMode}
+              onChange={(e) =>
+                setPolicyMode(e.target.value as "pinned" | "calendar")
+              }
+            >
+              <option value="pinned">Historical: pin selected policy</option>
+              <option value="calendar">
+                Run 2: dated calendar through selected amendment
+              </option>
+            </select>
+          </label>
+          <p className="text-sm text-lavender">
+            Calendar mode keeps earlier effective policies for older PRs. Pinned
+            mode never applies a policy before its effective date. Choose
+            automatic dated selection to use the full active calendar.
+          </p>
           <label className="field">
             Policy version
             <select

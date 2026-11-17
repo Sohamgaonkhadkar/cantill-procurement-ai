@@ -12,7 +12,8 @@ AMOUNT=r'(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d+)?)\s*(lakhs?|lacs?|crores?|million
 ROUTE=r'(CONTRACT_PO|EMERGENCY_PO|SPOT_PO|RFQ|RFP|CAPEX_SOURCING|NEW_ITEM_SOURCING)'
 
 def amount(value,unit=None):
-    return str(number(value)*{'lakh':100000,'lac':100000,'crore':10000000,'million':1000000}.get((unit or '').lower().rstrip('s'),1))
+    result=format(number(value)*{'lakh':100000,'lac':100000,'crore':10000000,'million':1000000}.get((unit or '').lower().rstrip('s'),1),'f')
+    return result.rstrip('0').rstrip('.') if '.' in result else result
 
 def leaves(node):
     if 'fact' in node: yield node
@@ -106,6 +107,52 @@ def parse_date(value):
 
 def apply_statement(policy,text,data=None,context=None):
     text=text.strip().rstrip('.').strip()
+    label=r'(spot|emergency|rfq|rfp)(?:[- ](?:purchase|purchasing|purchases|PO))?\s+(?:limit|threshold)'
+    m=re.fullmatch(r'(change|increase|reduce|decrease|raise|lower|revise|update)\s+(?:the\s+)?'+label+r'\s+from\s+'+AMOUNT+r'\s+to\s+'+AMOUNT,text,re.I)
+    if m:
+        verb,name,old,old_unit,new,new_unit=m.groups()
+        old_value=number(amount(old,old_unit));new_value=number(amount(new,new_unit))
+        signature=limit_signature(policy,name.lower())
+        values=[number(value) for _,entries in signature for _,value in entries]
+        if not values or any(value!=old_value for value in values):raise ValueError('Conflicting from-value: stated prior limit does not match the selected base policy')
+        if verb.lower() in {'increase','raise'} and new_value<=old_value or verb.lower() in {'reduce','decrease','lower'} and new_value>=old_value:
+            raise ValueError('Conflicting direction: requested limit does not agree with increase/reduce')
+        return apply_statement(policy,f'Set {name} limit to INR {new_value}',data,context)
+    m=re.fullmatch(r'(?:the\s+)?'+label+r'\s+shall\s+now\s+be\s+'+AMOUNT,text,re.I)
+    if m:return apply_statement(policy,f'Set {m[1]} limit to INR {amount(m[2],m[3])}',data,context)
+    m=re.fullmatch(r'the revised (?:limit|threshold) for (spot|emergency|rfq|rfp)(?: purchases| purchasing| purchase| PO)? is '+AMOUNT,text,re.I)
+    if m:return apply_statement(policy,f'Set {m[1]} limit to INR {amount(m[2],m[3])}',data,context)
+    m=re.fullmatch(r'replace (?:the )?existing '+label+r' with '+AMOUNT,text,re.I)
+    if m:return apply_statement(policy,f'Set {m[1]} limit to INR {amount(m[2],m[3])}',data,context)
+    m=re.fullmatch(r'only purchases (exceeding|above|at least|below|at most) '+AMOUNT+r' require '+ROUTE,text,re.I)
+    if m:
+        route=m[4].upper();rules=global_route_rules(policy,route)
+        if len(rules)!=1:raise ValueError('No unique global rule for '+route)
+        op={'exceeding':'gt','above':'gt','at least':'gte','below':'lt','at most':'lte'}[m[1].lower()]
+        rules[0]['when']={'all':[rules[0]['when'],condition('requirement.group_value_inr',op,amount(m[2],m[3]))]}
+        return 'Restrict '+route+' to the explicit value condition; earlier rules retain precedence, review any uncovered values'
+    m=re.fullmatch(r'purchases up to and including '+AMOUNT+r' qualify for (?:a |an )?'+ROUTE,text,re.I)
+    if m:
+        rules=global_route_rules(policy,m[3].upper())
+        if len(rules)!=1:raise ValueError('No unique global rule for '+m[3])
+        bounds=[leaf for leaf in leaves(rules[0]['when']) if leaf['fact']=='requirement.group_value_inr']
+        if len(bounds)!=1:raise ValueError('An inclusive limit requires one unambiguous value predicate')
+        bounds[0].update(op='lte',value=amount(m[1],m[2]))
+        return m[3].upper()+' inclusive upper bound proposed; existing eligibility and precedence retained'
+    m=re.fullmatch(r'apply this rule only to (?:the )?(.+?) plant',text,re.I)
+    if m:
+        ids=(context or {}).get('added_rule_ids',[])
+        if len(ids)!=1:raise ValueError('Plant qualifier must identify exactly one newly proposed rule')
+        rule=next(r for r in policy['rules'] if r['id']==ids[0])
+        rule['when']={'all':[rule['when'],predicate('plant '+m[1],data)]}
+        return 'Restrict the proposed rule to '+m[1]+'; baseline rules remain available elsewhere'
+    if re.fullmatch(r'(?:the )?previous rule remains unchanged for other categories',text,re.I):
+        ids=(context or {}).get('added_rule_ids',[])
+        additions=[r for r in policy['rules'] if r['id'] in ids]
+        if not additions or not all(any(l['fact']=='item.category' for l in leaves(r['when'])) for r in additions):raise ValueError('Other-category preservation needs an explicit category-scoped new rule')
+        base_rules=(context or {}).get('base_rules',[])
+        if [r for r in policy['rules'] if r['id'] not in ids]!=base_rules:raise ValueError('Conflicting preservation: baseline rules were changed globally')
+        return 'Preserve unchanged baseline rules for other categories'
     prefix=r'(?:(?:please|change|set|update|revise|increase|decrease|reduce|the|new)\s+)*'
     # Explicit preservation is recorded, never interpreted as a request to mutate.
     m=re.fullmatch(r"(?:do not|don't) change (?:the )?(spot|emergency|rfq|rfp)(?:[- ](?:purchase|purchasing|PO))? (?:limit|threshold)",text,re.I)
@@ -194,6 +241,9 @@ def apply_statement(policy,text,data=None,context=None):
         return f'New {route} rule proposed at priority {priority}; review scope and precedence'
     raise ValueError('Statement needs structured manual authoring')
 
+def global_route_rules(policy,route):
+    return [r for r in policy['rules'] if r['route']==route and not any(x['fact'] in {'requirement.plant','item.category','item.item_type','item.item_code'} for x in leaves(r['when']))]
+
 def limit_signature(policy,label):
     routes={'spot':{'SPOT_PO'},'emergency':{'EMERGENCY_PO'},'rfq':{'RFQ','RFP'},'rfp':{'RFQ','RFP'}}[label]
     return [(r['id'],[(x['op'],str(x['value'])) for x in leaves(r['when']) if x['fact']=='requirement.group_value_inr']) for r in policy['rules'] if r['route'] in routes and not any(x['fact'] in {'requirement.plant','item.category','item.item_type','item.item_code'} for x in leaves(r['when']))]
@@ -204,9 +254,9 @@ def interpret(base,text,version,effective_date,data=None):
     policy=deepcopy(base); policy.pop('status',None); policy.pop('governance',None)
     policy.update(version=version,effective_date=effective_date)
     detected=[];unresolved=[];coverage=[];conflicts=[];updates={}
-    context={'preserved_labels':set(),'added_rule_ids':[]}
+    context={'preserved_labels':set(),'added_rule_ids':[],'base_rules':deepcopy(base['rules'])}
     if len(text)>100000: raise ValueError('Policy text exceeds the 100,000-character interpretation limit')
-    commands=r'if|when|change|set|update|revise|increase|decrease|reduce|suggest|use|do not|exclude|at plant|for |apply|make'
+    commands=r'if|when|change|set|update|revise|increase|decrease|reduce|replace|only purchases|purchases up|the revised|the previous|suggest|use|do not|exclude|at plant|for |apply|make'
     lines=[re.sub(r'^\s*(?:[0-9]+[.)]|[-•])\s+','',x.strip()) for x in re.split(r'[\n;]+|(?<=[.!?])\s+(?=(?:'+commands+r')\b)',text,flags=re.I) if x.strip()]
     if len(lines)>500: raise ValueError('Policy has too many source lines for automatic interpretation')
     statements=[];buffer=''
@@ -219,7 +269,8 @@ def interpret(base,text,version,effective_date,data=None):
         if buffer and (complete or starts):statements.append(buffer);buffer=line
         else:buffer=(buffer+' '+line).strip()
     if buffer:statements.append(buffer)
-    for statement in statements:
+    for clause_index,statement in enumerate(statements):
+        clause_id='CLAUSE-'+digest([clause_index,statement])[:16]
         candidate=deepcopy(policy);candidate_context=deepcopy(context)
         try:
             description=apply_statement(candidate,statement,data,candidate_context)
@@ -240,11 +291,11 @@ def interpret(base,text,version,effective_date,data=None):
             candidate_context['added_rule_ids'] += [r['id'] for r in added]
             for diff in diffs:updates[diff['path']]={'value':diff['after'],'source':statement}
             policy=candidate;context=candidate_context;detected.append(description)
-            coverage.append({'text':statement,'status':'proposed' if diffs else 'preserved','description':description,'changed_paths':[x['path'] for x in diffs]})
+            coverage.append({'id':clause_id,'text':statement,'status':'proposed' if diffs else 'preserved','description':description,'changed_paths':[x['path'] for x in diffs]})
         except ValueError as exc:
-            entry={'text':statement,'reason':str(exc)};unresolved.append(entry)
+            entry={'id':clause_id,'text':statement,'reason':str(exc)};unresolved.append(entry)
             conflicting='conflict' in str(exc).lower()
             if conflicting:conflicts.append(entry)
-            coverage.append({'text':statement,'status':'conflict' if conflicting else 'unresolved','reason':str(exc)})
+            coverage.append({'id':clause_id,'text':statement,'status':'conflict' if conflicting else 'unresolved','reason':str(exc)})
     validate_policy(policy)
     return {'policy':policy,'detected_changes':detected,'unresolved_clauses':unresolved,'conflicts':conflicts,'source_clauses':coverage,'complete':not unresolved}

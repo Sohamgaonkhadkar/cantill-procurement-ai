@@ -125,6 +125,8 @@ class ProcessingResult(Schema):
     output_hash:str
     counts:dict[str,int]
 class RunResponse(ProcessingResult):
+    policy_mode:Literal['pinned','calendar']|None=None
+    calendar_version:str|None=None
     id:str
     created_at:str
     input_hash:str

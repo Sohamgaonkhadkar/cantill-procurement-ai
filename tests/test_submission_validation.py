@@ -1,6 +1,7 @@
 from copy import deepcopy
 import csv
 import io
+import json
 import pytest
 from backend.domain import csv_bytes, INPUT_COLUMNS, OUTPUT_COLUMNS
 from backend.engine import process
@@ -80,3 +81,11 @@ def test_checker_rejects_wrong_nonempty_policy_even_on_invalid_lines(exports):
         rows[0].update(route='NOT_PROCESSED',decision='',po_id='',supplier_id='',unit_price='',suggested_supplier_ids='',policy_version='wrong-version',reason='Synthetic invalid input')
     mutate(exports,'run1',corrupt)
     with pytest.raises(ValueError,match='wrong policy version'):check(exports)
+
+def test_preferred_can_verify_a_published_policy_unused_by_the_batch(exports,data,policy,tmp_path):
+    published=deepcopy(policy);published.update(version='NOVEMBER-RANKING',status='active')
+    master_path=tmp_path/'masters.json';master_path.write_text(json.dumps(data.snapshot()),encoding='utf-8')
+    metadata=tmp_path/'preferred.json';metadata.write_text(json.dumps({'as_of':'2026-11-19','policy_version':published['version'],'policy_snapshot':published}),encoding='utf-8')
+    result=validate(exports['input'],exports['run1'],exports['run2'],exports['preferred'],'6.0',exports['suppliers'],masters_snapshot=master_path,preferred_metadata=metadata)
+    assert result['valid'] and result['supplier_status_checked']
+    assert len(result['warnings'])==2 and all('snapshot for independent' in warning for warning in result['warnings'])

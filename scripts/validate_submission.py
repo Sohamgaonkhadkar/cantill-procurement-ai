@@ -50,7 +50,11 @@ def decimal(value, label):
     return result
 
 
-def validate(input_path, run1_path, run2_path, preferred_path, amended_version, suppliers_path=None):
+def validate(input_path, run1_path, run2_path, preferred_path, amended_version, suppliers_path=None, run1_snapshot=None, run2_snapshot=None, masters_snapshot=None, preferred_metadata=None):
+    from .submission_semantics import read,validate_snapshot,ranking,cents
+    snapshots={key:read(path) for key,path in [('run1',run1_snapshot),('run2',run2_snapshot)] if path}
+    master=read(masters_snapshot) if masters_snapshot else None
+    warnings=[];semantic={}
     inputs = load(input_path, INPUT_COLUMNS, exact=False)
     if not inputs:
         raise ValueError('Input batch is empty')
@@ -68,15 +72,18 @@ def validate(input_path, run1_path, run2_path, preferred_path, amended_version, 
     summary = {}
     for label, path, version in [('run1', run1_path, '5.0'), ('run2', run2_path, amended_version)]:
         rows = load(path, OUTPUT_COLUMNS)
+        captured=snapshots.get(label)
+        expected_versions={tuple((r['pr_no'],r['pr_line'])):r['policy_version'] for r in captured['rows']} if captured else None
         if Counter((row['pr_no'], row['pr_line']) for row in rows) != identities:
             raise ValueError(f'{label}: output PR-line identities/multiplicities differ from input')
         groups, orders = {}, {}
         for index, row in enumerate(rows, 1):
             where = f'{label} row {index}'
+            expected_version=expected_versions[(row['pr_no'],row['pr_line'])] if expected_versions else version
             route = row['route']
             if not row['reason']:
                 raise ValueError(f'{where}: decision reason is required')
-            if row['policy_version'] and row['policy_version'] != version:
+            if row['policy_version'] and row['policy_version'] != expected_version:
                 raise ValueError(f'{where}: wrong policy version; expected {version}')
             if route == 'NOT_PROCESSED':
                 if any(row[key] for key in ['decision', 'po_id', 'supplier_id', 'unit_price', 'suggested_supplier_ids']):
@@ -84,7 +91,7 @@ def validate(input_path, run1_path, run2_path, preferred_path, amended_version, 
                 continue
             if route not in PO_ROUTES | SOURCING_ROUTES:
                 raise ValueError(f'{where}: unknown route')
-            if row['policy_version'] != version:
+            if row['policy_version'] != expected_version:
                 raise ValueError(f'{where}: wrong policy version; expected {version}')
             if not row['group_id'] or not row['resolved_item_code']:
                 raise ValueError(f'{where}: missing resolved item or requirement ID')
@@ -112,10 +119,12 @@ def validate(input_path, run1_path, run2_path, preferred_path, amended_version, 
                 raise ValueError(f'{where}: new item must have NEW code and no invented suggestions')
         summary[label] = {'rows': len(rows), 'requirements': len(groups), 'planned_pos': len(orders),
                           'routes': dict(sorted(Counter(row['route'] for row in rows).items()))}
+        if captured:semantic[label]=validate_snapshot(inputs,rows,captured,master)
+        else:warnings.append(label+': provide --'+label+'-snapshot for independent grouping, valuation, consolidation, date and hash checks')
     preferred = load(preferred_path, PREFERRED_COLUMNS)
     rankings = defaultdict(list)
     for index, row in enumerate(preferred, 1):
-        if not row['item_code'] or not row['supplier_id'] or row['rank'] not in {'1', '2', '3'}:
+        if not row['item_code'] or not row['supplier_id'] or not row['rank'].isdigit() or not 1<=int(row['rank'])<=1000:
             raise ValueError(f'Preferred row {index}: invalid item, supplier or top-three rank')
         decimal(row['reference_price'], f'Preferred row {index} reference price')
         eligible(row['supplier_id'])
@@ -123,9 +132,28 @@ def validate(input_path, run1_path, run2_path, preferred_path, amended_version, 
     for ranks in rankings.values():
         if sorted(rank for rank, _ in ranks) != list(range(1, len(ranks) + 1)) or len({sid for _, sid in ranks}) != len(ranks):
             raise ValueError('Preferred export has duplicate suppliers or non-contiguous ranks')
+    if len(snapshots)==2 and snapshots['run1']['input_hash']!=snapshots['run2']['input_hash']:raise ValueError('Run 1 and Run 2 input hashes differ')
+    if not master:warnings.append('No master snapshot: source prices, supplier eligibility, contract ceilings and rank order are not fully verified')
+    if preferred_metadata and master:
+        metadata=read(preferred_metadata);asof=metadata['as_of'];version=metadata['policy_version']
+        policy=next((p for snap in snapshots.values() for p in snap['policy_snapshots'] if p['version']==version),None)
+        supplied=metadata.get('policy_snapshot')
+        if supplied:
+            if supplied.get('version')!=version or supplied.get('status') not in {'active','superseded'}:raise ValueError('Preferred policy snapshot must identify the requested published version')
+            keys=['version','effective_date','parameters','rules']
+            if policy and any(policy[key]!=supplied[key] for key in keys):raise ValueError('Preferred policy snapshot conflicts with the captured run policy')
+            policy=policy or supplied
+        if not policy:raise ValueError('Provide the preferred policy_snapshot in metadata when the ranking version was unused by both captured runs')
+        if policy['effective_date']>asof:raise ValueError('Preferred as-of date precedes policy effective date')
+        expected=[]
+        for item in sorted(master['items']):
+            for rank,(sid,_,price) in enumerate(ranking(master,item,asof,policy)[:policy['parameters']['preferred_count']],1):expected.append({'item_code':item,'rank':str(rank),'supplier_id':sid,'reference_price':cents(price)})
+        if preferred!=expected:raise ValueError('Preferred export differs from independent as-of/policy ranking and reference prices')
+    else:warnings.append('Preferred as-of date/policy cannot be proven from CSV alone: provide --preferred-metadata and --masters-snapshot with both run snapshots')
     return {'valid': True, **summary, 'preferred_rows': len(preferred), 'preferred_items': len(rankings),
-            'supplier_status_checked': active is not None,
-            'scope': 'Export integrity only; does not certify business accuracy, effective/as-of dates or policy interpretation'}
+            'supplier_status_checked': active is not None or master is not None,
+            'semantic_checks':semantic,'warnings':warnings,'failures':[],
+            'scope': 'Read-only export and selected independent invariants; does not certify natural-language policy meaning or unknown blind-test accuracy'}
 
 
 def main():
@@ -133,11 +161,13 @@ def main():
     for name in ['input', 'run1', 'run2', 'preferred', 'amended-version']:
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--suppliers', help='Private supplier master CSV; verifies Active status if supplied')
+    for name in ['run1-snapshot','run2-snapshot','masters-snapshot','preferred-metadata']:
+        parser.add_argument('--'+name,help='Private JSON evidence file; never committed or modified by this checker')
     args = parser.parse_args()
     try:
-        result = validate(args.input, args.run1, args.run2, args.preferred, args.amended_version, args.suppliers)
-    except (ValueError, OSError, UnicodeError) as exc:
-        parser.exit(1, f'Submission validation failed: {exc}\n')
+        result = validate(args.input, args.run1, args.run2, args.preferred, args.amended_version, args.suppliers,args.run1_snapshot,args.run2_snapshot,args.masters_snapshot,args.preferred_metadata)
+    except (ValueError, OSError, UnicodeError, KeyError, TypeError, StopIteration, InvalidOperation) as exc:
+        parser.exit(1, json.dumps({'valid':False,'failures':[str(exc) or 'Malformed or incomplete evidence'],'warnings':[]})+'\n')
     print(json.dumps(result, indent=2))
 
 

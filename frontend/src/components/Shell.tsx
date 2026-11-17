@@ -303,7 +303,7 @@ function Header({
             ? "DEMO · FICTIONAL DATA"
             : IS_MOCK
               ? "MOCK · SYNTHETIC DATA"
-              : "LIVE · API"}
+              : "ASSESSMENT · PRIVATE DATA"}
         </span>
       </div>
 
@@ -713,7 +713,7 @@ export function Shell() {
           >
             {identity?.workspace_mode === "demo" ? (
               <div className="demo-workspace-banner" role="status">
-                <strong>Isolated demo</strong>
+                  <strong>DEMO WORKSPACE — FICTIONAL DATA</strong>
                 <span>
                   Fictional data · Changes do not affect the live workspace.
                 </span>

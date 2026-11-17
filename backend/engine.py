@@ -38,7 +38,10 @@ def validate_lines(rows,data):
 def select_policy(policies,when,explicit=None):
     candidates=[p for p in policies if (p.get('status','active')=='active' or (explicit and p.get('status')=='superseded')) and p['effective_date']<=when.isoformat() and (not explicit or p['version']==explicit)]
     if not candidates: raise ValueError(f'No approved effective policy on {when}'+(f' for version {explicit}' if explicit else ''))
-    return max(candidates,key=lambda p:(p['effective_date'],p['version']))
+    effective=max(p['effective_date'] for p in candidates)
+    latest=[p for p in candidates if p['effective_date']==effective]
+    if len(latest)!=1: raise ValueError('Conflicting effective policies on '+effective+'; authorize an explicit supersession before processing')
+    return latest[0]
 
 def group_lines(lines,policies,explicit=None):
     groups=[]; invalid=[]; buckets={}

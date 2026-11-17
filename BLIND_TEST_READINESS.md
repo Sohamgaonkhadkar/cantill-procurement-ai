@@ -4,9 +4,9 @@ Reviewed **17 November 2026** against the original brief, Procurement Policy v5.
 
 ## Release and evaluator access
 
-The repository is public: [Sohamgaonkhadkar/cantill-procurement-ai](https://github.com/Sohamgaonkhadkar/cantill-procurement-ai). Production is [Corvo](https://corvo-procurement.vercel.app), with a public [health endpoint](https://corvo-procurement.vercel.app/health). At the start of this audit GitHub was one documentation commit ahead of production. The audit release must publish the complete verified commit; its full GitHub and deployed SHA values are recorded in the accompanying release report and Vercel deployment metadata.
+The repository is public: [Sohamgaonkhadkar/cantill-procurement-ai](https://github.com/Sohamgaonkhadkar/cantill-procurement-ai). Production is [Corvo](https://corvo-procurement.vercel.app), with a public [health endpoint](https://corvo-procurement.vercel.app/health). The release is gated on matching the complete GitHub commit with both existing Vercel deployments; exact full SHAs are recorded in the release report and deployment metadata.
 
-A fresh unauthenticated Chromium context reached the application's own login without Vercel authentication. The private evaluator identity authenticated with **admin role / evaluation scope**, reached all eleven screens and downloaded an authenticated decision CSV. Its identity-administration and bulk-import requests returned **403**; anonymous CSV access returned **401**. No deployment-protection or access-control changes were necessary. Credentials must be shared privately through the assessment submission channel.
+A fresh unauthenticated Chromium context reached the application's own login without Vercel authentication. The private evaluator identity authenticated with **admin role / evaluation scope**, reached all eleven screens and downloaded an authenticated decision CSV. Its identity-administration and bulk-import requests returned **403**; anonymous CSV access returned **401**. No deployment-protection or access-control changes were necessary. Credentials are supplied privately to the recruiter; the URL-only submission form does not carry passwords. Public built-in accounts remain fictional-demo identities.
 
 Production database inspection confirmed **Alembic revision 004**, persistent PostgreSQL connectivity and the required knowledge/chat tables.
 
@@ -14,9 +14,9 @@ Production database inspection confirmed **Alembic revision 004**, persistent Po
 
 | Check | Result |
 |---|---|
-| Windows / Python 3.14 / SQLite | **250 passed, 4 PostgreSQL-only skips** |
-| Linux / Python 3.12 / PostgreSQL | **254 passed**, including all independent concurrency tests |
-| Full Chromium suite / isolated real FastAPI | **18 passed**, including desktop/mobile workspaces and the new blind rehearsal |
+| Windows / Python 3.14 / SQLite | **294 passed, 4 PostgreSQL-only skips** |
+| Linux / Python 3.12 / PostgreSQL | **298 passed**, including all independent concurrency tests |
+| Full Chromium suite / isolated real FastAPI | **21 passed**, including desktop/mobile workspaces and the new blind rehearsal |
 | Frontend unit tests | **7 passed** |
 | Type checking, ESLint, Vite production build | Passed |
 | OpenAPI snapshot and generated client drift | Passed |
@@ -67,7 +67,7 @@ The first new export assertion expected `100` instead of the authoritative `100.
 ## Remaining risks
 
 - **Medium — bounded interpretation:** arbitrary English is not guaranteed to compile. Unsupported wording requires faithful structured authoring and human review. Rules needing an unregistered business fact or a new engine operation are outside the present DSL; the unseen amendment has not been received.
-- **Medium — hosted resource bounds:** the portable API permits 20,000 rows, but maximum-size Vercel throughput has not been load-tested. Its 4.5 MB payload ceiling and execution limits apply. Do not split a real batch into separately processed parts: that can change grouping and ceiling allocation.
+- **Medium — hosted resource bounds:** measured tests passed through 2,500 grouped lines and 1,000 separate requirements. The 20,000-row parser bound is not a hosted-capacity guarantee. Client/API cap CSV uploads at 4,000,000 bytes; response size and group count also matter. Do not split a business batch: that changes grouping and ceiling allocation.
 - **Low — operational availability:** managed free services can cold-start or throttle. Gemini is optional and disabled for live data; blind-test calculations and amendment governance do not require external AI.
 - **Low — broader assurance:** no exhaustive penetration or fault-injection audit is claimed. Dependency results are point-in-time checks, not a security certification.
 
@@ -81,7 +81,37 @@ After freeze, keep application source, dependencies, compiler, tests and documen
 
 1. Process the complete unseen batch under explicit **5.0**, export decisions and record run/input hashes.
 2. Upload and reconcile every amendment clause; verify priority and effective date, simulate, review, approve and activate.
-3. Reprocess the exact same original file under the amended version. Compare matching input hashes and replay both snapshots. Do not approve purchasing actions between runs.
+3. In Batch Lab select **Run 2: dated calendar through selected amendment**, then the activated amendment. Reprocess the exact original file. Earlier PRs retain the earlier effective policy; no future policy is applied retroactively. Compare input hashes and replay both snapshots. Do not approve purchasing actions between runs. Use pinned mode only when explicitly testing a single historical policy's applicability.
 4. Export preferred suppliers for the evaluator's exact as-of date and requested policy version.
-5. Run `python -m scripts.validate_submission` using the three actual downloads, original private input, amended version and private supplier master. Independently inspect route changes and eligibility; the checker cannot certify business accuracy.
+5. Run `python -m scripts.validate_submission` using the three actual downloads, original private input and amended version. Supply both immutable run JSONs for mixed-calendar checks, plus the master snapshot and preferred metadata for independent invariants. Missing evidence produces explicit warnings. Independently inspect route changes and eligibility; the checker cannot certify unrestricted policy meaning or unseen accuracy.
 6. Place only the three actual result CSVs in `submission/`. Review the staged file list to ensure no source/data/credential changes, then commit and push the output files before **12:00 noon IST**. No automatic post-freeze source push is configured.
+
+## Competitive hardening changes
+
+| Risk | Implemented control | Independent verification |
+|---|---|---|
+| Mixed effective dates | Separate pinned history and dated Run 2 calendar modes | 14/15/16 November fixture; policy-boundary groups, exported versions and four replays |
+| Common amendment wording | From-value/direction verification, exact operators and Indian currency notation | Equivalent wording table plus explicit prior-value conflicts |
+| New rule precedence | Bounded symbolic overlaps with protected-route warnings; required acknowledgment | Plant/category disjointness and normal-only emergency exclusion |
+| Incomplete manual reconciliation | Every unresolved clause requires confirmed evidence tied to executable saved paths | Three-clause bypass, unrelated edits and damaged scope/value/date/priority checks |
+| Wrong workspace and public signup | Server rejects non-demo identifiers before storage; public signup is demo-only and legacy self-registered assessment sessions are denied | No run/chat/policy writes for blocked identifiers; provisioned private accounts remain authorized |
+| Export confidence | Read-only independent arithmetic, membership, dates, ranking, price, ceiling and consolidation checks | Corruption tests, literal thirteen-field contract tie case and full synthetic rehearsal |
+| Conversational friction | Local cardinal quantities, explicit ambiguous-date clarification, preserved corrections and authorized policy handoff | Spoken-quantity and correction cases; handoff creates no policy or purchasing action |
+
+The new complete rehearsal uses eight novel lines, six source instructions, two plants, several item classes, normal/emergency requests and a 15 November amendment boundary. One unsupported inclusive interval is authored through the existing DSL and mapped explicitly. Run 1 has six requirements and Run 2 seven; each plans three POs, with no purchasing approval. One invalid line remains explicit, three lines change and supplier-eligibility checks find no failures. Both snapshots replay and all three CSVs pass semantic verification with no missing-evidence warnings. Artifacts remain temporary/private; nothing is placed in `submission/`.
+
+## Read-only evidence verification
+
+Retrieve `/api/runs/{id}` for each immutable run and `/api/runs/{id}/master-snapshot` for its data snapshot, using an authorized Buyer/Admin bearer token. These files contain private data and must stay outside Git. The latter endpoint denies requester access. Capture preferred metadata as `{"as_of":"YYYY-MM-DD","policy_version":"activated-version"}` using the exact export parameters.
+
+If the preferred-ranking policy was not used by any batch line, also include its authenticated policy-registry response as `policy_snapshot` inside that metadata. The checker requires a published matching version and rejects conflicting definitions; a mixed-date run need not invent policy usage simply to validate a later as-of ranking.
+
+```sh
+python -m scripts.validate_submission --input /private/input.csv \
+  --run1 /private/run1.csv --run2 /private/run2.csv \
+  --preferred /private/preferred.csv --amended-version activated-version \
+  --run1-snapshot /private/run1.json --run2-snapshot /private/run2.json \
+  --masters-snapshot /private/masters.json --preferred-metadata /private/preferred.json
+```
+
+This command reads files only. It never calls purchasing APIs, activates policies, rewrites exports or recomputes decisions through the production engine. Server replay separately verifies the historical engine snapshot. Warnings identify unverified evidence; validation failures stop publication.

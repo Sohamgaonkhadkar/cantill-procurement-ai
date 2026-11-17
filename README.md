@@ -18,8 +18,8 @@
 ![Gemini](https://img.shields.io/badge/Gemini_API-Free_tier-4678E8?style=flat-square&logo=googlegemini&logoColor=white)
 ![Local RAG](https://img.shields.io/badge/RAG-PostgreSQL_search-287C79?style=flat-square)
 
-![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-254_passed-28A745?style=flat-square)
-![Browser verification](https://img.shields.io/badge/Browser_scenarios-18_passed-4678E8?style=flat-square)
+![Backend verification](https://img.shields.io/badge/PostgreSQL_tests-298_passed-28A745?style=flat-square)
+![Browser verification](https://img.shields.io/badge/Browser_scenarios-21_passed-4678E8?style=flat-square)
 ![Financial arithmetic](https://img.shields.io/badge/Financial_arithmetic-Decimal-287C79?style=flat-square&labelColor=142128)
 
 </div>
@@ -46,7 +46,7 @@ The server key is named `GEMINI_API_KEY` and belongs only in the isolated demo p
 
 **[Open Corvo →](https://corvo-procurement.vercel.app)**
 
-Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged live-workspace password is published. The same login page also provides automatically filled built-in roles against the isolated fictional demo database.
+Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged live-workspace password is published. The same login page provides automatically filled built-in demo roles and personal fictional-demo signup. Individual users choose their workspace explicitly; new public accounts cannot access assessment master data.
 
 | Workspace | What to inspect |
 |---|---|
@@ -215,9 +215,9 @@ Replace version, paths and filenames with the supplied values. This read-only to
 
 | Evidence | Result |
 |---|---|
-| Linux / PostgreSQL suite | **254 passed**, including independent concurrent transactions |
-| Windows / SQLite suite | **250 passed**, with four PostgreSQL-only skips |
-| Complete real-backend browser suite | **18 scenarios passed** against the retained Arena interface |
+| Linux / PostgreSQL suite | **298 passed**, including independent concurrent transactions |
+| Windows / SQLite suite | **294 passed**, with four PostgreSQL-only skips |
+| Complete real-backend browser suite | **21 scenarios passed** against the retained Arena interface |
 | Frontend quality gates | **7 unit tests passed**; lint, type checking and production build passed |
 | Hosted Gemini and retrieval | Real cited response, confirmed stored request and eight persisted demo embeddings; repeat embedding produced no duplicates |
 | Disclosed worked examples | **14 procurement decisions + 3 supplier rankings match** |

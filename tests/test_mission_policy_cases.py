@@ -79,7 +79,8 @@ def test_manual_checkbox_is_insufficient_but_saved_structured_correction_can_be_
     definition={k:p[k] for k in ['version','effective_date','parameters','rules']}
     definition['rules'].append({'id':'manual-plant-bearing','priority':5,'when':{'all':[{'fact':'requirement.plant','op':'eq','value':'P-A'},{'fact':'item.category','op':'eq','value':'Bearings'}]},'route':'RFQ','reason':'Human reconciled the explicit plant/category clause'})
     edited=client.put('/api/policies/manual-corrected',json={'policy':definition,'base_version':'5.0','source_text':text})
-    assert edited.status_code==200 and edited.json()['governance']['manual_reconciled']
+    assert edited.status_code==200 and edited.json()['governance']['structured_changes_saved'] and not edited.json()['governance']['manual_reconciled']
+    note.update(precedence_acknowledged=True,reconciliations=[{'clause_id':p['interpretation']['unresolved_clauses'][0]['id'],'meaning':'All bearing purchases at Alpha require RFQ','scope':'P-A plant and Bearings category','paths':['rules[manual-plant-bearing]'],'priority':5,'effective_date':'2026-04-01','evidence':'Verified the exact plant and category predicates, quotation route and priority','confirmed':True}])
     assert client.post('/api/policies/manual-corrected/review',json=note).status_code==200
     for action in ['approve','activate']:assert client.post('/api/policies/manual-corrected/'+action,json={'reason':'Verified source and structured correction'}).status_code==200
     assert upload(client,version='manual-corrected').json()['rows'][0]['route']=='RFQ'

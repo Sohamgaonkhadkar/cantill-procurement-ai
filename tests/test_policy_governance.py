@@ -8,7 +8,7 @@ def test_uploaded_scoped_prose_goes_through_real_lifecycle(client):
     result=client.post('/api/policies/6.0/simulate',json={'run_id':before['id']}).json()
     assert result['comparison']['affected_lines']==1
     for action in ['review','approve','activate']:
-        response=client.post('/api/policies/6.0/'+action,json={'reason':'Verified plant/category clause and precedence'})
+        response=client.post('/api/policies/6.0/'+action,json={'reason':'Verified plant/category clause and precedence',**({'precedence_acknowledged':True} if action=='review' else {})})
         assert response.status_code==200,response.text
     assert upload(client,version='6.0').json()['rows'][0]['route']=='RFQ'
     assert client.post('/api/runs/'+before['id']+'/replay').json()['matches']

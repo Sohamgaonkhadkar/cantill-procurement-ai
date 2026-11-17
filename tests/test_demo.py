@@ -56,7 +56,7 @@ def test_demo_does_not_accept_live_master_item_as_demo_data(client):
     row={**batch()[0],'item_code':'I-A','plant':'P-A'}
     before=state()
     result=client.post('/api/demo/preview',files={'file':('live.csv',csv_bytes([row],INPUT_COLUMNS),'text/csv')})
-    assert result.status_code==200 and result.json()['result']['rows'][0]['route']=='NOT_PROCESSED'
+    assert result.status_code==422 and result.json()['error']['code']=='WRONG_WORKSPACE'
     assert state()==before
     invalid=client.post('/api/demo/preview',files={'file':('bad.csv',b'quantity,quantity\n1,2','text/csv')})
     assert invalid.status_code==422

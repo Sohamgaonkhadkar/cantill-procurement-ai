@@ -21,7 +21,12 @@ def public_passwords():
     return DEMO_PASSWORDS if isolated_demo() else SUBMISSION_PASSWORDS
 
 def registration_enabled():
-    return os.getenv('PUBLIC_REGISTRATION','false').lower()=='true'
+    return os.getenv('PUBLIC_REGISTRATION','false').lower()=='true' and (DEMO or isolated_demo())
+
+def account_allowed(account):
+    # Public self-registration is not evidence of assessment authorization.
+    # Owner-created individuals have an explicit scope, including legacy users.
+    return DEMO or isolated_demo() or account.payload.get('type')!='individual' or 'access_scope' in account.payload or account.payload.get('provisioned_by_owner') is True
 if not DEMO and (not os.getenv('SESSION_SECRET') or any(not os.getenv(r.upper()+'_PASSWORD') for r in ROLES)):
     raise RuntimeError('Production requires SESSION_SECRET and all three role passwords')
 _sessions=None
@@ -81,7 +86,7 @@ def authenticate(name,password):
             # never exposes or substitutes the private operational passwords.
             if submission_access() and name in public_passwords() and account and account.payload.get('type') in {'controlled_demo_account','public_demo_role'}:
                 valid=valid or hmac.compare_digest(password.encode(),public_passwords()[name].encode())
-            if not account or account.payload.get('enabled',True) is False or not valid:
+            if not account or account.payload.get('enabled',True) is False or not valid or not account_allowed(account):
                 throttle.failures+=1
                 failure=HTTPException(401,'Invalid credentials')
             else:
@@ -127,7 +132,7 @@ def user(credentials:HTTPAuthorizationCredentials|None=Depends(bearer)):
         if value['exp']<=now: raise ValueError()
         with _sessions()() as s:
             session=s.get(AuthSession,value['sid']); account=s.get(User,value['sub'])
-            if not session or session.user_id!=value['sub'] or session.revoked or session.expires_at<=now or not account or account.payload.get('enabled',True) is False or account.role not in ROLES: raise ValueError()
+            if not session or session.user_id!=value['sub'] or session.revoked or session.expires_at<=now or not account or account.payload.get('enabled',True) is False or account.role not in ROLES or not account_allowed(account): raise ValueError()
             return Principal(account.id,account.role,session.id,account.payload.get('access_scope','standard'))
     except SQLAlchemyError: raise HTTPException(503,'Authentication storage temporarily unavailable',headers={'Retry-After':'5'})
     except Exception: raise HTTPException(401,'Sign in required',headers={'WWW-Authenticate':'Bearer'})
@@ -137,5 +142,7 @@ def require(actor,*roles):
 
 def require_owner(actor):
     require(actor,'admin')
+    if isolated_demo():
+        raise HTTPException(403,'Public demo accounts cannot administer identities or replace master data')
     if getattr(actor,'access_scope','standard')=='evaluation':
         raise HTTPException(403,'Evaluator accounts cannot administer identities or replace assessment data')

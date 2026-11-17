@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -23,6 +24,7 @@ function object(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
 }
 export default function PolicyReactor() {
+  const location = useLocation();
   const { identity } = useAuth();
   const admin = identity?.role === "admin";
   const policies = usePolicies();
@@ -40,9 +42,18 @@ export default function PolicyReactor() {
   const [editor, setEditor] = useState("");
   const [version, setVersion] = useState("");
   const [effective, setEffective] = useState("2026-04-02");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(() =>
+    typeof location.state?.policyProposalText === "string"
+      ? (location.state.policyProposalText as string)
+      : "",
+  );
   const [reason, setReason] = useState("");
   const [manual, setManual] = useState(false);
+  const [precedenceAcknowledged, setPrecedenceAcknowledged] = useState(false);
+  const [mappings, setMappings] = useState<
+    Record<string, Record<string, string | boolean>>
+  >({});
+  const [priorityInput, setPriorityInput] = useState("");
   const [result, setResult] = useState<unknown>(null);
   const [ruleIndex, setRuleIndex] = useState(0);
   const [fact, setFact] = useState("requirement.plant");
@@ -54,6 +65,8 @@ export default function PolicyReactor() {
       setEditor(JSON.stringify(definition(selected), null, 2));
       setRuleIndex(0);
       setManual(false);
+      setPrecedenceAcknowledged(false);
+      setMappings({});
       setResult(null);
     }
   }, [selected?.version]);
@@ -70,6 +83,38 @@ export default function PolicyReactor() {
     ? interpretation.unresolved_clauses
     : [];
   const changes = Array.isArray(gov.diff) ? gov.diff.map(object) : [];
+  const precedence = object(gov.precedence_analysis);
+  const warnings = Array.isArray(precedence.warnings)
+    ? precedence.warnings.map(object)
+    : [];
+  const reconciliationRows = unresolved.map(object).map((clause) => {
+    const id = String(clause.id ?? "");
+    const m = mappings[id] ?? {};
+    return {
+      clause_id: id,
+      meaning: String(m.meaning ?? ""),
+      scope: String(m.scope ?? ""),
+      paths: String(m.paths ?? "")
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean),
+      priority: m.priority ? Number(m.priority) : null,
+      effective_date: String(
+        m.effective_date || selected?.effective_date || "",
+      ),
+      evidence: String(m.evidence ?? ""),
+      confirmed: m.confirmed === true,
+    };
+  });
+  const mappingsReady = reconciliationRows.every(
+    (m) =>
+      m.clause_id &&
+      m.meaning.length >= 10 &&
+      m.scope.length >= 5 &&
+      m.paths.length &&
+      m.evidence.length >= 15 &&
+      m.confirmed,
+  );
   async function saveImported(promise: Promise<PolicyResponse>) {
     const p = await promise;
     qc.setQueryData<{ items: PolicyResponse[] }>(["policies"], (previous) => ({
@@ -157,7 +202,112 @@ export default function PolicyReactor() {
                 implement missing rules.
               </p>
               <Json value={unresolved} label="Unresolved clauses" />
+              {unresolved.map(object).map((clause, index) => {
+                const id = String(clause.id ?? "");
+                const m = mappings[id] ?? {};
+                return (
+                  <fieldset
+                    key={id || index}
+                    className="mt-4 space-y-3 border border-lavender/30 p-3"
+                  >
+                    <legend>Clause {index + 1}</legend>
+                    <p className="text-sm">{String(clause.text)}</p>
+                    {!id ? (
+                      <p role="alert">
+                        Re-upload this legacy draft to assign stable clause IDs.
+                      </p>
+                    ) : null}
+                    {(
+                      [
+                        ["meaning", "Intended meaning"],
+                        ["scope", "Applicable scope"],
+                        [
+                          "paths",
+                          "Changed DSL paths (comma separated, e.g. rules[rule-id])",
+                        ],
+                        [
+                          "priority",
+                          "Rule priority (leave blank for parameters)",
+                        ],
+                        ["effective_date", "Effective date (YYYY-MM-DD)"],
+                        [
+                          "evidence",
+                          "Evidence: how the saved change implements this clause",
+                        ],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <label className="field" key={key}>
+                        {label}
+                        <input
+                          aria-label={`Clause ${index + 1} ${key}`}
+                          value={String(
+                            m[key] ??
+                              (key === "effective_date"
+                                ? selected?.effective_date
+                                : "") ??
+                              "",
+                          )}
+                          onChange={(e) =>
+                            setMappings((previous) => ({
+                              ...previous,
+                              [id]: { ...previous[id], [key]: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                    ))}
+                    <label className="check-field">
+                      <input
+                        type="checkbox"
+                        checked={m.confirmed === true}
+                        onChange={(e) =>
+                          setMappings((previous) => ({
+                            ...previous,
+                            [id]: {
+                              ...previous[id],
+                              confirmed: e.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                      I verified this clause against the saved executable
+                      change.
+                    </label>
+                  </fieldset>
+                );
+              })}
             </div>
+          ) : null}
+          {warnings.length ? (
+            <section
+              className="border border-coral p-3"
+              aria-label="Rule precedence warnings"
+            >
+              <h3>Possible rule shadowing</h3>
+              <p className="text-sm">
+                Symbolic overlaps require scope review and simulation; they are
+                not actual purchasing decisions.
+              </p>
+              <ul className="list-disc pl-5">
+                {warnings.map((warning, i) => (
+                  <li key={i} className="mt-2 text-sm">
+                    {String(warning.message)}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+          {precedence.requires_acknowledgement ? (
+            <label className="check-field">
+              <input
+                aria-label="Acknowledge rule precedence"
+                type="checkbox"
+                checked={precedenceAcknowledged}
+                onChange={(e) => setPrecedenceAcknowledged(e.target.checked)}
+              />
+              I reviewed precedence, including Capex, contract and emergency
+              effects, and accept this ordering.
+            </label>
           ) : null}
           <Json value={interpretation} label="Interpretation coverage" />
           <Json value={gov.source_text ?? ""} label="Original source text" />
@@ -236,7 +386,11 @@ export default function PolicyReactor() {
                         (action === "review" &&
                           (selected.status !== "draft" ||
                             (unresolved.length > 0 &&
-                              (!manual || !gov.manual_reconciled)))) ||
+                              (!manual ||
+                                !gov.structured_changes_saved ||
+                                !mappingsReady)) ||
+                            (!!precedence.requires_acknowledgement &&
+                              !precedenceAcknowledged))) ||
                         (action === "approve" && selected.status !== "draft") ||
                         (action === "activate" &&
                           !["approved", "superseded"].includes(
@@ -252,6 +406,10 @@ export default function PolicyReactor() {
                             action,
                             reason,
                             manual,
+                            {
+                              precedence_acknowledged: precedenceAcknowledged,
+                              reconciliations: reconciliationRows,
+                            },
                           ),
                         )
                       }
@@ -304,6 +462,16 @@ export default function PolicyReactor() {
                     String(gov.source_text ?? ""),
                   );
                   setEditor(JSON.stringify(definition(p), null, 2));
+                  setManual(false);
+                  setPrecedenceAcknowledged(false);
+                  setMappings((previous) =>
+                    Object.fromEntries(
+                      Object.entries(previous).map(([id, entry]) => [
+                        id,
+                        { ...entry, confirmed: false },
+                      ]),
+                    ),
+                  );
                   return p;
                 })
               }
@@ -356,8 +524,15 @@ export default function PolicyReactor() {
                   task.mutate(async () => {
                     const p = parsed();
                     const priorities = new Set(p.rules.map((r) => r.priority));
-                    let priority = 1;
-                    while (priorities.has(priority)) priority++;
+                    const priority = Number(priorityInput);
+                    if (
+                      !priorityInput ||
+                      !Number.isInteger(priority) ||
+                      priorities.has(priority)
+                    )
+                      throw new Error(
+                        "Choose an explicit unused integer priority. Lower numbers execute first; inspect precedence before review.",
+                      );
                     const typedValue = ["in", "not_in"].includes(op)
                       ? JSON.parse(value)
                       : value === "true"
@@ -384,6 +559,15 @@ export default function PolicyReactor() {
               >
                 Add rule to editor
               </Button>
+              <label className="field">
+                Explicit priority
+                <input
+                  aria-label="New rule priority"
+                  type="number"
+                  value={priorityInput}
+                  onChange={(e) => setPriorityInput(e.target.value)}
+                />
+              </label>
             </div>
           </details>
           <Json value={registry.data} label="Backend schema registry" />
@@ -498,15 +682,18 @@ export default function PolicyReactor() {
         <Button
           disabled={!selected || !selection.runId || busy}
           onClick={() =>
-            task.mutate(() => api.simulate(selected!.version, selection.runId))
+            task.mutate(() =>
+              api.simulate(selected!.version, selection.runId, "calendar"),
+            )
           }
         >
           Simulate selected policy
         </Button>
         <p className="text-sm text-lavender">
-          Simulation does not activate policy or reserve contract headroom.
-          Requests before the effective date become NOT_PROCESSED under explicit
-          version selection.
+          Simulation uses the dated policy calendar: earlier requests retain
+          their captured earlier policy. It does not activate the draft or
+          reserve contract headroom. Batch Lab also provides pinned historical
+          processing as a separate mode.
         </p>
       </section>
       {task.error ? <ErrorBlock error={task.error} /> : null}

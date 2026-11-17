@@ -385,6 +385,7 @@ test("real CSV, consolidated approval, policy amendment lifecycle, replay and au
   await page
     .getByLabel("Governance reason")
     .fill("Reviewed source scope, comparison and priority");
+  await page.getByLabel("Acknowledge rule precedence").check();
   for (const action of ["Review", "Approve", "Activate"]) {
     const response = page.waitForResponse(
       (r) =>

@@ -55,9 +55,17 @@ def policies(session,lock=False):
     if lock: statement=statement.with_for_update(read=True)
     return [{**r.payload,'status':r.status} for r in session.scalars(statement)]
 
-def execute_run(session,rows,explicit,actor,data=None,policy_list=None):
+def execute_run(session,rows,explicit,actor,data=None,policy_list=None,policy_mode='pinned'):
     data=data or current_data(session); ps=policy_list or [p for p in policies(session) if p['status']=='active' or (explicit and p['status']=='superseded')]
-    if explicit: ps=[p for p in ps if p['version']==explicit]
+    calendar_version=None
+    if policy_mode not in {'pinned','calendar'}: raise ValueError('Unknown policy application mode')
+    if policy_mode=='calendar' and explicit:
+        target=next((p for p in ps if p['version']==explicit and p.get('status','active')=='active'),None)
+        if not target: raise ValueError('Activate the selected amendment before calendar processing')
+        calendar_version=explicit
+        ps=[p for p in ps if p.get('status','active')=='active' and (p['effective_date']<target['effective_date'] or p['version']==explicit)]
+        explicit=None
+    elif explicit: ps=[p for p in ps if p['version']==explicit]
     ps=sorted(ps,key=lambda p:(p['effective_date'],p['version']))
     if not data.items: raise ValueError('Import private master data before processing')
     result=process(rows,data,ps,explicit)
@@ -66,12 +74,13 @@ def execute_run(session,rows,explicit,actor,data=None,policy_list=None):
     data_hash=digest(data.snapshot()); input_hash=digest(sorted(rows,key=lambda r:(r['pr_no'],r['pr_line'],digest(r))))
     # Governance status can change after activation/withdrawal without changing
     # an approved policy's immutable content. Unused versions are not inputs.
-    policy_hash=digest([{k:v for k,v in p.items() if k not in {'id','status'}} for p in snapshot_policies])
-    run_id='RUN-'+digest([input_hash,data_hash,policy_hash,explicit,str(actor)])[:20]
+    policy_hash=digest([{k:v for k,v in p.items() if k not in {'id','status','governance'}} for p in snapshot_policies])
+    selection={'mode':'calendar','through_version':calendar_version} if calendar_version else explicit
+    run_id='RUN-'+digest([input_hash,data_hash,policy_hash,selection,str(actor)])[:20]
     existing=session.get(Run,run_id)
     if existing: return existing.payload
     if not session.get(Dataset,data_hash): session.add(Dataset(id=data_hash,payload=data.snapshot())); session.flush()
-    payload={**result,'id':run_id,'created_at':now(),'input_hash':input_hash,'data_hash':data_hash,'policy_hash':policy_hash,'policy_snapshots':deepcopy(snapshot_policies),'explicit_policy':explicit,'input':rows,'status':'completed','actor':actor}
+    payload={**result,'id':run_id,'created_at':now(),'input_hash':input_hash,'data_hash':data_hash,'policy_hash':policy_hash,'policy_snapshots':deepcopy(snapshot_policies),'explicit_policy':explicit,'policy_mode':'pinned' if explicit else 'calendar','calendar_version':calendar_version,'input':rows,'status':'completed','actor':actor}
     session.add(Run(id=run_id,created_at=payload['created_at'],input_hash=input_hash,data_hash=data_hash,payload=payload)); session.flush()
     pr_ids=set(session.scalars(select(Requisition.id).where(Requisition.id.in_([row['pr_no'] for row in rows]))))
     for pr in sorted({row['pr_no'] for row in rows}-pr_ids): session.add(Requisition(id=pr,payload={'pr_no':pr}))

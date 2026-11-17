@@ -129,7 +129,9 @@ export default function RequestStudio() {
         {chat ? (
           <p className="mt-3 text-sm text-lavender">
             {chat.ai_status === "available"
-              ? (chat.mode==='intake'?'Gemini-assisted intake · server-validated draft':'Gemini answer · source-checked')
+              ? chat.mode === "intake"
+                ? "Gemini-assisted intake · server-validated draft"
+                : "Gemini answer · source-checked"
               : chat.ai_status === "local_only"
                 ? "Local response · no external model call"
                 : chat.ai_status === "disabled"
@@ -142,6 +144,15 @@ export default function RequestStudio() {
           </p>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
+          {typeof state.policy_proposal_text === "string" ? (
+            <Link
+              className="button"
+              to="/policy-reactor"
+              state={{ policyProposalText: state.policy_proposal_text }}
+            >
+              Review policy proposal
+            </Link>
+          ) : null}
           {chat?.alternatives.map((a, i) => (
             <Button
               key={i}

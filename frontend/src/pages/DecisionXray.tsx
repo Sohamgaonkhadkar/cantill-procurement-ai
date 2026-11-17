@@ -245,10 +245,35 @@ export default function DecisionXray() {
                   Exact remaining headroom and rejection reasons at processing
                   time.
                 </p>
+                {e!.contracts.map((contract, i) => (
+                  <p key={i} className="mb-2 text-sm">
+                    <strong>{String(contract.contract_id)}</strong> · supplier{" "}
+                    {String(contract.supplier_id)} · rate ₹
+                    {String(contract.rate)} · remaining ₹
+                    {String(contract.remaining)} · needed ₹
+                    {String(contract.required)} ·{" "}
+                    {contract.usable
+                      ? "Eligible with sufficient ceiling"
+                      : String(contract.rejection)}
+                  </p>
+                ))}
                 <Json value={e!.contracts} label="All evaluated contracts" />
                 <h2 className="font-display mt-5 text-xl">
                   Supplier selection
                 </h2>
+                <ol className="list-decimal pl-5">
+                  {e!.ranking.map((supplier, i) => (
+                    <li key={i} className="my-2 text-sm">
+                      {String(supplier.supplier_id)} · {String(supplier.name)} ·
+                      score {String(supplier.score)} · price ₹
+                      {String(supplier.reference_price)} from{" "}
+                      {String(supplier.reference_source)}
+                      {supplier.supplier_id === r.supplier_id
+                        ? " · Selected supplier"
+                        : ""}
+                    </li>
+                  ))}
+                </ol>
                 <Json
                   value={e!.ranking}
                   label="Ranking components and reference prices"
@@ -264,6 +289,20 @@ export default function DecisionXray() {
               <div className="surface-dark p-5">
                 <h2 className="font-display text-xl">Decision explanation</h2>
                 <p className="mt-3 leading-relaxed text-lavender">{r.reason}</p>
+                <p className="mt-3">
+                  {r.description} · {r.quantity} units · {r.plant}
+                </p>
+                <p className="mt-2 text-sm">
+                  Grouped PR lines:{" "}
+                  {r.lines
+                    .map((line) => `${line.pr_no}/${line.pr_line}`)
+                    .join(", ")}
+                </p>
+                <p className="mt-2 text-sm">
+                  Planned PO: {r.po_id || "No PO — sourcing workflow"}.
+                  Processing a batch creates recommendations; the approval panel
+                  explains the separate commitment action.
+                </p>
                 <p className="num mt-4">
                   Exact group value {formatMoney(e!.valuation.exact_value)}
                 </p>
