@@ -27,6 +27,11 @@ import {
 } from "./types";
 import type { PolicyDefinition } from "./generated";
 let token: string | null = null;
+let demoWorkspace = false;
+export function setDemoWorkspace(value: boolean) {
+  demoWorkspace = value;
+  token = null;
+}
 export function setToken(value: string | null) {
   token = value;
 }
@@ -47,7 +52,10 @@ async function response(path: string, init: RequestInit = {}) {
   if (token) headers.set("Authorization", "Bearer " + token);
   let res: Response;
   try {
-    res = await fetch(API_BASE_URL + path, { ...init, headers });
+    const routedPath = demoWorkspace && path.startsWith("/api/")
+      ? "/demo-api/" + path.slice(5)
+      : path;
+    res = await fetch(API_BASE_URL + routedPath, { ...init, headers });
   } catch {
     throw new ApiError(
       "Unable to reach the API. Check your connection and retry.",
@@ -123,6 +131,7 @@ export const api = {
       )
     ).blob(),
   authOptions: () => call("/api/auth/options", AuthOptionsSchema),
+  demoAuthOptions: () => call("/demo-api/auth/options", AuthOptionsSchema),
   register: (body: {
     username: string;
     display_name: string;

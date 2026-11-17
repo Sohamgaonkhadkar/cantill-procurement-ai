@@ -3,9 +3,13 @@
   "framework": "fastapi",
   "regions": ["sin1"],
   "buildCommand": "python -m scripts.build_vercel",
+  "rewrites": [
+    {"source":"/demo-api/:path*","destination":"https://corvo-procurement-demo.vercel.app/api/:path*"}
+  ],
   "headers": [
     {"source":"/","headers":[{"key":"Cache-Control","value":"no-store"}]},
-    {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-store"}]}
+    {"source":"/index.html","headers":[{"key":"Cache-Control","value":"no-store"}]},
+    {"source":"/demo-api/:path*","headers":[{"key":"Cache-Control","value":"private, no-store"}]}
   ],
   "functions": {
     "app.py": {

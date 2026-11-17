@@ -6,8 +6,9 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "@/api";
-import { setToken } from "@/api/http";
+import { setToken, setDemoWorkspace } from "@/api/http";
 import { Button, ErrorBlock } from "@/components/ui";
 import { Wordmark } from "@/components/Monogram";
 import { HERO_POSTER } from "@/components/media/assets";
@@ -22,7 +23,7 @@ type Auth = {
     username?: string;
     role?: string;
     password: string;
-  }) => Promise<void>;
+  }, demo?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   register: (body: {
     username: string;
@@ -39,8 +40,10 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const clear = () => {
     setToken(null);
+    setDemoWorkspace(false);
     setIdentity(null);
     qc.clear();
   };
@@ -52,21 +55,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     username?: string;
     role?: string;
     password: string;
-  }) {
-    await acceptSession(await api.login(body));
+  }, demo = false) {
+    setDemoWorkspace(demo);
+    try {
+      await acceptSession(await api.login(body), demo);
+    } catch (error) {
+      clear();
+      throw error;
+    }
   }
   async function register(body: {
     username: string;
     display_name: string;
     password: string;
   }) {
+    setDemoWorkspace(false);
     await acceptSession(await api.register(body));
   }
-  async function acceptSession(session: { access_token: string }) {
+  async function acceptSession(session: { access_token: string }, demo = false) {
     setToken(session.access_token);
     try {
       const me = await api.me();
+      if (demo && me.workspace_mode !== "demo") throw new Error("Built-in accounts require the isolated demo workspace.");
       qc.clear();
+      navigate("/", { replace: true });
       setIdentity(me);
     } catch (e) {
       clear();
@@ -101,19 +113,27 @@ export function Login() {
     queryFn: api.authOptions,
     retry: false,
   });
+  const demoOptions = useQuery({
+    queryKey: ["demo-auth-options"],
+    queryFn: api.demoAuthOptions,
+    enabled: Boolean(options.data?.workspace_mode === "live" && options.data.demo_url),
+    retry: false,
+  });
+  const roleOptions = options.data?.workspace_mode === "demo" ? options.data : demoOptions.data;
+  const routedDemo = options.data?.workspace_mode === "live" && Boolean(options.data.demo_url);
   const publicPassword =
     kind === "role" &&
-    options.data?.workspace_mode === "demo" &&
-    options.data.submission_access
-      ? options.data?.roles.find((item) => item.role === role)?.password
+    roleOptions?.workspace_mode === "demo" &&
+    roleOptions.submission_access
+      ? roleOptions.roles.find((item) => item.role === role)?.password
       : undefined;
   useEffect(() => {
-    if (options.data?.submission_access === false) {
+    if (options.data?.submission_access === false && !options.data.demo_url) {
       setKind("individual");
       setPassword("");
       setShowPassword(false);
     }
-  }, [options.data?.submission_access]);
+  }, [options.data?.submission_access, options.data?.demo_url]);
   useEffect(() => {
     if (publicPassword) {
       setPassword(publicPassword);
@@ -177,6 +197,7 @@ export function Login() {
               else
                 await auth.login(
                   kind === "role" ? { role, password } : { username, password },
+                  kind === "role" && routedDemo,
                 );
               setPassword("");
             } catch (e) {
@@ -198,7 +219,7 @@ export function Login() {
           <p className="mt-3 text-lavender">
             {options.data?.workspace_mode === "demo"
               ? "Explore the isolated demo with fictional procurement data."
-              : "Sign in to work with live procurement data."}
+              : "Choose a built-in account, or sign in with your own individual credentials."}
           </p>
           {options.data?.workspace_mode === "demo" ? (
             <div className="demo-workspace-invite" role="note">
@@ -213,12 +234,17 @@ export function Login() {
             </div>
           ) : options.data?.demo_url ? (
             <div className="demo-workspace-invite">
-              <strong>Want automatic role passwords?</strong>
+              <strong>One sign-in page · choose your account type</strong>
               <p>
-                Try Admin, Buyer and Requester in a separate workspace with
-                fictional data.
+                Built-in accounts: choose Admin, Buyer or Requester below. The
+                password appears automatically. Choose Admin for the full
+                evaluation walkthrough. These accounts use fictional demo data.
               </p>
-              <a href={options.data.demo_url}>Open isolated demo workspace ↗</a>
+              <p>
+                Individual accounts: enter your own username and password, or
+                create a new account. Private evaluator credentials access the
+                live assessment workspace. You stay on this website for both.
+              </p>
             </div>
           ) : null}
           <label className="field mt-6">
@@ -231,9 +257,9 @@ export function Login() {
                 setCreating(false);
                 const demoPassword =
                   e.target.value === "role" &&
-                  options.data?.workspace_mode === "demo" &&
-                  options.data.submission_access
-                    ? options.data.roles.find((item) => item.role === role)
+                  roleOptions?.workspace_mode === "demo" &&
+                  roleOptions.submission_access
+                    ? roleOptions.roles.find((item) => item.role === role)
                         ?.password
                     : undefined;
                 setPassword(demoPassword ?? "");
@@ -241,8 +267,12 @@ export function Login() {
                 setError(null);
               }}
             >
-              <option value="role">Controlled role account</option>
-              <option value="individual">Individual account</option>
+              <option value="role">
+                {options.data?.workspace_mode === "demo" || routedDemo
+                  ? "Controlled role account · automatic password"
+                  : "Controlled role account · private password"}
+              </option>
+              <option value="individual">Individual account / private evaluator</option>
             </select>
           </label>
           {kind === "role" ? (
@@ -254,9 +284,9 @@ export function Login() {
                 onChange={(e) => {
                   setRole(e.target.value);
                   const demoPassword =
-                    options.data?.workspace_mode === "demo" &&
-                    options.data.submission_access
-                      ? options.data.roles.find(
+                    roleOptions?.workspace_mode === "demo" &&
+                    roleOptions.submission_access
+                      ? roleOptions.roles.find(
                           (item) => item.role === e.target.value,
                         )?.password
                       : undefined;
@@ -274,6 +304,7 @@ export function Login() {
             <label className="field">
               Username
               <input
+                name="username"
                 autoComplete="username"
                 required
                 value={username}
@@ -324,12 +355,15 @@ export function Login() {
           ) : null}
           {publicPassword ? (
             <p className="text-sm text-lavender mt-3 mb-3">
-              {options.data?.workspace_mode === "demo"
+              {roleOptions?.workspace_mode === "demo"
                 ? "Public demo password filled automatically for the selected role."
                 : "Submission password is filled automatically for the selected shared role."}
             </p>
           ) : null}
-          {!options.isPending && !options.data?.submission_access ? (
+          {kind === "role" && routedDemo && demoOptions.isPending ? (
+            <p className="text-sm text-lavender" role="status">Loading built-in account passwords…</p>
+          ) : null}
+          {!options.isPending && !publicPassword && !routedDemo && !options.data?.submission_access ? (
             <p className="text-sm text-lavender mb-3">
               {kind === "role"
                 ? "Use the private password assigned to the selected role. Contact the workspace administrator for access."
@@ -341,6 +375,7 @@ export function Login() {
           <label className="field">
             Password
             <input
+              name="password"
               type={showPassword ? "text" : "password"}
               autoComplete={creating ? "new-password" : "current-password"}
               required
@@ -358,13 +393,25 @@ export function Login() {
             />
             Show password
           </label>
+          {kind === "individual" && !creating ? (
+            <p className="text-xs text-lavender">
+              Your browser's password manager can save this login. Use Show
+              password to check what you entered.
+            </p>
+          ) : null}
           {options.error ? <ErrorBlock error={options.error} /> : null}
+          {kind === "role" && routedDemo && demoOptions.error ? (
+            <>
+              <ErrorBlock error={demoOptions.error} />
+              <Button type="button" onClick={() => void demoOptions.refetch()}>Retry loading built-in accounts</Button>
+            </>
+          ) : null}
           {error ? <ErrorBlock error={error} /> : null}
           <Button
             type="submit"
             variant="lime"
             busy={busy}
-            disabled={wait > 0}
+            disabled={wait > 0 || (kind === "role" && routedDemo && !publicPassword)}
             className="mt-5 w-full"
           >
             {wait

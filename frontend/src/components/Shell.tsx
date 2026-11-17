@@ -717,9 +717,7 @@ export function Shell() {
                 <span>
                   Fictional data · Changes do not affect the live workspace.
                 </span>
-                <a href="https://corvo-procurement.vercel.app">
-                  Open live workspace ↗
-                </a>
+                <span>Switch accounts using Profile → Sign out.</span>
               </div>
             ) : null}
             <motion.div

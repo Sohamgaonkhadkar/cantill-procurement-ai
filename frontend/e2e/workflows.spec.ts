@@ -53,6 +53,29 @@ test("synthetic auth-discovery presentation autofills only isolated demo roles, 
     await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
   }
 });
+test("one login page autofills built-in demo roles and keeps individual passwords private", async ({ page }) => {
+  await page.route("**/api/auth/options", (route) => route.fulfill({ json: {
+    submission_access: false, registration_enabled: true, roles: [],
+    workspace_mode: "live", demo_url: "https://corvo-procurement-demo.vercel.app",
+  } }));
+  await page.route("**/demo-api/auth/options", (route) => route.fulfill({ json: {
+    submission_access: true, registration_enabled: true, workspace_mode: "demo", demo_url: null,
+    roles: ["requester", "buyer", "admin"].map((role) => ({ role, password: "corvo-demo-" + role })),
+  } }));
+  await page.goto("/");
+  for (const role of ["requester", "buyer", "admin", "admin"]) {
+    await page.getByLabel("Role", { exact: true }).selectOption(role);
+    await expect(page.getByLabel("Password", { exact: true })).toHaveValue("corvo-demo-" + role);
+  }
+  await page.getByLabel("Account type", { exact: true }).selectOption("individual");
+  await expect(page.getByLabel("Username", { exact: true })).toHaveAttribute("autocomplete", "username");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("autocomplete", "current-password");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
+  await page.getByLabel("Account type", { exact: true }).selectOption("role");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("corvo-demo-admin");
+  await expect(page).toHaveURL("http://127.0.0.1:5175/");
+});
+
 test("blocked entry script shows reload recovery instead of a blank page", async ({
   page,
 }) => {

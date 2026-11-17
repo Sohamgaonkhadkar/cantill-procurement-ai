@@ -10,6 +10,11 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     proxy: {
+      "/demo-api": {
+        target: process.env.CORVO_DEMO_API_PROXY ?? "https://corvo-procurement-demo.vercel.app",
+        changeOrigin: true,
+        rewrite: (value) => value.replace(/^\/demo-api/, "/api"),
+      },
       "/api": process.env.CORVO_DEV_API_PROXY ?? "http://127.0.0.1:8000",
       "/health": process.env.CORVO_DEV_API_PROXY ?? "http://127.0.0.1:8000",
     },

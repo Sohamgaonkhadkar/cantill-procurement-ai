@@ -46,7 +46,7 @@ The server key is named `GEMINI_API_KEY` and belongs only in the isolated demo p
 
 **[Open Corvo →](https://corvo-procurement.vercel.app)**
 
-Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged live-workspace password is published. The separate [fictional demo](https://corvo-procurement-demo.vercel.app) provides automatically filled demonstration roles against its isolated database schema.
+Choose **Individual account** and use the private evaluator credentials supplied separately. The evaluator account can inspect procurement and policy workflows; identity administration and bulk data replacement are restricted to the owner. No privileged live-workspace password is published. The same login page also provides automatically filled built-in roles against the isolated fictional demo database.
 
 | Workspace | What to inspect |
 |---|---|
@@ -59,13 +59,13 @@ Choose **Individual account** and use the private evaluator credentials supplied
 | **Contract Vault** | Contract register, ceiling values and reviewed PDF proposals |
 | **Purchase Orders / Sourcing / Audit Trail** | Persisted purchasing records, overrides and actor/time evidence |
 
-Controlled role sign-in is also available: select Admin, Buyer or Requester and enter its privately assigned password. New users can select Individual account → New here? Create account; self-registration creates Requester accounts only. Public privileged demonstration passwords remain removed. Registration is an explicit environment setting, enabled on this hosted instance. [Health endpoint](https://corvo-procurement.vercel.app/health).
+For built-in access, select Controlled role account and choose Admin, Buyer or Requester: its public demo password appears automatically on this same page. Choose Admin for the complete fictional-data walkthrough. New users can select Individual account → New here? Create account; self-registration creates Requester accounts only. Public privileged demonstration passwords remain removed. Registration is an explicit environment setting, enabled on this hosted instance. [Health endpoint](https://corvo-procurement.vercel.app/health).
 
-### Full demo workspace with automatic passwords
+### Built-in accounts on the same login page
 
-[Open the isolated demo](https://corvo-procurement-demo.vercel.app). Choose Controlled role account, then Admin, Buyer or Requester; the public demonstration password fills automatically. This deployment uses fictional DEMO-prefixed data, a restricted database role/schema and a separate session-signing key. It cannot access the live workspace's records. Its Admin can exercise procurement/policy workflows but cannot administer identities or replace data. The demo is shared; demonstration changes persist there.
+[Open Corvo](https://corvo-procurement.vercel.app). Choose Controlled role account, then Admin, Buyer or Requester; the public demonstration password fills automatically. Sign-in and all screens remain on the main website. A fixed same-origin `/demo-api/` gateway connects those accounts to the isolated demo backend. This deployment uses fictional DEMO-prefixed data, a restricted database role/schema and a separate session-signing key. It cannot access the live workspace's records. Its Admin can exercise procurement/policy workflows but cannot administer identities or replace data. The demo is shared; demonstration changes persist there.
 
-Live individual/controlled-role passwords remain private. The main sign-in screen links to the demo for password-free exploration. Selecting a demo role does not grant live access.
+Individual account passwords remain private and are never filled by the application. Switching to Individual account clears the built-in password; new users can create a Requester account. Switching accounts clears the in-memory token and query cache. A built-in role cannot access the live database.
 
 ### Isolated synthetic examples
 

@@ -104,8 +104,11 @@ test("blind rehearsal uploads, reconciles, activates and exports the same batch 
   // Leave the shared isolated browser server on its original active policy.
   await go("Policy Reactor");
   await page.getByRole("button", { name: new RegExp(version + ".*active") }).click();
+  await expect(page.getByLabel("Policy DSL JSON")).toHaveValue(new RegExp('"version":\\s*"' + version + '"'));
   await page.getByLabel("Governance reason").fill("Completed isolated rehearsal; restore original policy calendar");
-  await clickResponse(page, "Deactivate policy", "/deactivate");
+  const withdrawn = await clickResponse(page, "Deactivate policy", "/deactivate");
+  expect(withdrawn.id).toBe(version);
+  expect(withdrawn.status).toBe("superseded");
 });
 
 async function clickResponse(page: Page, button: string, suffix: string, method = "POST") {
