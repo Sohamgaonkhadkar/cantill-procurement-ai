@@ -5,6 +5,7 @@ import { useRuns } from "@/api/hooks";
 import type { PageOf, RequirementResponse } from "@/api";
 import { PageHeading, Button, ErrorBlock, LoadingBlock, RouteTag } from "./ui";
 import { formatMoney, formatDate } from "@/lib/format";
+import { EvidenceView } from "./EvidenceView";
 export function Page({
   eyebrow,
   title,
@@ -33,7 +34,13 @@ export function Json({
   return (
     <details className="json-details">
       <summary>{label}</summary>
-      <pre>{JSON.stringify(value, null, 2)}</pre>
+      <div className="evidence-body">
+        <EvidenceView value={value} />
+      </div>
+      <details className="evidence-technical">
+        <summary>Technical JSON · exact source data</summary>
+        <pre>{JSON.stringify(value, null, 2)}</pre>
+      </details>
     </details>
   );
 }

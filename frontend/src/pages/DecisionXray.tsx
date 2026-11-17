@@ -288,24 +288,80 @@ export default function DecisionXray() {
             <aside className="min-w-0 space-y-5">
               <div className="surface-dark p-5">
                 <h2 className="font-display text-xl">Decision explanation</h2>
-                <p className="mt-3 leading-relaxed text-lavender">{r.reason}</p>
-                <p className="mt-3">
-                  {r.description} · {r.quantity} units · {r.plant}
-                </p>
-                <p className="mt-2 text-sm">
-                  Grouped PR lines:{" "}
-                  {r.lines
-                    .map((line) => `${line.pr_no}/${line.pr_line}`)
-                    .join(", ")}
-                </p>
-                <p className="mt-2 text-sm">
-                  Planned PO: {r.po_id || "No PO — sourcing workflow"}.
-                  Processing a batch creates recommendations; the approval panel
-                  explains the separate commitment action.
-                </p>
-                <p className="num mt-4">
-                  Exact group value {formatMoney(e!.valuation.exact_value)}
-                </p>
+                <div className="decision-summary">
+                  <div className="decision-summary-heading">
+                    <RouteTag route={r.route} />
+                    <span>{r.approval_status}</span>
+                  </div>
+                  <p className="decision-item">{r.description}</p>
+                  <dl className="decision-facts">
+                    <div>
+                      <dt>Quantity</dt>
+                      <dd>
+                        {r.quantity} {r.lines[0]?.uom ?? "units"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Plant</dt>
+                      <dd>{r.plant}</dd>
+                    </div>
+                    <div>
+                      <dt>Policy version</dt>
+                      <dd>{r.policy_version}</dd>
+                    </div>
+                    <div>
+                      <dt>Matched clause</dt>
+                      <dd>
+                        {e!.rule_trace
+                          .filter((x) => x.matched)
+                          .map((x) => String(x.rule))
+                          .join(", ") || "None"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Valuation source</dt>
+                      <dd>{e!.valuation.source.replace(/_/g, " ")}</dd>
+                    </div>
+                    <div>
+                      <dt>Price reference</dt>
+                      <dd>{e!.valuation.reference}</dd>
+                    </div>
+                  </dl>
+                  <div className="decision-amount">
+                    <span>Exact group value</span>
+                    <strong>{formatMoney(e!.valuation.exact_value)}</strong>
+                  </div>
+                  <h3 className="text-sm font-semibold">
+                    Grouped purchase request lines
+                  </h3>
+                  <ul className="decision-lines">
+                    {r.lines.map((line, i) => (
+                      <li key={i}>
+                        <span>{line.pr_no}</span>
+                        <small>
+                          Line {line.pr_line} · {line.quantity} {line.uom}
+                        </small>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="decision-commitment">
+                    <span>Planned purchase order</span>
+                    <p>
+                      {r.po_id ||
+                        (r.decision === "SOURCING_REQUEST"
+                          ? "Sourcing workflow · no PO planned"
+                          : "No purchase order planned")}
+                    </p>
+                    <small>
+                      Batch processing creates recommendations. Commitment
+                      requires a separate authorized approval.
+                    </small>
+                  </div>
+                  <details className="decision-reason">
+                    <summary>Full backend explanation</summary>
+                    <p>{r.reason}</p>
+                  </details>
+                </div>
               </div>
               <ApprovalPanel
                 key={selection.runId + r.id}
