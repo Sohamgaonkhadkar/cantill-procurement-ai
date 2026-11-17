@@ -78,6 +78,8 @@ export default function PolicyReactor() {
     },
   });
   const gov = object(selected?.governance);
+  const unsavedChanges =
+    !!selected && editor !== JSON.stringify(definition(selected), null, 2);
   const interpretation = object(gov.interpretation);
   const unresolved = Array.isArray(interpretation.unresolved_clauses)
     ? interpretation.unresolved_clauses
@@ -193,6 +195,17 @@ export default function PolicyReactor() {
             {selected?.status === "draft"
               ? "Drafts do not affect live processing."
               : "This version is immutable. Clone it into a new draft for changes."}
+          </p>
+          <p className="text-sm text-lavender" aria-live="polite">
+            {unsavedChanges
+              ? "Unsaved editor changes. Preview and save the draft before simulation, review or approval. These actions use the saved definition."
+              : selected?.status === "draft"
+                ? gov.reviewed
+                  ? "Saved draft reviewed. Approve this definition, then activate it. Any further saved edit requires a new review."
+                  : "Reconcile source clauses, preview and save edits, then simulate a selected run. Review the saved definition before approval and activation."
+                : selected?.status === "approved"
+                  ? "Approved definition ready for activation. Verify its effective date before activating."
+                  : "Inspect the effective date and original source before creating an amendment."}
           </p>
           {unresolved.length ? (
             <div className="border border-coral p-4" role="alert">
@@ -382,6 +395,7 @@ export default function PolicyReactor() {
                       busy={busy}
                       disabled={
                         !admin ||
+                        unsavedChanges ||
                         reason.trim().length < 5 ||
                         (action === "review" &&
                           (selected.status !== "draft" ||
@@ -391,7 +405,8 @@ export default function PolicyReactor() {
                                 !mappingsReady)) ||
                             (!!precedence.requires_acknowledgement &&
                               !precedenceAcknowledged))) ||
-                        (action === "approve" && selected.status !== "draft") ||
+                        (action === "approve" &&
+                          (selected.status !== "draft" || !gov.reviewed)) ||
                         (action === "activate" &&
                           !["approved", "superseded"].includes(
                             selected.status,
@@ -680,7 +695,7 @@ export default function PolicyReactor() {
         </h2>
         <RunPicker selection={selection} />
         <Button
-          disabled={!selected || !selection.runId || busy}
+          disabled={!selected || !selection.runId || busy || unsavedChanges}
           onClick={() =>
             task.mutate(() =>
               api.simulate(selected!.version, selection.runId, "calendar"),

@@ -207,7 +207,8 @@ async function go(page: Page, label: string) {
       exact: label !== "Overview",
     }),
   ).toBeVisible();
-  await page.waitForLoadState("networkidle");
+  // Screen readiness is established by the heading and animation checks.
+  // Unrelated media/network activity must not block business-flow assertions.
   await page.waitForFunction(() =>
     Array.from(document.querySelectorAll("#main h1 [style]")).every((el) => {
       const transform = getComputedStyle(el).transform;

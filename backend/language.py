@@ -175,12 +175,15 @@ def apply_statement(policy,text,data=None,context=None):
     if m:
         policy['parameters']['weights'][m[1].lower()]=float(number(m[2]))
         return m[1].lower()+' ranking weight proposed: '+m[2]
-    m=re.fullmatch(r'(?:increase|change|set) (?:the )?(?:preferred )?supplier count for '+ROUTE+r'(?: from '+COUNT+r')? to ('+COUNT+r')',text,re.I)
+    m=re.fullmatch(r'(increase|change|set) (?:the )?(?:preferred )?supplier count for '+ROUTE+r'(?: from ('+COUNT+r'))? to ('+COUNT+r')',text,re.I)
     if m:
-        route=m[1].upper()
+        verb,route,prior,target=m.groups();route=route.upper()
         if route not in {'RFQ','RFP','CAPEX_SOURCING'}: raise ValueError('Supplier counts apply to sourcing')
-        policy['parameters']['suggestions'][route]=count(m[2])
-        return route+' supplier count proposed: '+str(count(m[2]))
+        current=policy['parameters']['suggestions'][route];proposed=count(target)
+        if prior is not None and count(prior)!=current:raise ValueError('Conflicting from-value: stated supplier count does not match the selected policy')
+        if verb.lower()=='increase' and proposed<=current:raise ValueError('Conflicting direction: an increase must exceed the current supplier count')
+        policy['parameters']['suggestions'][route]=proposed
+        return route+' supplier count proposed: '+str(proposed)
     m=re.fullmatch(r'for (capital equipment|capex|materials|services),? require (?:an |one )?additional sourcing approval',text,re.I)
     if m:
         kind={'capital equipment':'Capex','capex':'Capex','materials':'Material','services':'Service'}[m[1].lower()]

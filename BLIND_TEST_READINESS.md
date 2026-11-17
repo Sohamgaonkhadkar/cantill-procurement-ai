@@ -14,9 +14,9 @@ Production database inspection confirmed **Alembic revision 004**, persistent Po
 
 | Check | Result |
 |---|---|
-| Windows / Python 3.14 / SQLite | **295 passed, 4 PostgreSQL-only skips** |
-| Linux / Python 3.12 / PostgreSQL | **299 passed**, including all independent concurrency tests |
-| Full Chromium suite / isolated real FastAPI | **21 passed**, including desktop/mobile workspaces and the new blind rehearsal |
+| Windows / Python 3.14 / SQLite | **301 passed, 4 PostgreSQL-only skips** |
+| Linux / Python 3.12 / PostgreSQL | **305 passed**, including all independent concurrency tests |
+| Full Chromium suite / isolated real FastAPI | **22 passed**, including desktop/mobile workspaces and the new blind rehearsal |
 | Frontend unit tests | **7 passed** |
 | Type checking, ESLint, Vite production build | Passed |
 | OpenAPI snapshot and generated client drift | Passed |
