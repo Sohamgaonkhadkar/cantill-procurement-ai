@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="docs/assets/corvo-banner.svg" alt="Corvo Procurement OS â€” Every request. A reasoned decision." width="100%" />
+<img src="docs/assets/corvo-banner.svg" alt="Corvo Procurement OS — Every request. A reasoned decision." width="100%" />
 
 # CORVO PROCUREMENT OS
 
 A policy-driven procurement platform that converts purchase requests into explainable purchase-order and sourcing recommendations.
 
-**[Live application](https://corvo-procurement.vercel.app) Â· [API documentation](https://corvo-procurement.vercel.app/docs) Â· [Architecture](SOLUTION_DESIGN.md) Â· [Engineering decisions](DECISIONS.md)**
+**[Live application](https://corvo-procurement.vercel.app) · [API documentation](https://corvo-procurement.vercel.app/docs) · [Architecture](SOLUTION_DESIGN.md) · [Engineering decisions](DECISIONS.md)**
 
 ![React and TypeScript](https://img.shields.io/badge/React_19-TypeScript_5.9-3178C6?style=flat-square)
 ![FastAPI and PostgreSQL](https://img.shields.io/badge/FastAPI-PostgreSQL-009688?style=flat-square)
@@ -21,10 +21,10 @@ The same login page serves two isolated environments:
 | Access | Select | Data and permissions |
 |---|---|---|
 | Fictional demonstration | **Controlled role account**, then Admin, Buyer or Requester | Its public demo password fills automatically. Admin provides the complete demonstration; Requester has a restricted workflow. |
-| Private evaluation | **Individual account â†’ Assessment** | Requires an owner-provisioned account. Assessment credentials are never published. The evaluator can use procurement and policy workflows but cannot administer identities or replace master data. |
-| Personal fictional account | **Individual account â†’ New here? Create account** | Creates a Requester in the fictional workspace with a password chosen by that user. It grants no assessment access. |
+| Private evaluation | **Individual account → Assessment** | Requires an owner-provisioned account. Assessment credentials are never published. The evaluator can use procurement and policy workflows but cannot administer identities or replace master data. |
+| Personal fictional account | **Individual account → New here? Create account** | Creates a Requester in the fictional workspace with a password chosen by that user. It grants no assessment access. |
 
-The header and banner identify the data mode. Demo and assessment tokens, databases and signing keys are separate. Demo changes persist only in the shared fictional workspace. The session token stays in memory; reloading requires sign-in. **Assessment credentials stay private. If reviewers need them, use an approved private channel; no separate credential-email requirement is claimed.**
+The header and banner identify the data mode. Demo and assessment tokens and signing keys are separate; the demo uses a restricted PostgreSQL role and an isolated schema. Demo changes persist only in the shared fictional workspace. The session token stays in memory; reloading requires sign-in. **Assessment credentials stay private. If reviewers need them, use an approved private channel; no separate credential-email requirement is claimed.**
 
 ## What Corvo does
 
@@ -55,12 +55,12 @@ Each saved run includes the source lines, item-match evidence, grouping anchors,
 ## Evaluator walkthrough
 
 1. **Sign in.** Choose the built-in Admin for fictional exploration or the privately provisioned Individual assessment account for supplied data.
-2. **Create a request or process a batch.** In Request Studio, inspect the assembled specification before confirming. For evaluation Run 1, upload the complete supplied CSV in Batch Lab and select **5.0** explicitly. Retain its run ID, input hash and export.
+2. **Create a request or process a batch.** In Request Studio, inspect the assembled specification before confirming. For evaluation Run 1, upload the complete supplied CSV in Batch Lab and select **Historical: pin selected policy** and **5.0** explicitly. Retain its run ID, input hash and export.
 3. **Inspect the decision.** Use Decision X-Ray and Buyer Inbox to check matching, grouping, valuation, supplier eligibility and approval scope. Invalid input lines remain explicit `NOT_PROCESSED` outcomes.
 4. **Upload and review the amendment.** In Policy Reactor, select the base version and enter a unique new version and effective date. Inspect every source clause. Unsupported wording stays unresolved until faithfully implemented through the registered DSL and mapped to saved executable changes.
 5. **Simulate, review, approve and activate.** Save edits before simulation. Complete clause evidence and precedence acknowledgments, then perform the separate governance actions. Activating a policy does not approve a purchase order.
 6. **Reprocess the original bytes.** For Run 2, select **Run 2: dated calendar through selected amendment** and the activated version. Earlier PR dates retain earlier effective policies. Compare the input hashes and replay both runs. Do not make purchasing approvals between Run 1 and Run 2.
-7. **Export the results.** Download both exact decision CSVs. In Supplier Constellation, select the requested policy and as-of date, then download preferred suppliers. Validate all three files before submission.
+7. **Export the results.** Download both exact decision CSVs. In Supplier Constellation, select the requested policy and as-of date, then download preferred suppliers for all applicable items, not only the chart selection. Validate all three files before submission.
 
 For a quick fictional experiment, Batch Lab also has **Try an isolated demo**. This separate preview computes through the same engine without saving runs or changing dashboard totals, policies or ceilings. It accepts at most 200 lines; use ordinary Batch Lab for assessment processing.
 

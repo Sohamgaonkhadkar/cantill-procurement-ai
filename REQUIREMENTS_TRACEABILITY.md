@@ -38,7 +38,7 @@ This matrix maps the supplied assessment requirements to implemented components 
 | Grounded conversation | Direct Gemini, typed read-only tools, server-validated fields and backend citations | Real hosted responses observed; availability depends on free-tier quotas |
 | Local RAG | PostgreSQL search, reviewed/versioned chunks, source ACLs and effective-date filtering | Remains available without an external provider; private sources stay local |
 | Demo embeddings | Native Gemini embeddings for approved fictional/public sources | Eight hosted chunks persisted; repeat request embedded zero duplicates |
-| External-data isolation | Separate demo database, explicit flags, per-turn consent and provenance checks | Live egress rejected before client creation; known sensitive patterns blocked; arbitrary text classification is not infallible |
+| External-data isolation | Restricted demo PostgreSQL role and isolated schema, explicit flags, per-turn consent and provenance checks | Live egress rejected before client creation; known sensitive patterns blocked; arbitrary text classification is not infallible |
 | Public demonstration access | Autofilled controlled roles only in the isolated fictional workspace | Separate session key and restricted database role; live privileged credentials remain private |
 
 These extensions assist exploration and intake. They do not replace the assessment's deterministic procurement engine or permit model-authored financial decisions.

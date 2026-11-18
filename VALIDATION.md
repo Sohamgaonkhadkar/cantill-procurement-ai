@@ -37,12 +37,6 @@ All eleven workspaces were inspected on the canonical site at 1440- and 390-pixe
 
 No procurement algorithm, schema, migration or dependency changed. The original sample hash and all disclosed outcomes still match. All three frozen-rehearsal exports also pass independent validation under the recruiter-required filenames, with no missing-evidence warnings. The README verification count, demo/assessment access wording, media credits and submission filenames were reconciled with the implementation.
 
-## Evaluator polish, 18 November
-
-All eleven workspaces were inspected on the canonical site at 1440- and 390-pixel widths: no page overflow or browser page errors. Two presentation defects were reproduced before editing: the five-row CSV preview rendered as nested lists rather than columns (4,144 pixels tall), and twelve policy versions produced an unbounded 1,438-pixel register. The preview now uses a keyboard-scrollable semantic table, preserving quoted fields and decimal text. The version list has its own bounded scroll region; every version remains selectable. Both new real-backend browser regressions failed against the old presentation and passed after the fix. Their fixtures seed policies before sign-in to avoid client-cache timing.
-
-No procurement algorithm, schema, migration or dependency changed. The original sample hash and all disclosed outcomes still match. All three frozen-rehearsal exports also pass independent validation under the recruiter-required filenames, with no missing-evidence warnings. The README verification count, demo/assessment access wording, media credits and submission filenames were reconciled with the implementation.
-
 ## Final zero-regression audit
 
 The submission checker reproduced three calendar-evidence failures: CSV-only validation assumed every Run 2 row used the amendment; a captured calendar run could be accepted as the original baseline; and duplicate invalid identities crossing an effective date lost one captured version. The checker now requires captured pinned v5.0 baseline and the requested Run 2 calendar endpoint, preserves duplicate-line evidence, and verifies complete captured CSV contents. Without snapshots it reports calendar-version verification as unavailable rather than inventing an all-amended expectation. Missing policy versions on actionable rows remain hard failures. Negative cases reject a changed per-line version, wrong baseline and wrong endpoint. These regressions failed before the respective corrections; all 19 targeted validation/rehearsal checks pass. No financial output was edited to satisfy validation.
@@ -75,7 +69,7 @@ Amendment tests cover equivalent wording, old-value/direction conflicts, Indian 
 
 The independent read-only checker imports neither the production engine nor supplier-ranking implementation. With run/master snapshots and preferred-export metadata it recalculates selected arithmetic, membership, calendar, source-price, ranking, ceiling and PO-window invariants. It checks CSV versus snapshot and same-input hashes. Missing evidence produces warnings; failures prevent publication. Natural-language meaning remains a human review responsibility.
 
-## Complete novel rehearsal
+## Eight-line API regression rehearsal
 
 Eight lines cover multiple item classes, two plants, normal/emergency requests, a genuinely new item, an invalid quantity and a policy-date boundary. Six source instructions include a plant/category exception and one unsupported inclusive interval. The interval is authored in the existing DSL and reconciled explicitly before review, approval and activation; no application-code edit occurs during the rehearsal.
 
@@ -92,7 +86,7 @@ Three lines change. Both input hashes match, both immutable replays match, and b
 
 ## Browser and conversational coverage
 
-The twenty-three scenarios cover single-page role/individual login, demo-only autofill, signup, startup recovery, real CSV/policy/approval/export workflows, clause reconciliation, all eleven desktop/mobile screens, errors/outages, revocation, throttling, pagination, distinct-reviewer sourcing approval, focus handling and the 3D/2D alternative. New coverage exercises spoken quantities, corrections, ambiguous weekdays, the exact-text policy handoff, calendar mode and client rejection above the upload limit.
+The twenty-five scenarios cover single-page role/individual login, demo-only autofill, signup, startup recovery, real CSV/policy/approval/export workflows, clause reconciliation, all eleven desktop/mobile screens, errors/outages, revocation, throttling, pagination, distinct-reviewer sourcing approval, focus handling and the 3D/2D alternative. Coverage also exercises spoken quantities, corrections, ambiguous weekdays, the exact-text policy handoff, calendar mode, client rejection above the upload limit, the tabular CSV preview and selection within a long policy register.
 
 Earlier overlapping build/database/browser runs produced setup timeouts and exhausted the long rehearsal's original 120-second budget after processing. The rehearsal now allows 300 seconds and the chat action 45 seconds; business assertions remain unchanged. The accepted full runs execute separately from build/database stress, with trace recording disabled. A signup fixture label was corrected, and a run interrupted by schema regeneration was discarded. These harness corrections do not establish a hosted latency guarantee.
 

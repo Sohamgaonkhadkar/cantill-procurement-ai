@@ -33,12 +33,12 @@ New public API regressions cover a nine-clause document: preserved emergency lim
 
 A separate case deliberately uses unfamiliar wording for an inclusive value interval. Upload reports it unresolved. Review, approval and activation remain blocked until a reviewer saves an actual condition using the existing `all`, `not`, `gte` and `lte` DSL and explicitly verifies the reconciliation. Boundary, other-plant and emergency cases have independently specified outcomes. No DSL extension or procurement-algorithm change was needed.
 
-The browser rehearsal executes the complete workflow over real HTTP:
+An earlier three-line browser rehearsal checked pinned-version compatibility over real HTTP; the dated-calendar rehearsal and submission procedure are described separately below:
 
 1. Upload a three-line synthetic batch explicitly under v5.0; download Run 1.
 2. Upload four amendment clauses; inspect the unresolved interval and blocked review.
 3. Author the interval in Policy DSL JSON, preview, save, simulate, review, approve and activate.
-4. Process the exact same bytes under the amended version; download Run 2 and compare.
+4. Process the exact same bytes with the pinned amended version; download the second result and compare.
 5. Replay each saved run and export preferred suppliers for the selected version and **19 November 2026**.
 
 | Evidence | Run 1 | Run 2 |
@@ -66,10 +66,10 @@ The first new export assertion expected `100` instead of the authoritative `100.
 
 ## Remaining risks
 
-- **Medium â€” bounded interpretation:** arbitrary English is not guaranteed to compile. Unsupported wording requires faithful structured authoring and human review. Rules needing an unregistered business fact or a new engine operation are outside the present DSL; the unseen amendment has not been received.
-- **Medium â€” hosted resource bounds:** measured tests passed through 2,500 grouped lines and 1,000 separate requirements. A later concurrent load check caused delayed exports/retries and a client timeout; serial recovery preserved the saved runs. A reproduced event-loop blocking defect is fixed and covered by a liveness regression. The 20,000-row parser bound is not a hosted-capacity guarantee. Client/API cap CSV uploads at 4,000,000 bytes; response size and group count also matter. Do not split a business batch: that changes grouping and ceiling allocation.
-- **Low â€” operational availability:** managed free services can cold-start or throttle. Gemini is optional and disabled for live data; blind-test calculations and amendment governance do not require external AI.
-- **Low â€” broader assurance:** no exhaustive penetration or fault-injection audit is claimed. Dependency results are point-in-time checks, not a security certification.
+- **Medium — bounded interpretation:** arbitrary English is not guaranteed to compile. Unsupported wording requires faithful structured authoring and human review. Rules needing an unregistered business fact or a new engine operation are outside the present DSL; the unseen amendment has not been received.
+- **Medium — hosted resource bounds:** measured tests passed through 2,500 grouped lines and 1,000 separate requirements. A later concurrent load check caused delayed exports/retries and a client timeout; serial recovery preserved the saved runs. A reproduced event-loop blocking defect is fixed and covered by a liveness regression. The 20,000-row parser bound is not a hosted-capacity guarantee. Client/API cap CSV uploads at 4,000,000 bytes; response size and group count also matter. Do not split a business batch: that changes grouping and ceiling allocation.
+- **Low — operational availability:** managed free services can cold-start or throttle. Gemini is optional and disabled for live data; blind-test calculations and amendment governance do not require external AI.
+- **Low — broader assurance:** no exhaustive penetration or fault-injection audit is claimed. Dependency results are point-in-time checks, not a security certification.
 
 No unresolved Critical or High defect was identified by the executed checks. The application is a freeze candidate with the limits above; actual unseen accuracy remains unmeasured.
 
@@ -79,7 +79,7 @@ Before **19 November 2026, 10:00 AM IST**, finish source changes, run the gates,
 
 After freeze, keep application source, dependencies, compiler, tests and documentation unchanged unless official assessment rules explicitly authorize an exception. Apply the received amendment through the existing interface only. Keep the supplied files private.
 
-1. Process the complete unseen batch under explicit **5.0**, export decisions and record run/input hashes.
+1. In Batch Lab select **Historical: pin selected policy** and explicit **5.0**, process the complete unseen batch, export decisions and record run/input hashes.
 2. Upload and reconcile every amendment clause; verify priority and effective date, simulate, review, approve and activate.
 3. In Batch Lab select **Run 2: dated calendar through selected amendment**, then the activated amendment. Reprocess the exact original file. Earlier PRs retain the earlier effective policy; no future policy is applied retroactively. Compare input hashes and replay both snapshots. Do not approve purchasing actions between runs. Use pinned mode only when explicitly testing a single historical policy's applicability.
 4. Export preferred suppliers for the evaluator's exact as-of date and requested policy version.
@@ -98,7 +98,7 @@ After freeze, keep application source, dependencies, compiler, tests and documen
 | Export confidence | Read-only independent arithmetic, membership, dates, ranking, price, ceiling and consolidation checks | Corruption tests, literal thirteen-field contract tie case and full synthetic rehearsal |
 | Conversational friction | Local cardinal quantities, explicit ambiguous-date clarification, preserved corrections and authorized policy handoff | Spoken-quantity and correction cases; handoff creates no policy or purchasing action |
 
-The new complete rehearsal uses eight novel lines, six source instructions, two plants, several item classes, normal/emergency requests and a 15 November amendment boundary. One unsupported inclusive interval is authored through the existing DSL and mapped explicitly. Run 1 has six requirements and Run 2 seven; each plans three POs, with no purchasing approval. One invalid line remains explicit, three lines change and supplier-eligibility checks find no failures. Both snapshots replay and all three CSVs pass semantic verification with no missing-evidence warnings. Artifacts remain temporary/private; nothing is placed in `submission/`.
+The eight-line API regression rehearsal uses eight novel lines, six source instructions, two plants, several item classes, normal/emergency requests and a 15 November amendment boundary. One unsupported inclusive interval is authored through the existing DSL and mapped explicitly. Run 1 has six requirements and Run 2 seven; each plans three POs, with no purchasing approval. One invalid line remains explicit, three lines change and supplier-eligibility checks find no failures. Both snapshots replay and all three CSVs pass semantic verification with no missing-evidence warnings. Artifacts remain temporary/private; nothing is placed in `submission/`.
 
 ## Read-only evidence verification
 
