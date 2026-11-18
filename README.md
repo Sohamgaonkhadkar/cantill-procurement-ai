@@ -24,7 +24,7 @@ The same login page serves two isolated environments:
 | Private evaluation | **Individual account â†’ Assessment** | Requires an owner-provisioned account. Assessment credentials are never published. The evaluator can use procurement and policy workflows but cannot administer identities or replace master data. |
 | Personal fictional account | **Individual account â†’ New here? Create account** | Creates a Requester in the fictional workspace with a password chosen by that user. It grants no assessment access. |
 
-The header and banner identify the data mode. Demo and assessment tokens, databases and signing keys are separate. Demo changes persist only in the shared fictional workspace. The session token stays in memory; reloading requires sign-in. **Private evaluator credentials must be delivered securely to the recruiter; a prepared access file is not proof of delivery.**
+The header and banner identify the data mode. Demo and assessment tokens, databases and signing keys are separate. Demo changes persist only in the shared fictional workspace. The session token stays in memory; reloading requires sign-in. **Assessment credentials stay private. If reviewers need them, use an approved private channel; no separate credential-email requirement is claimed.**
 
 ## What Corvo does
 
@@ -138,8 +138,8 @@ The final evaluator-polish verification produced the results below. [VALIDATION.
 
 | Check | Verified result |
 |---|---|
-| Linux / PostgreSQL | **305 passed** |
-| Windows / SQLite | **301 passed**, four PostgreSQL-only skips |
+| Linux / PostgreSQL | **306 passed** |
+| Windows / SQLite | **302 passed**, four PostgreSQL-only skips |
 | Complete real-backend browser suite | **25 passed**, including all eleven desktop/mobile workspaces |
 | Frontend unit tests | **7 passed** |
 | ESLint, TypeScript, production build and API/client consistency | Passed |
@@ -173,7 +173,7 @@ Soham_Gaonkhadkar__run2.csv
 Soham_Gaonkhadkar__preferred.csv
 ```
 
-Keep supplied inputs, private documents, credentials and evidence snapshots outside Git. No synthetic submission files are included. [BLIND_TEST_READINESS.md](BLIND_TEST_READINESS.md) gives the exact two-run procedure and read-only validation command. The form/link submission and secure credential delivery remain human obligations.
+Keep supplied inputs, private documents, credentials and evidence snapshots outside Git. No synthetic submission files are included. [BLIND_TEST_READINESS.md](BLIND_TEST_READINESS.md) gives the exact two-run procedure and read-only validation command. Official Forms submission must be confirmed separately. Do not claim credentials were delivered without confirmation.
 
 Unsupported amendment wording needs faithful structured authoring and human review. Rules requiring unregistered facts or new engine operations cannot be promised without source changes. Scanned policies need transcription; PDF extraction does not verify signatures. Free services can cold-start or throttle, and large concurrent workloads remain unqualified. Corporate SSO/MFA/recovery, external supplier dispatch and exhaustive security certification are outside scope. These limitations do not change the deterministic authority of the implemented engine.
 

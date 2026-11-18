@@ -38,6 +38,23 @@ def test_real_engine_exports_pass_structural_validation(exports):
     assert result['supplier_status_checked']
 
 
+def test_csv_only_dated_calendar_warns_instead_of_rejecting_valid_earlier_policies(exports,data,policy):
+    rows=[line('BEFORE',created_at='2026-11-14 10:00'),line('AFTER',created_at='2026-11-16 10:00')]
+    changed=deepcopy(policy);changed.update(version='6.0',effective_date='2026-11-15')
+    changed['parameters']['group_days']=12
+    exports['input'].write_bytes(csv_bytes(rows,INPUT_COLUMNS))
+    exports['run1'].write_bytes(csv_bytes(process(rows,data,[policy],explicit='5.0')['rows']))
+    calendar=process(rows,data,[policy,changed])
+    assert {row['policy_version'] for row in calendar['rows']}=={'5.0','6.0'}
+    exports['run2'].write_bytes(csv_bytes(calendar['rows']))
+    result=check(exports)
+    assert result['valid']
+    assert any('calendar policy versions cannot be verified from CSV alone' in warning for warning in result['warnings'])
+    # A missing version is still malformed even when temporal evidence is absent.
+    mutate(exports,'run2',lambda output:output[0].update(policy_version=''))
+    with pytest.raises(ValueError,match='policy version is required'):check(exports)
+
+
 @pytest.mark.parametrize('kind',['missing_line','duplicate_line','wrong_policy','nonfinite','blocked_supplier','inconsistent_group','bad_header'])
 def test_export_corruption_is_rejected(exports,kind):
     if kind=='missing_line':change=lambda rows:rows.pop()

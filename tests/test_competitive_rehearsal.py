@@ -1,5 +1,6 @@
 """Full frozen-application synthetic rehearsal with literal business expectations."""
 import json,csv,io,time
+import pytest
 from copy import deepcopy
 from pathlib import Path
 from backend.domain import INPUT_COLUMNS,csv_bytes
@@ -54,6 +55,30 @@ Apply policy from 15 November 2026.'''
     (tmp_path/'preferred.json').write_text(json.dumps({'as_of':'2026-11-19','policy_version':'REHEARSAL-CALENDAR'}),encoding='utf-8')
     report=validate(tmp_path/'input.csv',tmp_path/'run1.csv',tmp_path/'run2.csv',tmp_path/'preferred.csv','REHEARSAL-CALENDAR',run1_snapshot=tmp_path/'run1.json',run2_snapshot=tmp_path/'run2.json',masters_snapshot=tmp_path/'masters.json',preferred_metadata=tmp_path/'preferred.json')
     assert report['valid'] and not report['warnings']
+    # Captured mixed-date evidence remains authoritative: do not relax a wrong
+    # per-line policy merely because CSV-only verification now reports a warning.
+    bad_rows=deepcopy(after['rows'])
+    next(row for row in bad_rows if row['pr_no']=='AFTER')['policy_version']='5.0'
+    (tmp_path/'wrong-calendar.csv').write_bytes(csv_bytes(bad_rows))
+    with pytest.raises(ValueError,match='wrong policy version'):
+        validate(tmp_path/'input.csv',tmp_path/'run1.csv',tmp_path/'wrong-calendar.csv',tmp_path/'preferred.csv','REHEARSAL-CALENDAR',run1_snapshot=tmp_path/'run1.json',run2_snapshot=tmp_path/'run2.json',masters_snapshot=tmp_path/'masters.json',preferred_metadata=tmp_path/'preferred.json')
+    with pytest.raises(ValueError,match='run1:.*pinned.*5.0'):
+        validate(tmp_path/'input.csv',tmp_path/'run2.csv',tmp_path/'run2.csv',tmp_path/'preferred.csv','REHEARSAL-CALENDAR',run1_snapshot=tmp_path/'run2.json',run2_snapshot=tmp_path/'run2.json',masters_snapshot=tmp_path/'masters.json',preferred_metadata=tmp_path/'preferred.json')
+    with pytest.raises(ValueError,match='run2:.*calendar.*endpoint'):
+        validate(tmp_path/'input.csv',tmp_path/'run1.csv',tmp_path/'run2.csv',tmp_path/'preferred.csv','WRONG-ENDPOINT',run1_snapshot=tmp_path/'run1.json',run2_snapshot=tmp_path/'run2.json',masters_snapshot=tmp_path/'masters.json',preferred_metadata=tmp_path/'preferred.json')
+    # Invalid duplicate identities can themselves straddle the effective date.
+    # Keep both NOT_PROCESSED rows and their distinct captured policy evidence.
+    duplicates=[line('DUPLICATE',created_at=day+' 10:00') for day in ['2026-11-14','2026-11-16']]
+    duplicate_raw=csv_bytes(duplicates,INPUT_COLUMNS)
+    duplicate_dir=tmp_path/'duplicate-calendar';duplicate_dir.mkdir()
+    (duplicate_dir/'input.csv').write_bytes(duplicate_raw)
+    for name,version,mode in [('run1','5.0','pinned'),('run2','REHEARSAL-CALENDAR','calendar')]:
+        captured=ok(client.post('/api/process-batch',files={'file':('duplicates.csv',duplicate_raw,'text/csv')},data={'policy_version':version,'policy_mode':mode}))
+        assert len(captured['rows'])==2 and all(row['route']=='NOT_PROCESSED' for row in captured['rows'])
+        (duplicate_dir/(name+'.json')).write_text(json.dumps(captured),encoding='utf-8')
+        (duplicate_dir/(name+'.csv')).write_bytes(client.get('/api/runs/'+captured['id']+'/export.csv').content)
+    duplicate_report=validate(duplicate_dir/'input.csv',duplicate_dir/'run1.csv',duplicate_dir/'run2.csv',tmp_path/'preferred.csv','REHEARSAL-CALENDAR',run1_snapshot=duplicate_dir/'run1.json',run2_snapshot=duplicate_dir/'run2.json',masters_snapshot=tmp_path/'masters.json',preferred_metadata=tmp_path/'preferred.json')
+    assert duplicate_report['valid'] and not duplicate_report['warnings']
     assert client.get('/api/purchase-orders').json()['total']==0
     report.update(seconds=round(time.monotonic()-started,2),affected_lines=ok(client.get('/api/runs/'+before['id']+'/compare/'+after['id']))['affected_lines'],invalid_lines=len(after['issues']),supplier_eligibility_failures=0,source_clauses=6)
     (tmp_path/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')

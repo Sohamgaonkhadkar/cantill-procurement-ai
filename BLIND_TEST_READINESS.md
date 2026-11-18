@@ -6,7 +6,7 @@ Reviewed **18 November 2026** against the original brief, Procurement Policy v5.
 
 The repository is public: [Sohamgaonkhadkar/cantill-procurement-ai](https://github.com/Sohamgaonkhadkar/cantill-procurement-ai). Production is [Corvo](https://corvo-procurement.vercel.app), with a public [health endpoint](https://corvo-procurement.vercel.app/health). The release is gated on matching the complete GitHub commit with both existing Vercel deployments; exact full SHAs are recorded in the release report and deployment metadata.
 
-A fresh unauthenticated Chromium context reached the application's own login without Vercel authentication. The private evaluator identity authenticated with **admin role / evaluation scope**, reached all eleven screens and downloaded an authenticated decision CSV. Its identity-administration and bulk-import requests returned **403**; anonymous CSV access returned **401**. No deployment-protection or access-control changes were necessary. Credential delivery to the recruiter through a private channel is a separate, required submission gate; preparing an access file does not prove delivery. Delivery confirmation is an operational prerequisite, separate from automated verification. The URL-only submission form does not carry passwords. Public built-in accounts remain fictional-demo identities.
+A fresh unauthenticated Chromium context reached the application's own login without Vercel authentication. The private evaluator identity authenticated with **admin role / evaluation scope**, reached all eleven screens and downloaded an authenticated decision CSV. Its identity-administration and bulk-import requests returned **403**; anonymous CSV access returned **401**. No deployment-protection or access-control changes were necessary. Private credential delivery is not established by a prepared file or automated access test. No separate credential-email requirement is claimed; share access through an approved channel if requested. The URL-only submission form does not carry passwords. Public built-in accounts remain fictional-demo identities.
 
 Production database inspection confirmed **Alembic revision 004**, persistent PostgreSQL connectivity and the required knowledge/chat tables.
 
@@ -14,9 +14,9 @@ Production database inspection confirmed **Alembic revision 004**, persistent Po
 
 | Check | Result |
 |---|---|
-| Windows / Python 3.14 / SQLite | **301 passed, 4 PostgreSQL-only skips** |
-| Linux / Python 3.12 / PostgreSQL | **305 passed**, including all independent concurrency tests |
-| Full Chromium suite / isolated real FastAPI | **23 passed**, including desktop/mobile workspaces and the new blind rehearsal |
+| Windows / Python 3.14 / SQLite | **302 passed, 4 PostgreSQL-only skips** |
+| Linux / Python 3.12 / PostgreSQL | **306 passed**, including all independent concurrency tests |
+| Full Chromium suite / isolated real FastAPI | **25 passed**, including desktop/mobile workspaces and the new blind rehearsal |
 | Frontend unit tests | **7 passed** |
 | Type checking, ESLint, Vite production build | Passed |
 | OpenAPI snapshot and generated client drift | Passed |
@@ -75,7 +75,7 @@ No unresolved Critical or High defect was identified by the executed checks. The
 
 ## Freeze and blind-test procedure
 
-Before **19 November 2026, 10:00 AM IST**, finish source changes, run the gates, commit, deploy that exact full SHA, verify public login/processing/export and privately provide evaluator credentials. Submit the public repository and hosted link through the official form; the application does not submit that form.
+Before **19 November 2026, 10:00 AM IST**, finish source changes, run the gates, commit, deploy that exact full SHA, verify public login/processing/export and confirm the official Forms submission. Keep any assessment-access handoff private. Submit the public repository and hosted link through the official form; the application does not submit that form.
 
 After freeze, keep application source, dependencies, compiler, tests and documentation unchanged unless official assessment rules explicitly authorize an exception. Apply the received amendment through the existing interface only. Keep the supplied files private.
 
@@ -83,7 +83,7 @@ After freeze, keep application source, dependencies, compiler, tests and documen
 2. Upload and reconcile every amendment clause; verify priority and effective date, simulate, review, approve and activate.
 3. In Batch Lab select **Run 2: dated calendar through selected amendment**, then the activated amendment. Reprocess the exact original file. Earlier PRs retain the earlier effective policy; no future policy is applied retroactively. Compare input hashes and replay both snapshots. Do not approve purchasing actions between runs. Use pinned mode only when explicitly testing a single historical policy's applicability.
 4. Export preferred suppliers for the evaluator's exact as-of date and requested policy version.
-5. Run `python -m scripts.validate_submission` using the three actual downloads, original private input and amended version. Supply both immutable run JSONs for mixed-calendar checks, plus the master snapshot and preferred metadata for independent invariants. Missing evidence produces explicit warnings. Independently inspect route changes and eligibility; the checker cannot certify unrestricted policy meaning or unseen accuracy.
+5. Run `python -m scripts.validate_submission` using the three actual downloads, original private input and amended version. Supply both immutable run JSONs for mixed-calendar checks, plus the master snapshot and preferred metadata for independent invariants. Missing evidence produces explicit warnings. CSV-only Run 2 checking cannot prove per-line calendar versions; it no longer assumes all rows use the amendment. Captured evidence must identify pinned v5.0 for Run 1 and the selected amendment endpoint in calendar mode for Run 2. Independently inspect route changes and eligibility; the checker cannot certify unrestricted policy meaning or unseen accuracy.
 6. Place only the three actual result CSVs in `submission/`: `Soham_Gaonkhadkar__run1.csv`, `Soham_Gaonkhadkar__run2.csv` and `Soham_Gaonkhadkar__preferred.csv`. Review the staged file list to ensure no source/data/credential changes, then commit and push the output files before **12:00 noon IST**. No automatic post-freeze source push is configured.
 
 ## Competitive hardening changes

@@ -73,26 +73,38 @@ def validate(input_path, run1_path, run2_path, preferred_path, amended_version, 
     for label, path, version in [('run1', run1_path, '5.0'), ('run2', run2_path, amended_version)]:
         rows = load(path, OUTPUT_COLUMNS)
         captured=snapshots.get(label)
-        expected_versions={tuple((r['pr_no'],r['pr_line'])):r['policy_version'] for r in captured['rows']} if captured else None
+        if captured:
+            if label=='run1' and (captured.get('policy_mode')!='pinned' or captured.get('explicit_policy')!='5.0'):
+                raise ValueError('run1: snapshot must identify historical pinned Policy 5.0 processing')
+            if label=='run2' and (captured.get('policy_mode')!='calendar' or captured.get('calendar_version')!=amended_version):
+                raise ValueError('run2: snapshot must identify dated calendar processing through the requested amendment endpoint')
+        expected_versions=defaultdict(set) if captured else None
+        if captured:
+            for captured_row in captured['rows']:
+                expected_versions[(captured_row['pr_no'],captured_row['pr_line'])].add(captured_row['policy_version'])
         if Counter((row['pr_no'], row['pr_line']) for row in rows) != identities:
             raise ValueError(f'{label}: output PR-line identities/multiplicities differ from input')
         groups, orders = {}, {}
         for index, row in enumerate(rows, 1):
             where = f'{label} row {index}'
-            expected_version=expected_versions[(row['pr_no'],row['pr_line'])] if expected_versions else version
+            # Calendar Run 2 can legitimately contain earlier published policies.
+            # Only captured evidence establishes each line's effective version.
+            allowed_versions={version} if label=='run1' else (expected_versions[(row['pr_no'],row['pr_line'])] if expected_versions is not None else None)
             route = row['route']
             if not row['reason']:
                 raise ValueError(f'{where}: decision reason is required')
-            if row['policy_version'] and row['policy_version'] != expected_version:
-                raise ValueError(f'{where}: wrong policy version; expected {version}')
+            if allowed_versions is not None and row['policy_version'] and row['policy_version'] not in allowed_versions:
+                raise ValueError(f'{where}: wrong policy version; expected '+', '.join(sorted(allowed_versions)))
             if route == 'NOT_PROCESSED':
                 if any(row[key] for key in ['decision', 'po_id', 'supplier_id', 'unit_price', 'suggested_supplier_ids']):
                     raise ValueError(f'{where}: NOT_PROCESSED must not contain a purchasing action')
                 continue
             if route not in PO_ROUTES | SOURCING_ROUTES:
                 raise ValueError(f'{where}: unknown route')
-            if row['policy_version'] != expected_version:
-                raise ValueError(f'{where}: wrong policy version; expected {version}')
+            if not row['policy_version']:
+                raise ValueError(f'{where}: policy version is required')
+            if allowed_versions is not None and row['policy_version'] not in allowed_versions:
+                raise ValueError(f'{where}: wrong policy version; expected '+', '.join(sorted(allowed_versions)))
             if not row['group_id'] or not row['resolved_item_code']:
                 raise ValueError(f'{where}: missing resolved item or requirement ID')
             decimal(row['group_value_inr'], where + ' group value')
@@ -120,7 +132,10 @@ def validate(input_path, run1_path, run2_path, preferred_path, amended_version, 
         summary[label] = {'rows': len(rows), 'requirements': len(groups), 'planned_pos': len(orders),
                           'routes': dict(sorted(Counter(row['route'] for row in rows).items()))}
         if captured:semantic[label]=validate_snapshot(inputs,rows,captured,master)
-        else:warnings.append(label+': provide --'+label+'-snapshot for independent grouping, valuation, consolidation, date and hash checks')
+        else:
+            warning=label+': provide --'+label+'-snapshot for independent grouping, valuation, consolidation, date and hash checks'
+            if label=='run2':warning+='; calendar policy versions cannot be verified from CSV alone (requested endpoint '+amended_version+')'
+            warnings.append(warning)
     preferred = load(preferred_path, PREFERRED_COLUMNS)
     rankings = defaultdict(list)
     for index, row in enumerate(preferred, 1):

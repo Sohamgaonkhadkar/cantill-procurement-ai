@@ -6,9 +6,9 @@ Reviewed **18 November 2026**. Results describe executed checks, not a predicted
 
 | Check | Environment | Result |
 |---|---|---|
-| Complete Python suite | Windows / Python 3.14 / SQLite | **301 passed; 4 PostgreSQL-only skips** |
-| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL `corvo_test` | **305 passed**, including concurrent approval and chat-confirmation tests |
-| Browser release gate | Chromium / real isolated FastAPI, SQLite and Vite | **25 passed in the final clean full run (3.5 minutes)** |
+| Complete Python suite | Windows / Python 3.14 / SQLite | **302 passed; 4 PostgreSQL-only skips** |
+| Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL `corvo_test` | **306 passed**, including concurrent approval and chat-confirmation tests |
+| Browser release gate | Chromium / real isolated FastAPI, SQLite and Vite | **25 passed in the final clean full run (3.7 minutes)** |
 | Frontend unit tests | Node test runner | **7 passed** |
 | ESLint, TypeScript and Vite build | Retained Arena frontend | Passed; nonblocking large-3D-bundle and dependency-comment warnings remain |
 | Container build | Pinned Python dependencies and production frontend | Passed |
@@ -42,6 +42,16 @@ No procurement algorithm, schema, migration or dependency changed. The original 
 All eleven workspaces were inspected on the canonical site at 1440- and 390-pixel widths: no page overflow or browser page errors. Two presentation defects were reproduced before editing: the five-row CSV preview rendered as nested lists rather than columns (4,144 pixels tall), and twelve policy versions produced an unbounded 1,438-pixel register. The preview now uses a keyboard-scrollable semantic table, preserving quoted fields and decimal text. The version list has its own bounded scroll region; every version remains selectable. Both new real-backend browser regressions failed against the old presentation and passed after the fix. Their fixtures seed policies before sign-in to avoid client-cache timing.
 
 No procurement algorithm, schema, migration or dependency changed. The original sample hash and all disclosed outcomes still match. All three frozen-rehearsal exports also pass independent validation under the recruiter-required filenames, with no missing-evidence warnings. The README verification count, demo/assessment access wording, media credits and submission filenames were reconciled with the implementation.
+
+## Final zero-regression audit
+
+The submission checker reproduced three calendar-evidence failures: CSV-only validation assumed every Run 2 row used the amendment; a captured calendar run could be accepted as the original baseline; and duplicate invalid identities crossing an effective date lost one captured version. The checker now requires captured pinned v5.0 baseline and the requested Run 2 calendar endpoint, preserves duplicate-line evidence, and verifies complete captured CSV contents. Without snapshots it reports calendar-version verification as unavailable rather than inventing an all-amended expectation. Missing policy versions on actionable rows remain hard failures. Negative cases reject a changed per-line version, wrong baseline and wrong endpoint. These regressions failed before the respective corrections; all 19 targeted validation/rehearsal checks pass. No financial output was edited to satisfy validation.
+
+A separate fresh-browser rehearsal used a disposable local database initialized from the private assessment masters. Eleven unfamiliar requests crossed a 15 November policy boundary. The six-clause amendment changed a monetary threshold, grouping window and ranking weight, introduced a plant rule, and required one manually authored normal-category inclusive interval with explicit priority ahead of contracts. All five recognized clauses and the unresolved clause were reconciled through the existing UI. Preview, saved-definition review gates, calendar simulation, review, approval and activation completed without application-code changes during the rehearsal.
+
+Both actual browser exports contain eleven rows, including one invalid outcome. Six lines change and five remain unchanged; the 11-day grouping boundary, other-plant isolation, emergency contract routing and Capex route were checked explicitly. Both immutable snapshots replay exactly, and simulation matches Run 2. The dated all-item preferred export contains 155 rows across 68 eligible items. Independent checks of both runs, masters and preferred metadata pass without warnings. No purchasing approval/override or sourcing commitment occurred. Tokens remain in memory: a new tab and refresh require sign-in. A prepared private read-only capture helper reproduces all three browser downloads byte-for-byte.
+
+Disposable local load checks passed 2,500 grouped lines (one requirement) and 1,000 distinct requirements. Identical retries reused runs, repeated CSV downloads matched and replays succeeded; concurrent health probes remained responsive. These local timings are not Vercel capacity guarantees. Current production acceptance and the exact matched deployment SHAs are recorded separately after release.
 
 ## Original-data regression
 
@@ -112,7 +122,7 @@ Injected database connection failures and pool timeouts return retryable 503 res
 
 The exact public hostname is [corvo-procurement.vercel.app](https://corvo-procurement.vercel.app), with a public [health endpoint](https://corvo-procurement.vercel.app/health). Fresh unauthenticated browser checks reach the application login without Vercel account access. Built-in roles use the isolated fictional database through the same website; private evaluator credentials use the assessment database. Public signup now creates fictional-demo Requesters only. Hosted assessment self-registration is rejected even with a mistaken enabling flag. Legacy self-registered assessment sessions are denied; owner-provisioned individuals remain authorized. Public demo Admins cannot administer identities or replace master data.
 
-The evaluator uses Admin role with evaluation scope: policy and procurement workflows are available, while account administration and bulk master replacement return 403. Anonymous export and cross-workspace tokens are rejected. Credentials must be delivered privately to the recruiter before submission; delivery must be confirmed independently of automated tests. They are not embedded in the public URL, repository or frontend. The URL-only form is not treated as a credential channel.
+The evaluator uses Admin role with evaluation scope: policy and procurement workflows are available, while account administration and bulk master replacement return 403. Anonymous export and cross-workspace tokens are rejected. Credentials stay private; delivery cannot be inferred from automated access tests. No separate credential-email requirement is claimed. They are not embedded in the public URL, repository or frontend. The URL-only form is not treated as a credential channel.
 
 The final release report records the full GitHub SHA and both Vercel deployment SHAs from deployment metadata. Publication is accepted only when these match and canonical-host smoke checks pass. Canonical release acceptance additionally requires the original-data hash, authenticated exports/replay, workspace boundaries and fresh-browser checks on that exact deployed commit. The final release report records those outcomes rather than embedding a self-referential commit hash here.
 

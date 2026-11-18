@@ -52,7 +52,7 @@ The live procurement workspace uses local retrieval and deterministic intake. Th
 
 ## Scope boundaries
 
-The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Evaluator access uses private individual accounts whose credentials must be delivered securely to the recruiter before submission. Public controlled-role passwords grant fictional-demo access only.
+The implemented system creates internal PO/sourcing records rather than transmitting orders externally. Controlled language interpretation is bounded; scanned policies need transcription and signatures need human verification. Corporate SSO, MFA, password recovery and exhaustive load/security audits are not implemented. Evaluator access uses private individual accounts whose credentials remain private and can be shared through an approved channel when required. Public controlled-role passwords grant fictional-demo access only.
 
 ## Final hardening architecture
 
