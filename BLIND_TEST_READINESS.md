@@ -1,12 +1,12 @@
 # Blind-test readiness audit
 
-Reviewed **17 November 2026** against the original brief, Procurement Policy v5.0 and disclosed worked examples. This is an evidence-based freeze assessment, not an unseen-accuracy guarantee. Original challenge documents, private credentials and rehearsal artifacts are excluded from Git.
+Reviewed **18 November 2026** against the original brief, Procurement Policy v5.0 and disclosed worked examples. This is an evidence-based freeze assessment, not an unseen-accuracy guarantee. Original challenge documents, private credentials and rehearsal artifacts are excluded from Git.
 
 ## Release and evaluator access
 
 The repository is public: [Sohamgaonkhadkar/cantill-procurement-ai](https://github.com/Sohamgaonkhadkar/cantill-procurement-ai). Production is [Corvo](https://corvo-procurement.vercel.app), with a public [health endpoint](https://corvo-procurement.vercel.app/health). The release is gated on matching the complete GitHub commit with both existing Vercel deployments; exact full SHAs are recorded in the release report and deployment metadata.
 
-A fresh unauthenticated Chromium context reached the application's own login without Vercel authentication. The private evaluator identity authenticated with **admin role / evaluation scope**, reached all eleven screens and downloaded an authenticated decision CSV. Its identity-administration and bulk-import requests returned **403**; anonymous CSV access returned **401**. No deployment-protection or access-control changes were necessary. Credentials are supplied privately to the recruiter; the URL-only submission form does not carry passwords. Public built-in accounts remain fictional-demo identities.
+A fresh unauthenticated Chromium context reached the application's own login without Vercel authentication. The private evaluator identity authenticated with **admin role / evaluation scope**, reached all eleven screens and downloaded an authenticated decision CSV. Its identity-administration and bulk-import requests returned **403**; anonymous CSV access returned **401**. No deployment-protection or access-control changes were necessary. Credential delivery to the recruiter through a private channel is a separate, required submission gate; preparing an access file does not prove delivery. Delivery confirmation is an operational prerequisite, separate from automated verification. The URL-only submission form does not carry passwords. Public built-in accounts remain fictional-demo identities.
 
 Production database inspection confirmed **Alembic revision 004**, persistent PostgreSQL connectivity and the required knowledge/chat tables.
 
@@ -66,10 +66,10 @@ The first new export assertion expected `100` instead of the authoritative `100.
 
 ## Remaining risks
 
-- **Medium — bounded interpretation:** arbitrary English is not guaranteed to compile. Unsupported wording requires faithful structured authoring and human review. Rules needing an unregistered business fact or a new engine operation are outside the present DSL; the unseen amendment has not been received.
-- **Medium — hosted resource bounds:** measured tests passed through 2,500 grouped lines and 1,000 separate requirements. A later concurrent load check caused delayed exports/retries and a client timeout; serial recovery preserved the saved runs. A reproduced event-loop blocking defect is fixed and covered by a liveness regression. The 20,000-row parser bound is not a hosted-capacity guarantee. Client/API cap CSV uploads at 4,000,000 bytes; response size and group count also matter. Do not split a business batch: that changes grouping and ceiling allocation.
-- **Low — operational availability:** managed free services can cold-start or throttle. Gemini is optional and disabled for live data; blind-test calculations and amendment governance do not require external AI.
-- **Low — broader assurance:** no exhaustive penetration or fault-injection audit is claimed. Dependency results are point-in-time checks, not a security certification.
+- **Medium â€” bounded interpretation:** arbitrary English is not guaranteed to compile. Unsupported wording requires faithful structured authoring and human review. Rules needing an unregistered business fact or a new engine operation are outside the present DSL; the unseen amendment has not been received.
+- **Medium â€” hosted resource bounds:** measured tests passed through 2,500 grouped lines and 1,000 separate requirements. A later concurrent load check caused delayed exports/retries and a client timeout; serial recovery preserved the saved runs. A reproduced event-loop blocking defect is fixed and covered by a liveness regression. The 20,000-row parser bound is not a hosted-capacity guarantee. Client/API cap CSV uploads at 4,000,000 bytes; response size and group count also matter. Do not split a business batch: that changes grouping and ceiling allocation.
+- **Low â€” operational availability:** managed free services can cold-start or throttle. Gemini is optional and disabled for live data; blind-test calculations and amendment governance do not require external AI.
+- **Low â€” broader assurance:** no exhaustive penetration or fault-injection audit is claimed. Dependency results are point-in-time checks, not a security certification.
 
 No unresolved Critical or High defect was identified by the executed checks. The application is a freeze candidate with the limits above; actual unseen accuracy remains unmeasured.
 
@@ -84,7 +84,7 @@ After freeze, keep application source, dependencies, compiler, tests and documen
 3. In Batch Lab select **Run 2: dated calendar through selected amendment**, then the activated amendment. Reprocess the exact original file. Earlier PRs retain the earlier effective policy; no future policy is applied retroactively. Compare input hashes and replay both snapshots. Do not approve purchasing actions between runs. Use pinned mode only when explicitly testing a single historical policy's applicability.
 4. Export preferred suppliers for the evaluator's exact as-of date and requested policy version.
 5. Run `python -m scripts.validate_submission` using the three actual downloads, original private input and amended version. Supply both immutable run JSONs for mixed-calendar checks, plus the master snapshot and preferred metadata for independent invariants. Missing evidence produces explicit warnings. Independently inspect route changes and eligibility; the checker cannot certify unrestricted policy meaning or unseen accuracy.
-6. Place only the three actual result CSVs in `submission/`. Review the staged file list to ensure no source/data/credential changes, then commit and push the output files before **12:00 noon IST**. No automatic post-freeze source push is configured.
+6. Place only the three actual result CSVs in `submission/`: `Soham_Gaonkhadkar__run1.csv`, `Soham_Gaonkhadkar__run2.csv` and `Soham_Gaonkhadkar__preferred.csv`. Review the staged file list to ensure no source/data/credential changes, then commit and push the output files before **12:00 noon IST**. No automatic post-freeze source push is configured.
 
 ## Competitive hardening changes
 
@@ -108,8 +108,8 @@ If the preferred-ranking policy was not used by any batch line, also include its
 
 ```sh
 python -m scripts.validate_submission --input /private/input.csv \
-  --run1 /private/run1.csv --run2 /private/run2.csv \
-  --preferred /private/preferred.csv --amended-version activated-version \
+  --run1 /private/Soham_Gaonkhadkar__run1.csv --run2 /private/Soham_Gaonkhadkar__run2.csv \
+  --preferred /private/Soham_Gaonkhadkar__preferred.csv --amended-version activated-version \
   --run1-snapshot /private/run1.json --run2-snapshot /private/run2.json \
   --masters-snapshot /private/masters.json --preferred-metadata /private/preferred.json
 ```

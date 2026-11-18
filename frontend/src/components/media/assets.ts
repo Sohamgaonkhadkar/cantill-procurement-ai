@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------
  * Media registry — every photographic asset used by the product.
- * Files are imported (not referenced by remote URL) so the single-file
- * build inlines them; nothing depends on network access at runtime.
+ * Local imports become hashed Vite assets served with the application.
+ * No third-party image or video request is required at runtime.
  * Licensing and attribution: see ASSET_CREDITS.md.
  * ------------------------------------------------------------------ */
 import bearingMacro from "@/assets/media/images/bearing-macro.webp";
@@ -12,7 +12,6 @@ import pumpAssembly from "@/assets/media/images/pump-assembly.webp";
 import circuitMacro from "@/assets/media/images/circuit-macro.webp";
 import gearMacro from "@/assets/media/images/gear-macro.webp";
 import cncToolDark from "@/assets/media/images/cnc-tool-dark.webp";
-import robotWelding from "@/assets/media/images/robot-welding.webp";
 import cncCoolant from "@/assets/media/images/cnc-coolant.webp";
 import heroPoster from "@/assets/media/posters/cnc-turning-coolant.webp";
 import heroVideo from "@/assets/media/videos/cnc-turning-coolant.mp4";
@@ -52,14 +51,6 @@ export const VISUALS = {
     creator: "Daniel Smyth",
     source:
       "https://www.pexels.com/photo/close-up-of-machine-splashing-milk-8956445/",
-    tone: "dark",
-  },
-  welding: {
-    src: robotWelding,
-    alt: "Robotic arm grinding steel, throwing bright sparks",
-    creator: "alex",
-    source:
-      "https://www.pexels.com/photo/a-robot-industrial-machine-grinding-a-steel-11951215/",
     tone: "dark",
   },
   gears: {

@@ -1,6 +1,6 @@
 # Verification evidence
 
-Reviewed **17 November 2026**. Results describe executed checks, not a predicted assessment score. Private source documents, credentials, master snapshots and rehearsal artifacts remain outside Git.
+Reviewed **18 November 2026**. Results describe executed checks, not a predicted assessment score. Private source documents, credentials, master snapshots and rehearsal artifacts remain outside Git.
 
 ## Release checks
 
@@ -8,7 +8,7 @@ Reviewed **17 November 2026**. Results describe executed checks, not a predicted
 |---|---|---|
 | Complete Python suite | Windows / Python 3.14 / SQLite | **301 passed; 4 PostgreSQL-only skips** |
 | Complete Python suite | Linux / Python 3.12 / isolated PostgreSQL `corvo_test` | **305 passed**, including concurrent approval and chat-confirmation tests |
-| Browser release gate | Chromium / real isolated FastAPI, SQLite and Vite | **23 passed in the final clean full run (3.7 minutes)** |
+| Browser release gate | Chromium / real isolated FastAPI, SQLite and Vite | **25 passed in the final clean full run (3.5 minutes)** |
 | Frontend unit tests | Node test runner | **7 passed** |
 | ESLint, TypeScript and Vite build | Retained Arena frontend | Passed; nonblocking large-3D-bundle and dependency-comment warnings remain |
 | Container build | Pinned Python dependencies and production frontend | Passed |
@@ -23,13 +23,25 @@ The final pass reproduced two Medium issues before changing application code. An
 
 A real-browser regression also showed that Policy Reactor allowed review while different, unsaved DSL edits were visible. Actions operated on the saved backend definition, which could mislead the reviewer. The editor now identifies unsaved changes and blocks simulation and governance actions until they are saved. Approval remains disabled until the saved definition is reviewed. Inline guidance identifies the next step; original source and unresolved-clause warnings remain visible. The browser regression failed before the fix and passed after it.
 
-The first complete browser attempt had two page-setup/sign-in timeouts; an unchanged rerun passed those scenarios but exposed a global `networkidle` wait timing out after Batch Lab had rendered. That test-helper wait was removed: the existing exact-heading, settled-animation, HTTP response and business-result assertions remain. This is a browser-harness correction, not a procurement change. The final complete suite is rerun after that correction.
+A browser-helper `networkidle` wait timed out after Batch Lab had rendered and was removed. Exact-heading, settled-animation, HTTP response and business-result assertions remain. See the browser coverage section for the retained failure history.
 
 No procurement algorithm, API schema, database migration, dependency, workspace protection or visual redesign was introduced in this pass. The targeted business suite passed 94 checks covering unfamiliar wording, precedence, effective dates, exhausted and competing contracts, supplier eligibility, fixed-anchor grouping and exact financial boundaries. Full-suite and final hosted results are recorded below and in the release report. No further speculative change is recommended after the release gates pass.
 
 ## Evidence presentation verification
 
-The shared evidence viewer now presents labeled fields, readable record tables and expandable sections across all workflow pages. Exact JSON remains available in an explicitly labeled technical view. Decision X-Ray separates policy, matching clause, valuation source, grouped PR lines, commitment scope and exact group value. A real-browser regression checks the labeled evidence, optional raw source and desktop/mobile overflow. This presentation-only change preserves backend schemas, decimal strings and original outputs; the complete 23-scenario browser suite, frontend unit tests, lint, type checking and production build passed.
+The shared evidence viewer now presents labeled fields, readable record tables and expandable sections across all workflow pages. Exact JSON remains available in an explicitly labeled technical view. Decision X-Ray separates policy, matching clause, valuation source, grouped PR lines, commitment scope and exact group value. A real-browser regression checks the labeled evidence, optional raw source and desktop/mobile overflow. This presentation-only change preserves backend schemas, decimal strings and original outputs; its then-current 23-scenario browser suite, frontend unit tests, lint, type checking and production build passed.
+
+## Evaluator polish, 18 November
+
+All eleven workspaces were inspected on the canonical site at 1440- and 390-pixel widths: no page overflow or browser page errors. Two presentation defects were reproduced before editing: the five-row CSV preview rendered as nested lists rather than columns (4,144 pixels tall), and twelve policy versions produced an unbounded 1,438-pixel register. The preview now uses a keyboard-scrollable semantic table, preserving quoted fields and decimal text. The version list has its own bounded scroll region; every version remains selectable. Both new real-backend browser regressions failed against the old presentation and passed after the fix. Their fixtures seed policies before sign-in to avoid client-cache timing.
+
+No procurement algorithm, schema, migration or dependency changed. The original sample hash and all disclosed outcomes still match. All three frozen-rehearsal exports also pass independent validation under the recruiter-required filenames, with no missing-evidence warnings. The README verification count, demo/assessment access wording, media credits and submission filenames were reconciled with the implementation.
+
+## Evaluator polish, 18 November
+
+All eleven workspaces were inspected on the canonical site at 1440- and 390-pixel widths: no page overflow or browser page errors. Two presentation defects were reproduced before editing: the five-row CSV preview rendered as nested lists rather than columns (4,144 pixels tall), and twelve policy versions produced an unbounded 1,438-pixel register. The preview now uses a keyboard-scrollable semantic table, preserving quoted fields and decimal text. The version list has its own bounded scroll region; every version remains selectable. Both new real-backend browser regressions failed against the old presentation and passed after the fix. Their fixtures seed policies before sign-in to avoid client-cache timing.
+
+No procurement algorithm, schema, migration or dependency changed. The original sample hash and all disclosed outcomes still match. All three frozen-rehearsal exports also pass independent validation under the recruiter-required filenames, with no missing-evidence warnings. The README verification count, demo/assessment access wording, media credits and submission filenames were reconciled with the implementation.
 
 ## Original-data regression
 
@@ -72,7 +84,7 @@ Three lines change. Both input hashes match, both immutable replays match, and b
 
 The twenty-three scenarios cover single-page role/individual login, demo-only autofill, signup, startup recovery, real CSV/policy/approval/export workflows, clause reconciliation, all eleven desktop/mobile screens, errors/outages, revocation, throttling, pagination, distinct-reviewer sourcing approval, focus handling and the 3D/2D alternative. New coverage exercises spoken quantities, corrections, ambiguous weekdays, the exact-text policy handoff, calendar mode and client rejection above the upload limit.
 
-During release preparation one overlapping build/database/browser run had two browser timeouts; a later complete run passed those cases but exhausted the long rehearsal's 120-second total budget after business processing and cleanup. Its overall budget is now 300 seconds; the new chat test allows 45 seconds for the send action plus its response. Correctness assertions remain unchanged. The final full run passed all 23 scenarios with trace recording disabled to reduce local recording overhead. A new signup fixture's outdated button label was corrected; one in-flight run was invalidated by schema regeneration. The accepted run used unchanged application sources.
+Earlier overlapping build/database/browser runs produced setup timeouts and exhausted the long rehearsal's original 120-second budget after processing. The rehearsal now allows 300 seconds and the chat action 45 seconds; business assertions remain unchanged. The accepted full runs execute separately from build/database stress, with trace recording disabled. A signup fixture label was corrected, and a run interrupted by schema regeneration was discarded. These harness corrections do not establish a hosted latency guarantee.
 
 Local intake and policy proposals work without Gemini. Chat cannot approve or activate policies. The isolated demo's optional real Gemini integration was verified in earlier hosted checks; this sprint does not introduce a new AI provider or claim that a mocked response proves model availability. Live external-AI access remains disabled.
 
@@ -100,7 +112,7 @@ Injected database connection failures and pool timeouts return retryable 503 res
 
 The exact public hostname is [corvo-procurement.vercel.app](https://corvo-procurement.vercel.app), with a public [health endpoint](https://corvo-procurement.vercel.app/health). Fresh unauthenticated browser checks reach the application login without Vercel account access. Built-in roles use the isolated fictional database through the same website; private evaluator credentials use the assessment database. Public signup now creates fictional-demo Requesters only. Hosted assessment self-registration is rejected even with a mistaken enabling flag. Legacy self-registered assessment sessions are denied; owner-provisioned individuals remain authorized. Public demo Admins cannot administer identities or replace master data.
 
-The evaluator uses Admin role with evaluation scope: policy and procurement workflows are available, while account administration and bulk master replacement return 403. Anonymous export and cross-workspace tokens are rejected. Credentials are handed privately to the recruiter, not embedded in the public URL, repository or frontend. The URL-only form is not treated as a credential channel.
+The evaluator uses Admin role with evaluation scope: policy and procurement workflows are available, while account administration and bulk master replacement return 403. Anonymous export and cross-workspace tokens are rejected. Credentials must be delivered privately to the recruiter before submission; delivery must be confirmed independently of automated tests. They are not embedded in the public URL, repository or frontend. The URL-only form is not treated as a credential channel.
 
 The final release report records the full GitHub SHA and both Vercel deployment SHAs from deployment metadata. Publication is accepted only when these match and canonical-host smoke checks pass. Canonical release acceptance additionally requires the original-data hash, authenticated exports/replay, workspace boundaries and fresh-browser checks on that exact deployed commit. The final release report records those outcomes rather than embedding a self-referential commit hash here.
 

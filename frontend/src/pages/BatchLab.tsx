@@ -200,7 +200,39 @@ export default function BatchLab() {
           {process.error ? <ErrorBlock error={process.error} /> : null}
           <Json label="Required input headers" value={INPUT_HEADERS} />
           {preview.length ? (
-            <Json label="CSV preview (first five data rows)" value={preview} />
+            <details className="json-details">
+              <summary>CSV preview (first five data rows)</summary>
+              <div
+                className="evidence-table-wrap evidence-body"
+                role="region"
+                aria-label="Scrollable CSV preview"
+                tabIndex={0}
+              >
+                <table
+                  className="evidence-table"
+                  aria-label="CSV input preview"
+                >
+                  <thead>
+                    <tr>
+                      {preview[0].map((header) => (
+                        <th key={header} scope="col">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.slice(1).map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {row.map((cell, columnIndex) => (
+                          <td key={preview[0][columnIndex]}>{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
           ) : null}
         </section>
         <IndustrialImage

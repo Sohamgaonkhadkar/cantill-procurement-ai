@@ -149,7 +149,12 @@ export default function PolicyReactor() {
       <div className="policy-layout">
         <aside className="surface-dark min-w-0 p-4">
           <h2 className="eyebrow mb-4">VERSION REGISTER</h2>
-          <div className="space-y-2">
+          <div
+            className="policy-version-list space-y-2"
+            role="region"
+            aria-label="Policy versions"
+            tabIndex={0}
+          >
             {policies.data?.items.map((p) => (
               <button
                 key={p.version}

@@ -1,3 +1,5 @@
+# Optional Docker-host fallback blueprint; not the active Vercel deployment.
+# Requires an external persistent PostgreSQL database and private credentials.
 services:
   - type: web
     name: corvo-procurement-api

@@ -1220,6 +1220,8 @@ nav[aria-label="Primary"][data-expanded] {
 .evidence-records > li { padding: 8px; margin-bottom: 10px; border: 1px solid #9098b52b; border-radius: 7px; }
 .evidence-empty { opacity: .7; margin: 0; font-style: italic; }
 .evidence-table-wrap { overflow-x: auto; max-width: 100%; }
+.policy-version-list { max-height: min(65vh, 680px); overflow-y: auto; overscroll-behavior-y: contain; padding: 2px; }
+.policy-version-list:focus-visible, .evidence-table-wrap:focus-visible { outline: 2px solid #d7ff3f; outline-offset: 2px; }
 .evidence-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
 .evidence-table th { font-size: 11px; opacity: .75; font-weight: 500; }
 .evidence-table td, .evidence-table th { padding: 10px 12px; border-bottom: 1px solid #9098b52b; vertical-align: top; overflow-wrap: anywhere; min-width: 90px; max-width: 300px; }
