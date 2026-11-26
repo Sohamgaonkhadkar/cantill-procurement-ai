@@ -508,7 +508,7 @@ async def upload_contract(file:UploadFile=File(...),actor=Depends(user)):
     consume_rate_limit(actor,'contract-upload',20)
     require(actor,'admin','buyer'); raw=await content(file,{'.pdf'}); source=pdf_text(raw,allow_empty=True)
     if isolated_demo():assert_demo_text(source)
-    try: proposed=extract_contract(raw); error=None
+    try: proposed=extract_contract(raw,demo=isolated_demo()); error=None
     except ValueError as exc: proposed=None; error=str(exc)
     proposal_id='CP-'+uuid4().hex
     with Session.begin() as s:
